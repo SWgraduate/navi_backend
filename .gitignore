@@ -1,0 +1,85 @@
+# 로그
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# 진단 리포트
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# 런타임 데이터
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# 코드 커버리지
+coverage
+*.lcov
+.nyc_output
+
+# 빌드 결과물
+dist
+build
+lib
+out
+
+# 의존성 디렉터리
+node_modules/
+jspm_packages/
+web_modules/
+
+# TypeScript 캐시
+*.tsbuildinfo
+
+# npm / yarn / pnpm 캐시
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# REPL 히스토리
+.node_repl_history
+
+# npm pack 결과물
+*.tgz
+
+# Yarn 무결성 파일
+.yarn-integrity
+
+# 환경변수 파일 (중요)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 번들러/툴 캐시
+.cache
+.parcel-cache
+.vite
+.next
+.nuxt
+.svelte-kit
+
+# Serverless / 기타 툴
+.serverless/
+.dynamodb/
+
+# 에디터/IDE 설정
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS 별 파일
+.DS_Store
+Thumbs.db
+
+# (선택) 잠금 파일 제외하고 싶을 때
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
