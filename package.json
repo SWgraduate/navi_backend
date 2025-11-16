@@ -1,5 +1,5 @@
 {
-  "name": "erica-capstone-2025-backend",
+  "name": "erica-capstone-2026-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/taeyoung24/erica-capstone-2025-backend#readme",
   "dependencies": {
+    "dotenv": "^17.2.3",
     "express": "^5.1.0"
   },
   "devDependencies": {
