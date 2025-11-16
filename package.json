@@ -11,16 +11,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/taeyoung24/erica-capstone-2025-backend.git"
+    "url": "git+https://github.com/taeyoung24/erica-capstone-2026-backend.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/taeyoung24/erica-capstone-2025-backend/issues"
+    "url": "https://github.com/taeyoung24/erica-capstone-2026-backend/issues"
   },
-  "homepage": "https://github.com/taeyoung24/erica-capstone-2025-backend#readme",
+  "homepage": "https://github.com/taeyoung24/erica-capstone-2026-backend#readme",
   "dependencies": {
     "dotenv": "^17.2.3",
     "express": "^5.1.0"
