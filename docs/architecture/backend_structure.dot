@@ -1,0 +1,37 @@
+digraph G {
+    rankdir=LR;
+    // splines=ortho;
+    node [shape=record color=black background="#FFFFFF"];
+    edge [color=black dir=both];
+
+    client [label="Client"];
+
+    subgraph cluster_backend {
+        label="Backend (PaaS/Serverless)"
+
+        subgraph cluster_app {
+            label="Non-GPU App Server";
+
+            api_gateway  [label="API Gateway / BFF"];
+            business_logic [label="Business Logic Layer"];
+        }
+
+        subgraph cluster_gpu {
+            label="GPU Inference Worker";
+
+            local_llm [label="Local LLM Serving"];
+        }
+
+        llm_api [label="External LLM Service\n(e.g., OpenAI, Azure)"];
+        database [label="External Database\n(e.g., Cosmos DB, MongoDB)"];
+    }
+
+    client -> api_gateway [label="HTTP Requests"];
+
+    api_gateway -> business_logic [label="Function Calls"];
+
+    business_logic -> local_llm [label="Inference Requests"];
+    business_logic -> llm_api [label="Inference Requests"];
+    business_logic -> database [label="Data Queries"];
+
+}
