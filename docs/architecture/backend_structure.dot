@@ -22,7 +22,7 @@ digraph G {
             local_llm [label="Local LLM Serving"];
         }
 
-        llm_api [label="External LLM Service\n(e.g., OpenAI, Azure)"];
+        llm_api [label="External LLM Service\n(e.g., OpenAI, Google)"];
         database [label="External Database\n(e.g., Cosmos DB, MongoDB)"];
     }
 
