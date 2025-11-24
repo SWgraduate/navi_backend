@@ -69,16 +69,16 @@
 <!-- llm_api -->
 <g id="node5" class="node" pointer-events="visible" data-name="llm_api">
 
-<polygon fill="none" stroke="black" points="734.47,-102.2 734.47,-143.8 876.43,-143.8 876.43,-102.2 734.47,-102.2" style=""/>
+<polygon fill="none" stroke="black" points="732.53,-102.2 732.53,-143.8 878.38,-143.8 878.38,-102.2 732.53,-102.2" style=""/>
 <text text-anchor="middle" x="805.45" y="-127.2" font-family="Times,serif" font-size="14.00" style="">External LLM Service</text>
-<text text-anchor="middle" x="805.45" y="-110.4" font-family="Times,serif" font-size="14.00" style="">(e.g., OpenAI, Azure)</text>
+<text text-anchor="middle" x="805.45" y="-110.4" font-family="Times,serif" font-size="14.00" style="">(e.g., OpenAI, Google)</text>
 </g>
 <!-- business_logic&#45;&gt;llm_api -->
 <g id="edge4" class="edge" data-name="business_logic-&gt;llm_api">
 
-<path fill="none" stroke="black" d="M579.81,-123C623.89,-123 678.71,-123 723.15,-123" style=""/>
+<path fill="none" stroke="black" d="M579.96,-123C623.44,-123 677.31,-123 721.38,-123" style=""/>
 <polygon fill="black" stroke="black" points="580.05,-119.5 570.05,-123 580.05,-126.5 580.05,-119.5" style=""/>
-<polygon fill="black" stroke="black" points="723,-126.5 733,-123 723,-119.5 723,-126.5" style=""/>
+<polygon fill="black" stroke="black" points="721.14,-126.5 731.14,-123 721.14,-119.5 721.14,-126.5" style=""/>
 <text text-anchor="middle" x="640.25" y="-127.2" font-family="Times,serif" font-size="14.00" style="">Inference Requests</text>
 </g>
 <!-- database -->

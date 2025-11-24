@@ -1,8 +1,9 @@
 import { Router } from "express";
+import systemRouter from "./system.routes";
 import mockRouter from "./mock.routes";
 
-const router = Router();
+export const apiRouter = Router();
+export const indexRouter = Router();
 
-router.use("/mock", mockRouter);
-
-export default router;
+apiRouter.use("/mock", mockRouter);
+indexRouter.use("/", systemRouter);
