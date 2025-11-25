@@ -9,11 +9,32 @@
 
 ## [2] 환경
 ### ▍스택 정의
+- App Server
+    - [Render.io](https://render.com/) - PaaS 호스팅
+    - [UptimeRobot](https://uptimerobot.com/) - 24/7 모니터링
+    - Express (nodejs)
 
 ### ▍핵심 아키텍쳐
-![Backend Structure](./docs/res/backend_structure.svg)
+- Backend Structure ![Backend Structure](./docs/res/backend_structure.svg)
+- AI API Corresponding Sequence Diagram ![API Sequence Diagram](./docs/res/canvas-ai-api-corresponding-sequence-diagram.png)
+
 
 ### ▍환경변수 설정 (.env)
+```bash
+
+```
+
+### ▍중요 파일 위치 (디렉토리 구조)
+```
+📁 .
+├── 📁 dist
+├── 📁 src
+├── 📄 .env
+├── 📄 .gitignore
+├── 📄 package.json
+├── 📄 README.md
+└── 📄 tsconfig.json
+```
 
 
 ## [3] 개발 전략
@@ -26,6 +47,7 @@
 
 
 ## [4] 배포 및 유지 가이드
+- Base URL: `https://erica-capstone-2026-backend.onrender.com`
 
 
 ## [5] 부록
