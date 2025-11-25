@@ -15,11 +15,25 @@
     - Express (nodejs)
 
 ### ▍핵심 아키텍쳐
-![Backend Structure](./docs/res/backend_structure.svg)
+- Backend Structure ![Backend Structure](./docs/res/backend_structure.svg)
+- AI API Corresponding Sequence Diagram ![API Sequence Diagram](./docs/res/canvas-ai-api-corresponding-sequence-diagram.png)
+
 
 ### ▍환경변수 설정 (.env)
 ```bash
 
+```
+
+### ▍중요 파일 위치 (디렉토리 구조)
+```
+📁 .
+├── 📁 dist
+├── 📁 src
+├── 📄 .env
+├── 📄 .gitignore
+├── 📄 package.json
+├── 📄 README.md
+└── 📄 tsconfig.json
 ```
 
 
