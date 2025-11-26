@@ -43,7 +43,7 @@
 | --- | --- | --- |
 | production | 🚀 실제 서버 배포용 | main에서 검증된 코드만 이곳으로 Merge (Fast-forward 권장).PaaS는 이 브랜치만 바라봄. |
 | main | 🛡️ 코드 저장소 & 통합 | 모든 기능(feature)이 합쳐지는 곳.develop역할을 겸함. Github 레포의 '간판'. |
-| feature/* | ✨ 개별 기능 개발 | main에서 따서 개발 후main으로 PR. |
+| feature/* | ✨ 개별 기능 개발 | main에서 따서 개발 후main으로 PR. 케밥케이스 사용. (예시: feature/commit-me) |
 
 
 ## [4] 배포 및 유지 가이드
