@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node src/index.ts",
-    "build": "tsc",
+    "tsoa": "tsoa spec-and-routes",
+    "dev": "npm run tsoa && ts-node src/index.ts",
+    "build": "npm run tsoa && tsc",
     "start": "node dist/index.js"
   },
   "repository": {
