@@ -1,0 +1,15 @@
+{
+  "entryFile": "src/index.ts",
+  "noImplicitAdditionalProperties": "silently-remove-extras",
+  "controllerPathGlobs": ["src/controllers/**/*Controller.ts"],
+  "spec": {
+    "outputDirectory": "src/swagger",
+    "specVersion": 3,
+    "basePath": "/api",
+    "securityDefinitions": {}
+  },
+  "routes": {
+    "routesDir": "src/routes",
+    "basePath": "/api"
+  }
+}

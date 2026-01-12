@@ -1,0 +1,366 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"ChatTaskResponse": {
+				"properties": {
+					"taskId": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"taskId",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChatRequest": {
+				"properties": {
+					"query": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"query"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChatStatusResponse": {
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"queued",
+							"processing",
+							"completed",
+							"failed"
+						]
+					},
+					"progress": {
+						"type": "string"
+					},
+					"displayMessage": {
+						"type": "string"
+					},
+					"result": {}
+				},
+				"required": [
+					"status",
+					"progress",
+					"displayMessage"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LoginRequest": {
+				"properties": {
+					"username": {
+						"type": "string"
+					},
+					"password": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {}
+	},
+	"info": {
+		"title": "erica-capstone-2026-backend",
+		"version": "1.0.0",
+		"license": {
+			"name": "ISC"
+		},
+		"contact": {}
+	},
+	"paths": {
+		"/system/health": {
+			"get": {
+				"operationId": "HealthCheck",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"status": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"status"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"System"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/settings/profile": {
+			"get": {
+				"operationId": "GetProfile",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {},
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Settings"
+				],
+				"security": [],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateProfile",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {},
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Settings"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/mock/test": {
+			"get": {
+				"operationId": "Test",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Mock"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/chat": {
+			"post": {
+				"operationId": "CreateChatTask",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ChatTaskResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "질문을 전송하고 비동기 처리용 taskId를 발급받는다.",
+				"tags": [
+					"Chat"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ChatRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/status/{taskId}": {
+			"get": {
+				"operationId": "GetChatStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/ChatStatusResponse"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Task not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "특정 taskId의 현재 상태를 조회한다.",
+				"tags": [
+					"Chat"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "taskId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/auth/login": {
+			"post": {
+				"operationId": "Login",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {},
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/LoginRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/auth/register": {
+			"post": {
+				"operationId": "Register",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {},
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/auth/logout": {
+			"post": {
+				"operationId": "Logout",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {},
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": []
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "/api"
+		}
+	]
+}

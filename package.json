@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node src/index.ts",
-    "build": "tsc",
+    "tsoa": "tsoa spec-and-routes",
+    "dev": "npm run tsoa && ts-node src/index.ts",
+    "build": "npm run tsoa && tsc",
     "start": "node dist/index.js"
   },
   "repository": {
@@ -22,10 +23,12 @@
   },
   "homepage": "https://github.com/taeyoung24/erica-capstone-2026-backend#readme",
   "dependencies": {
+    "body-parser": "^2.2.1",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "tsoa": "^6.6.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
