@@ -25,7 +25,7 @@ export class ChatController extends Controller {
   @Post('/')
   public async createChatTask(@Body() body: ChatRequest): Promise<ChatTaskResponse> {
     const { query } = body;
-    const result = this.chatService.startChatTask(query);
+    const result = await this.chatService.startChatTask(query);
     this.setStatus(202); // Accepted
     return result;
   }
@@ -37,7 +37,7 @@ export class ChatController extends Controller {
   @Response<ChatStatusResponse>(200, "Success")
   @Response<{ error: string }>(404, "Task not found")
   public async getChatStatus(@Path() taskId: string): Promise<ChatStatusResponse | { error: string }> {
-    const status = this.chatService.getTaskStatus(taskId);
+    const status = await this.chatService.getTaskStatus(taskId);
     
     if (!status) {
       this.setStatus(404);
