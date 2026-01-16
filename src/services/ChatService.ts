@@ -1,4 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
+import { ChatOpenAI } from "@langchain/openai";
+import { HumanMessage } from "@langchain/core/messages";
+import ChatModel, { IChat } from '../models/Chat';
 
 export interface ChatTask {
   status: 'queued' | 'processing' | 'completed' | 'failed';
@@ -10,9 +12,6 @@ export interface ChatTask {
 export class ChatService {
   // Singleton instance
   private static instance: ChatService;
-  
-  // In-memory store
-  private taskStore = new Map<string, ChatTask>();
 
   private constructor() {}
 
@@ -28,68 +27,113 @@ export class ChatService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  // Helper: Mock LLM call
+  // Helper: Real LLM call using LangChain
   private async callLLM(query: string): Promise<string> {
-    await this.delay(2000);
-    return `LLM 응답: ${query}`;
+    // 1. Try to load API Key from LLM_TOKEN (user preference) or OPENAI_API_KEY (fallback)
+    const apiKey = process.env.LLM_TOKEN || process.env.OPENAI_API_KEY;
+
+    // Debug log to check if key is loaded (prints only first 4 chars for security)
+    if (apiKey) {
+      console.log(`[ChatService] API Key loaded: ${apiKey.substring(0, 4)}...`);
+    } else {
+      console.warn("[ChatService] API Key is MISSING (LLM_TOKEN or OPENAI_API_KEY).");
+    }
+
+    if (!apiKey) {
+      console.warn("API Key not found. Using mock response.");
+      await this.delay(2000);
+      return `[Mock] LLM Response: ${query} (Please set LLM_TOKEN in .env)`;
+    }
+
+    try {
+      const chat = new ChatOpenAI({
+        apiKey: apiKey,
+        modelName: "google/gemini-3-flash-preview", 
+        temperature: 0.7,
+        configuration: {
+          baseURL: "https://openrouter.ai/api/v1",
+        }
+      });
+
+      const response = await chat.invoke([
+        new HumanMessage(query),
+      ]);
+
+      return typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+    } catch (error) {
+      console.error("LangChain Error:", error);
+      throw error;
+    }
   }
 
   // Background task processor
   private async processChatTask(taskId: string, query: string) {
-    const update = (progress: string, msg: string) => {
-      const task = this.taskStore.get(taskId);
-      if (task) {
-        this.taskStore.set(taskId, { ...task, status: 'processing', progress, displayMessage: msg });
-      }
+    const update = async (progress: string, msg: string) => {
+      await ChatModel.findByIdAndUpdate(taskId, {
+        status: 'processing',
+        progress,
+        displayMessage: msg
+      });
     };
 
     try {
-      // [상태 업데이트 1] 검색
-      update('searching', '학교 공지사항을 검색하고 있습니다...');
+      // [Step 1] Searching (Simulated)
+      await update('searching', 'Searching school notices...');
       await this.delay(2000); 
 
-      // [상태 업데이트 2] 독해
-      update('reading', '찾은 문서 3건을 읽고 있습니다...');
+      // [Step 2] Reading (Simulated)
+      await update('reading', 'Reading 3 retrieved documents...');
       await this.delay(3000); 
 
-      // [상태 업데이트 3] 생성
-      update('thinking', '답변을 정리하고 있습니다...');
+      // [Step 3] Thinking (Real LLM)
+      await update('thinking', 'Generatng answer...');
       const finalAnswer = await this.callLLM(query); 
 
-      // [완료]
-      this.taskStore.set(taskId, {
+      // [Completed]
+      await ChatModel.findByIdAndUpdate(taskId, {
         status: 'completed',
         progress: 'done',
-        displayMessage: '완료',
-        result: finalAnswer
+        displayMessage: 'Completed',
+        answer: finalAnswer
       });
-    } catch (err) {
-      this.taskStore.set(taskId, { 
-        status: 'failed', 
-        progress: 'error', 
-        displayMessage: '오류가 발생했습니다.',
-        result: err
+
+    } catch (err: any) {
+      console.error(`Task ${taskId} failed:`, err);
+      await ChatModel.findByIdAndUpdate(taskId, {
+        status: 'failed',
+        progress: 'error',
+        displayMessage: 'An error occurred.',
+        error: err.message || String(err)
       });
     }
   }
 
-  public startChatTask(query: string): { taskId: string, message: string } {
-    const taskId = uuidv4();
-    
-    // 초기 상태 저장
-    this.taskStore.set(taskId, {
+  public async startChatTask(query: string): Promise<{ taskId: string, message: string }> {
+    // Create initial record in MongoDB
+    const chat = await ChatModel.create({
+      query,
       status: 'queued',
       progress: 'init',
-      displayMessage: '질문을 분석하고 있습니다...',
+      displayMessage: 'Analyzing question...',
     });
 
-    // 비동기 작업 시작 (fire-and-forget)
+    const taskId = chat._id.toString();
+
+    // Start background process (fire-and-forget)
     this.processChatTask(taskId, query);
 
     return { taskId, message: 'Started' };
   }
 
-  public getTaskStatus(taskId: string): ChatTask | undefined {
-    return this.taskStore.get(taskId);
+  public async getTaskStatus(taskId: string): Promise<ChatTask | undefined> {
+    const chat = await ChatModel.findById(taskId);
+    if (!chat) return undefined;
+
+    return {
+      status: chat.status,
+      progress: chat.progress,
+      displayMessage: chat.displayMessage,
+      result: chat.answer // Map 'answer' to 'result' for consistency with interface
+    };
   }
 }

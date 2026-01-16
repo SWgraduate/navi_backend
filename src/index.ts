@@ -4,8 +4,12 @@ import mongoose from "mongoose";
 import swaggerUi from 'swagger-ui-express';
 import { RegisterRoutes } from './routes/routes';
 import swaggerJson from './swagger/swagger.json';
+import { connectDB } from './config/database';
 
 dotenv.config();
+
+// MongoDB 연결
+connectDB();
 
 const app: Express = express();
 const PORT = 3000;
