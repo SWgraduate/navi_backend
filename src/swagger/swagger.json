@@ -64,13 +64,25 @@
 			},
 			"LoginRequest": {
 				"properties": {
-					"username": {
+					"name": {
 						"type": "string"
 					},
 					"password": {
 						"type": "string"
 					}
 				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"WithdrawRequest": {
+				"properties": {
+					"userId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"userId"
+				],
 				"type": "object",
 				"additionalProperties": false
 			}
@@ -355,6 +367,46 @@
 				],
 				"security": [],
 				"parameters": []
+			}
+		},
+		"/auth/withdraw": {
+			"delete": {
+				"operationId": "Withdraw",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/WithdrawRequest"
+							}
+						}
+					}
+				}
 			}
 		}
 	},

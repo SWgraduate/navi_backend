@@ -83,3 +83,6 @@ Thumbs.db
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
+
+# (선택) 환경변수 파일 제외하고 싶을 때
+.env 
