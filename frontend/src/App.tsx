@@ -10,7 +10,7 @@ function App() {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I am your AI assistant. How can I help you today?'
+      content: '정태영님의 한양대 생활을 더 편하게, 무엇이든 물어보세요'
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +65,7 @@ function App() {
       setMessages(prev => [...prev, {
         id: placeholderId,
         role: 'assistant',
-        content: 'Thinking...'
+        content: '분석중...'
       }]);
 
       const { taskId } = await startChat(content);
@@ -76,7 +76,7 @@ function App() {
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: 'Sorry, I encountered an error starting the chat.'
+        content: '메시지를 생성하는 중 문제가 발생하였습니다.'
       }]);
     }
   };

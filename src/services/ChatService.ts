@@ -38,20 +38,11 @@ export class ChatService {
 
   // Helper: Real LLM call using LangChain
   private async callLLM(query: string): Promise<string> {
-    // 1. Try to load API Key from LLM_TOKEN (user preference) or OPENAI_API_KEY (fallback)
+    // API key 확인
     const apiKey = process.env.LLM_TOKEN || process.env.OPENAI_API_KEY;
 
-    // Debug log to check if key is loaded (prints only first 4 chars for security)
-    if (apiKey) {
-      console.log(`[ChatService] API Key loaded: ${apiKey.substring(0, 4)}...`);
-    } else {
-      console.warn("[ChatService] API Key is MISSING (LLM_TOKEN or OPENAI_API_KEY).");
-    }
-
     if (!apiKey) {
-      console.warn("API Key not found. Using mock response.");
-      await this.delay(2000);
-      return `[Mock] LLM Response: ${query} (Please set LLM_TOKEN in .env)`;
+      console.warn("API Key not found.");
     }
 
     try {
@@ -60,7 +51,7 @@ export class ChatService {
         modelName: "xiaomi/mimo-v2-flash:free",
         temperature: 0.7,
         configuration: {
-          baseURL: "https://openrouter.ai/api/v1",
+          baseURL: process.env.OPENAI_BASE_URL 
         }
       });
 
@@ -95,15 +86,15 @@ export class ChatService {
 
     try {
       // [Step 1] Searching (Simulated)
-      await update('searching', 'Searching school notices...');
-      await this.delay(2000);
+      // await update('searching', 'searching school notices...');
+      // await this.delay(2000);
 
       // [Step 2] Reading (Simulated)
-      await update('reading', 'Reading 3 retrieved documents...');
-      await this.delay(3000);
+      // await update('reading', 'Reading 3 retrieved documents...');
+      // await this.delay(3000);
 
       // [Step 3] Thinking (Real LLM)
-      await update('thinking', 'Generatng answer...');
+      await update('thinking', '분석중...');
       const finalAnswer = await this.callLLM(query);
 
       // [Completed]
