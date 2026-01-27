@@ -33,6 +33,15 @@ export class AuthController extends Controller {
 public async withdraw(@Body() body: WithdrawRequest): Promise<{ message: string }> {
   const { userId } = body;
 
+  //서버가 실제로 연결된 DB 이름
+  console.log("Connected DB:", mongoose.connection.name);
+
+  //UserModel이 바라보는 컬렉션 이름
+  console.log("User collection:", UserModel.collection.name);
+
+  //전달받은 userId
+  console.log("Received userId:", userId);
+
   // 1) userId 유효성 검사
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     this.setStatus(400);
