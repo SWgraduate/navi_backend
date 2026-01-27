@@ -62,44 +62,9 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"AuthResponse": {
-				"properties": {
-					"user": {
-						"properties": {
-							"role": {
-								"type": "string"
-							},
-							"name": {
-								"type": "string"
-							},
-							"email": {
-								"type": "string"
-							},
-							"id": {
-								"type": "string"
-							}
-						},
-						"required": [
-							"role",
-							"name",
-							"email",
-							"id"
-						],
-						"type": "object"
-					},
-					"token": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"user"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"LoginRequest": {
 				"properties": {
-					"username": {
+					"name": {
 						"type": "string"
 					},
 					"password": {
@@ -109,22 +74,14 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"RegisterRequest": {
+			"WithdrawRequest": {
 				"properties": {
-					"email": {
-						"type": "string"
-					},
-					"password": {
-						"type": "string"
-					},
-					"name": {
+					"userId": {
 						"type": "string"
 					}
 				},
 				"required": [
-					"email",
-					"password",
-					"name"
+					"userId"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -342,46 +299,13 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/AuthResponse"
-										},
-										{
-											"properties": {
-												"error": {
-													"type": "string"
-												}
-											},
-											"required": [
-												"error"
-											],
-											"type": "object"
-										}
-									]
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Unauthorized",
-						"content": {
-							"application/json": {
-								"schema": {
-									"properties": {
-										"error": {
-											"type": "string"
-										}
-									},
-									"required": [
-										"error"
-									],
+									"properties": {},
 									"type": "object"
 								}
 							}
 						}
 					}
 				},
-				"description": "사용자 로그인",
 				"tags": [
 					"Auth"
 				],
@@ -403,66 +327,23 @@
 			"post": {
 				"operationId": "Register",
 				"responses": {
-					"201": {
-						"description": "Created",
+					"200": {
+						"description": "Ok",
 						"content": {
 							"application/json": {
 								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/AuthResponse"
-										},
-										{
-											"properties": {
-												"error": {
-													"type": "string"
-												}
-											},
-											"required": [
-												"error"
-											],
-											"type": "object"
-										}
-									]
-								}
-							}
-						}
-					},
-					"400": {
-						"description": "Bad Request",
-						"content": {
-							"application/json": {
-								"schema": {
-									"properties": {
-										"error": {
-											"type": "string"
-										}
-									},
-									"required": [
-										"error"
-									],
+									"properties": {},
 									"type": "object"
 								}
 							}
 						}
 					}
 				},
-				"description": "사용자 회원가입",
 				"tags": [
 					"Auth"
 				],
 				"security": [],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/RegisterRequest"
-							}
-						}
-					}
-				}
+				"parameters": []
 			}
 		},
 		"/auth/logout": {
@@ -486,6 +367,46 @@
 				],
 				"security": [],
 				"parameters": []
+			}
+		},
+		"/auth/withdraw": {
+			"delete": {
+				"operationId": "Withdraw",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/WithdrawRequest"
+							}
+						}
+					}
+				}
 			}
 		}
 	},

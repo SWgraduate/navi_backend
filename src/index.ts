@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import express, { Express } from 'express';
+import mongoose from "mongoose";
 import swaggerUi from 'swagger-ui-express';
 import { RegisterRoutes } from './routes/routes';
 import swaggerJson from './swagger/swagger.json';
@@ -23,6 +24,24 @@ RegisterRoutes(app);
 // Swagger UI 설정
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerJson));
 
+// MongoDB 연결
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  throw new Error("MONGO_URI is not defined in .env");
+}
+
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log(" MongoDB connected");
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err);
+  });
+
+// 서버 시작
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
