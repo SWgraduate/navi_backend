@@ -1,0 +1,7 @@
+# Handle line endings automatically for files detected as text
+# and perform LF normalization.
+* text=auto eol=lf
+
+# Explicitly set eol to lf for generated files
+src/routes/routes.ts text eol=lf
+src/swagger/swagger.json text eol=lf
