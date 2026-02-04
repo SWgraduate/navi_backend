@@ -128,6 +128,44 @@
 				],
 				"type": "object",
 				"additionalProperties": false
+			},
+			"IngestResponse": {
+				"properties": {
+					"message": {
+						"type": "string"
+					},
+					"chunks": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"message",
+					"chunks"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.any_": {
+				"properties": {},
+				"additionalProperties": {},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"IngestRequest": {
+				"properties": {
+					"text": {
+						"type": "string"
+					},
+					"metadata": {
+						"$ref": "#/components/schemas/Record_string.any_"
+					}
+				},
+				"required": [
+					"text"
+				],
+				"type": "object",
+				"additionalProperties": false
 			}
 		},
 		"securitySchemes": {}
@@ -486,6 +524,38 @@
 				],
 				"security": [],
 				"parameters": []
+			}
+		},
+		"/ingest": {
+			"post": {
+				"operationId": "IngestDocument",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IngestResponse"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Ingest"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/IngestRequest"
+							}
+						}
+					}
+				}
 			}
 		}
 	},
