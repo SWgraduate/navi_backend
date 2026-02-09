@@ -16,6 +16,8 @@ import { AuthController } from './../controllers/AuthController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { IngestController } from './../controllers/rag/IngestController';
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
+const multer = require('multer');
+
 
 
 
@@ -109,13 +111,14 @@ const templateService = new ExpressTemplateService(models, {"noImplicitAdditiona
 
 
 
-export function RegisterRoutes(app: Router) {
+export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof multer>}) {
 
     // ###########################################################################################################
     //  NOTE: If you do not see routes for all of your controllers in this file, then you might not have informed tsoa of where to look
     //      Please look into the "controllerPathGlobs" config option described in the readme: https://github.com/lukeautry/tsoa
     // ###########################################################################################################
 
+    const upload = opts?.multer ||  multer({"limits":{"fileSize":8388608}});
 
     
         const argsSystemController_healthCheck: Record<string, TsoaRoute.ParameterSchema> = {
@@ -402,6 +405,43 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'ingestDocument',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsIngestController_uploadDocument: Record<string, TsoaRoute.ParameterSchema> = {
+                file: {"in":"formData","name":"file","required":true,"dataType":"file"},
+                source: {"in":"formData","name":"source","dataType":"string"},
+        };
+        app.post('/api/ingest/upload',
+            upload.fields([
+                {
+                    name: "file",
+                    maxCount: 1
+                }
+            ]),
+            ...(fetchMiddlewares<RequestHandler>(IngestController)),
+            ...(fetchMiddlewares<RequestHandler>(IngestController.prototype.uploadDocument)),
+
+            async function IngestController_uploadDocument(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsIngestController_uploadDocument, request, response });
+
+                const controller = new IngestController();
+
+              await templateService.apiHandler({
+                methodName: 'uploadDocument',
                 controller,
                 response,
                 next,

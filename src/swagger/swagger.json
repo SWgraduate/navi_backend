@@ -557,6 +557,50 @@
 					}
 				}
 			}
+		},
+		"/ingest/upload": {
+			"post": {
+				"operationId": "UploadDocument",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IngestResponse"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Ingest"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"file": {
+										"type": "string",
+										"format": "binary"
+									},
+									"source": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"file"
+								]
+							}
+						}
+					}
+				}
+			}
 		}
 	},
 	"servers": [
