@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "cross-env DOTENV_CONFIG_PATH=.env.test.local jest --setupFiles=dotenv/config --forceExit",
     "tsoa": "tsoa spec-and-routes",
     "dev": "npm run tsoa && ts-node src/index.ts",
     "build": "npm run tsoa && tsc",
@@ -48,11 +48,17 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/chokidar": "^1.7.5",
     "@types/express": "^5.0.5",
+    "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
     "@types/node": "^24.10.1",
     "@types/pdf-parse": "^1.1.5",
+    "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
+    "cross-env": "^10.1.0",
+    "jest": "^30.2.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
