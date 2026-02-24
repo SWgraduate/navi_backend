@@ -62,15 +62,70 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"AuthResponse": {
+				"properties": {
+					"user": {
+						"properties": {
+							"role": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"email": {
+								"type": "string"
+							},
+							"id": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"role",
+							"name",
+							"email",
+							"id"
+						],
+						"type": "object"
+					},
+					"token": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"user"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"LoginRequest": {
 				"properties": {
-					"name": {
+					"username": {
 						"type": "string"
 					},
 					"password": {
 						"type": "string"
 					}
 				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegisterRequest": {
+				"properties": {
+					"email": {
+						"type": "string"
+					},
+					"password": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"email",
+					"password",
+					"name"
+				],
 				"type": "object",
 				"additionalProperties": false
 			},
@@ -337,13 +392,46 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"properties": {},
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/AuthResponse"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
 									"type": "object"
 								}
 							}
 						}
 					}
 				},
+				"description": "사용자 로그인",
 				"tags": [
 					"Auth"
 				],
@@ -365,46 +453,66 @@
 			"post": {
 				"operationId": "Register",
 				"responses": {
-					"200": {
-						"description": "Ok",
+					"201": {
+						"description": "Created",
 						"content": {
 							"application/json": {
 								"schema": {
-									"properties": {},
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/AuthResponse"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
 									"type": "object"
 								}
 							}
 						}
 					}
 				},
+				"description": "사용자 회원가입",
 				"tags": [
 					"Auth"
 				],
 				"security": [],
-				"parameters": []
-			}
-		},
-		"/auth/logout": {
-			"post": {
-				"operationId": "Logout",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"properties": {},
-									"type": "object"
-								}
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterRequest"
 							}
 						}
 					}
-				},
-				"tags": [
-					"Auth"
-				],
-				"security": [],
-				"parameters": []
+				}
 			}
 		},
 		"/auth/withdraw": {
@@ -416,13 +524,64 @@
 						"content": {
 							"application/json": {
 								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"message": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"message"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/json": {
+								"schema": {
 									"properties": {
-										"message": {
+										"error": {
 											"type": "string"
 										}
 									},
 									"required": [
-										"message"
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
 									],
 									"type": "object"
 								}
@@ -430,6 +589,7 @@
 						}
 					}
 				},
+				"description": "사용자 회원탈퇴",
 				"tags": [
 					"Auth"
 				],

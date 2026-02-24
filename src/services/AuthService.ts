@@ -20,7 +20,7 @@ export interface AuthResponse {
 export class AuthService {
   private static instance: AuthService;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): AuthService {
     if (!AuthService.instance) {
@@ -92,5 +92,15 @@ export class AuthService {
       // TODO: Generate JWT token here
       token: 'dummy-jwt-token',
     };
+  }
+
+  /**
+   * 사용자 회원 탈퇴(삭제)
+   */
+  public async withdraw(userId: string): Promise<void> {
+    const deletedUser = await User.findByIdAndDelete(userId);
+    if (!deletedUser) {
+      throw new Error('User not found');
+    }
   }
 }
