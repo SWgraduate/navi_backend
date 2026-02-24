@@ -1,18 +1,17 @@
 import dotenv from 'dotenv';
-import express, { Express } from 'express';
-import {
-  apiRouter,
-  indexRouter,
-} from './routes';
+import { createApp } from './app';
+import { connectDB } from './config/database';
 
 dotenv.config();
 
-const app: Express = express();
-const PORT = 3000;
+const startServer = async () => {
+  await connectDB();
+  const app = createApp();
+  const PORT = process.env.PORT || 3000;
 
-app.use('/', indexRouter);
-app.use('/api', apiRouter);
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+};
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+startServer();

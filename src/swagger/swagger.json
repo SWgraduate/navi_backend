@@ -1,0 +1,692 @@
+{
+	"openapi": "3.0.0",
+	"components": {
+		"examples": {},
+		"headers": {},
+		"parameters": {},
+		"requestBodies": {},
+		"responses": {},
+		"schemas": {
+			"ChatTaskResponse": {
+				"properties": {
+					"taskId": {
+						"type": "string"
+					},
+					"message": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"taskId",
+					"message"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChatRequest": {
+				"properties": {
+					"query": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"query"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"ChatStatusResponse": {
+				"properties": {
+					"status": {
+						"type": "string",
+						"enum": [
+							"queued",
+							"processing",
+							"completed",
+							"failed"
+						]
+					},
+					"progress": {
+						"type": "string"
+					},
+					"displayMessage": {
+						"type": "string"
+					},
+					"result": {}
+				},
+				"required": [
+					"status",
+					"progress",
+					"displayMessage"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"AuthResponse": {
+				"properties": {
+					"user": {
+						"properties": {
+							"role": {
+								"type": "string"
+							},
+							"name": {
+								"type": "string"
+							},
+							"email": {
+								"type": "string"
+							},
+							"id": {
+								"type": "string"
+							}
+						},
+						"required": [
+							"role",
+							"name",
+							"email",
+							"id"
+						],
+						"type": "object"
+					},
+					"token": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"user"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"LoginRequest": {
+				"properties": {
+					"username": {
+						"type": "string"
+					},
+					"password": {
+						"type": "string"
+					}
+				},
+				"type": "object",
+				"additionalProperties": false
+			},
+			"RegisterRequest": {
+				"properties": {
+					"email": {
+						"type": "string"
+					},
+					"password": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"email",
+					"password",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"WithdrawRequest": {
+				"properties": {
+					"userId": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"userId"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"IngestResponse": {
+				"properties": {
+					"message": {
+						"type": "string"
+					},
+					"chunks": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"message",
+					"chunks"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"Record_string.any_": {
+				"properties": {},
+				"additionalProperties": {},
+				"type": "object",
+				"description": "Construct a type with a set of properties K of type T"
+			},
+			"IngestRequest": {
+				"properties": {
+					"text": {
+						"type": "string"
+					},
+					"metadata": {
+						"$ref": "#/components/schemas/Record_string.any_"
+					}
+				},
+				"required": [
+					"text"
+				],
+				"type": "object",
+				"additionalProperties": false
+			}
+		},
+		"securitySchemes": {}
+	},
+	"info": {
+		"title": "erica-capstone-2026-backend",
+		"version": "1.0.0",
+		"license": {
+			"name": "ISC"
+		},
+		"contact": {}
+	},
+	"paths": {
+		"/system/health": {
+			"get": {
+				"operationId": "HealthCheck",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"status": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"status"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"System"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/settings/profile": {
+			"get": {
+				"operationId": "GetProfile",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {},
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Settings"
+				],
+				"security": [],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateProfile",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {},
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Settings"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/mock/test": {
+			"get": {
+				"operationId": "Test",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Mock"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/chat": {
+			"post": {
+				"operationId": "CreateChatTask",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ChatTaskResponse"
+								}
+							}
+						}
+					}
+				},
+				"description": "질문을 전송하고 비동기 처리용 taskId를 발급받는다.",
+				"tags": [
+					"Chat"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ChatRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/chat/status/{taskId}": {
+			"get": {
+				"operationId": "GetChatStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/ChatStatusResponse"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Task not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "특정 taskId의 현재 상태를 조회한다.",
+				"tags": [
+					"Chat"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "taskId",
+						"required": true,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/auth/login": {
+			"post": {
+				"operationId": "Login",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/AuthResponse"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "사용자 로그인",
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/LoginRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/auth/register": {
+			"post": {
+				"operationId": "Register",
+				"responses": {
+					"201": {
+						"description": "Created",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/AuthResponse"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "사용자 회원가입",
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/auth/withdraw": {
+			"delete": {
+				"operationId": "Withdraw",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"message": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"message"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"description": "사용자 회원탈퇴",
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/WithdrawRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/ingest": {
+			"post": {
+				"operationId": "IngestDocument",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IngestResponse"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Ingest"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/IngestRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/ingest/upload": {
+			"post": {
+				"operationId": "UploadDocument",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/IngestResponse"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Ingest"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"multipart/form-data": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"file": {
+										"type": "string",
+										"format": "binary"
+									},
+									"source": {
+										"type": "string"
+									}
+								},
+								"required": [
+									"file"
+								]
+							}
+						}
+					}
+				}
+			}
+		}
+	},
+	"servers": [
+		{
+			"url": "/api"
+		}
+	]
+}
