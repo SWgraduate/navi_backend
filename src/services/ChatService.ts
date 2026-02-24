@@ -51,7 +51,7 @@ export class ChatService {
         modelName: "xiaomi/mimo-v2-flash:free", // NOTE: The free MiMo-V2-Flash period has ended. To continue using this model, please migrate to the paid slug: xiaomi/mimo-v2-flash (26. 2. 9. 정태영)
         temperature: 0.7,
         configuration: {
-          baseURL: process.env.OPENAI_BASE_URL 
+          baseURL: "https://openrouter.ai/api/v1"
         }
       });
 
