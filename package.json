@@ -7,6 +7,7 @@
     "test": "cross-env DOTENV_CONFIG_PATH=.env.test.local jest --setupFiles=dotenv/config --forceExit",
     "tsoa": "tsoa spec-and-routes",
     "dev": "npm run tsoa && ts-node src/index.ts",
+    "dev:test": "cross-env DOTENV_CONFIG_PATH=.env.test.local npm run dev",
     "build": "npm run tsoa && tsc",
     "start": "node dist/index.js"
   },

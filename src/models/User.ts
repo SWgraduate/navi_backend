@@ -1,11 +1,13 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+export type UserRole = 'student' | 'staff' | 'admin';
+
 export interface IUser extends Document {
   email: string;
   password?: string;
   name: string;
-  role: 'user' | 'admin';
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -16,7 +18,7 @@ const UserSchema: Schema = new Schema(
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
     name: { type: String, required: true },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    role: { type: String, enum: ['student', 'staff', 'admin'], default: 'student' },
   },
   {
     timestamps: true, // createdAt, updatedAt 자동 생성
