@@ -49,7 +49,7 @@ describe('User Model Test', () => {
     expect(savedUser.name).toBe(userData.name);
 
     // 기본값(default) 확인
-    expect(savedUser.role).toBe('user');
+    expect(savedUser.role).toBe('student');
 
     // 비밀번호 해싱 확인 (원본 비밀번호와 달라야 함)
     expect(savedUser.password).not.toBe(userData.password);
