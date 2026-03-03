@@ -21,6 +21,12 @@ describe('AuthService Test', () => {
 
         await mongoose.connect(mongoURI);
 
+        // 이전 테스트 실행에 남은 데이터 정리 (다른 테스트 파일이 남긴 데이터 방지)
+        await User.deleteMany({});
+
+        // 테스트 실행 전 unique 인덱스가 생성되도록 보장
+        await User.createIndexes();
+
         // AuthService 인스턴스 가져오기 (싱글톤)
         authService = AuthService.getInstance();
     });

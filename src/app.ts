@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import swaggerUi from 'swagger-ui-express';
-import { RegisterRoutes } from './routes/routes';
-import swaggerJson from './swagger/swagger.json';
+import { RegisterRoutes } from '@/routes/routes';
+import swaggerJson from '@/swagger/swagger.json';
 
 export const createApp = (): Express => {
 	const app: Express = express();
@@ -13,6 +13,6 @@ export const createApp = (): Express => {
 
 	// Swagger UI 설정
 	app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerJson));
-	
+
 	return app;
 };

@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Route, Tags, Request, UploadedFile, FormField } from 'tsoa';
-import { VectorStoreService } from '../../services/rag/VectorStoreService';
-import { FileService } from '../../services/rag/FileService';
+import { VectorStoreService } from '@/services/rag/VectorStoreService';
+import { FileService } from '@/services/rag/FileService';
 import multer from 'multer';
 import express from 'express';
 // Configure Multer (Memory Storage)
@@ -34,7 +34,7 @@ export class IngestController extends Controller {
     // Note: TSOA handles file uploads differently. 
     // For simplicity with Express + TSOA, we often rely on standard Express middleware for the actual file handling
     // or define the file param specifically.
-    
+
     @Post('/upload')
     public async uploadDocument(
         @UploadedFile() file: Express.Multer.File,
@@ -47,10 +47,10 @@ export class IngestController extends Controller {
         try {
             // Extract extension
             const extension = '.' + file.originalname.split('.').pop()?.toLowerCase();
-            
+
             // Extract text
             const text = await this.fileService.extractTextFromBuffer(file.buffer, extension);
-            
+
             // Ingest
             const metadata = {
                 source: source || file.originalname,
@@ -58,7 +58,7 @@ export class IngestController extends Controller {
                 mimeType: file.mimetype
             };
             const chunkCount = await this.vectorStoreService.processDocument(text, metadata);
-            
+
             return {
                 message: `File ${file.originalname} processed successfully`,
                 chunks: chunkCount

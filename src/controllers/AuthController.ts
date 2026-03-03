@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Route, Tags, Response, SuccessResponse, Delete } from 'tsoa';
-import { AuthService, RegisterRequest, AuthResponse } from '../services/AuthService';
+import { AuthService, RegisterRequest, AuthResponse } from '@/services/AuthService';
 
 export interface LoginRequest {
   username?: string;

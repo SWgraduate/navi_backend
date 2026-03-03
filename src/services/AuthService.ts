@@ -1,5 +1,6 @@
-import User, { IUser } from '../models/User';
-import { LoginRequest } from '../controllers/AuthController';
+import jwt from 'jsonwebtoken';
+import User from '@/models/User';
+import { LoginRequest } from '@/controllers/AuthController';
 
 export interface RegisterRequest {
   email: string;
