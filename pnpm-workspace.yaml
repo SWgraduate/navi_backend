@@ -1,0 +1,4 @@
+onlyBuiltDependencies:
+  - '@openrouter/sdk'
+  - '@scarf/scarf'
+  - unrs-resolver
