@@ -1,4 +1,3 @@
-import jwt from 'jsonwebtoken';
 import User from '@/models/User';
 import { LoginRequest } from '@/controllers/AuthController';
 
@@ -15,7 +14,6 @@ export interface AuthResponse {
     name: string;
     role: string;
   };
-  token?: string; // 추후 JWT 적용 시 사용
 }
 
 export class AuthService {
@@ -90,8 +88,6 @@ export class AuthService {
         name: user.name,
         role: user.role,
       },
-      // TODO: Generate JWT token here
-      token: 'dummy-jwt-token',
     };
   }
 

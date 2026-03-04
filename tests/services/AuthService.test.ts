@@ -105,7 +105,6 @@ describe('AuthService Test', () => {
 
             expect(result.user).toBeDefined();
             expect(result.user.email).toBe(registerData.email);
-            expect(result.token).toBe('dummy-jwt-token'); // 현재 더미 토큰으로 구현된 상태
         });
 
         it('should throw Error if password does not match', async () => {
