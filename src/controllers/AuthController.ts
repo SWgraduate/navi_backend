@@ -2,12 +2,12 @@ import { Body, Controller, Post, Route, Tags, Response, SuccessResponse, Delete 
 import { AuthService, RegisterRequest, AuthResponse } from 'src/services/AuthService';
 
 export interface LoginRequest {
-  username?: string;
+  email?: string;
   password?: string;
 }
 
-export interface WithdrawRequest {
-  userId: string;
+export interface LeaveRequest {
+  email: string;
 }
 
 
@@ -51,22 +51,22 @@ export class AuthController extends Controller {
   /**
    * 사용자 회원탈퇴
    */
-  @Delete("withdraw")
+  @Delete("leave")
   @Response<{ error: string }>(400, "Bad Request")
   @Response<{ error: string }>(404, "Not Found")
-  public async withdraw(@Body() body: WithdrawRequest): Promise<{ message: string } | { error: string }> {
-    const { userId } = body;
+  public async leave(@Body() body: LeaveRequest): Promise<{ message: string } | { error: string }> {
+    const { email } = body;
 
     try {
-      await this.authService.withdraw(userId);
-      return { message: "User successfully withdrawn" };
+      await this.authService.leave(email);
+      return { message: "User successfully left" };
     } catch (error: any) {
       if (error.message === 'User not found') {
         this.setStatus(404);
         return { error: error.message };
       }
       this.setStatus(400);
-      return { error: 'Withdrawal failed' };
+      return { error: 'Leave failed' };
     }
   }
 }

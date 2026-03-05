@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@langchain/community':
         specifier: ^1.1.11
-        version: 1.1.22(@browserbasehq/sdk@2.7.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8))(@ibm-cloud/watsonx-ai@1.7.8)(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(@pinecone-database/pinecone@5.1.2)(ibm-cloud-sdk-core@5.4.8)(jsonwebtoken@9.0.3)(openai@4.62.1(zod@3.23.8))(pdf-parse@2.4.5)(playwright@1.58.2)(ws@8.19.0)
+        version: 1.1.22(@browserbasehq/sdk@2.7.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8))(@ibm-cloud/watsonx-ai@1.7.8)(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(@pinecone-database/pinecone@5.1.2)(ibm-cloud-sdk-core@5.4.8)(jsonwebtoken@9.0.3)(mongodb@7.0.0)(openai@4.62.1(zod@3.23.8))(pdf-parse@2.4.5)(playwright@1.58.2)(ws@8.19.0)
       '@langchain/core':
         specifier: ^1.1.12
         version: 1.1.30(openai@4.62.1(zod@3.23.8))
@@ -41,6 +41,9 @@ importers:
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0
+      connect-mongo:
+        specifier: ^6.0.0
+        version: 6.0.0(express-session@1.19.0)(mongodb@7.0.0)
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -1492,6 +1495,9 @@ packages:
   asap@2.0.6:
     resolution: {integrity: sha512-BSHWgDSAiKs50o2Re8ppvp3seVHXSRM44cdSsT9FfNEUUZLOGWVCsiWaRPWM1Znn+mqZ1OfVZ3z3DWEzSp7hRA==}
 
+  asn1.js@5.4.1:
+    resolution: {integrity: sha512-+I//4cYPccV8LdmBLiX8CYvf9Sp3vQsrqu2QNXRcrbiWvcx/UdlFiqUJJzxRQxgsZmvhXhn4cSKeSmoFjVdupA==}
+
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
@@ -1541,6 +1547,9 @@ packages:
   binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
+
+  bn.js@4.12.3:
+    resolution: {integrity: sha512-fGTi3gxV/23FTYdAoUtLYp6qySe2KE3teyZitipKNRuVYcBkoP/bB3guXN/XVKUe9mxCHXnc9C4ocyz8OmgN0g==}
 
   body-parser@1.20.4:
     resolution: {integrity: sha512-ZTgYYLMOXY9qKU/57FAo8F+HA2dGX7bqGc71txDRC1rS4frdFI5R7NhluHxH6M0YItAP0sHB4uqAOcYKxO6uGA==}
@@ -1685,6 +1694,13 @@ packages:
   concat-stream@2.0.0:
     resolution: {integrity: sha512-MWufYdFw53ccGjCA+Ol7XJYpAlW6/prSMzuPOTRnJGcGzuhLn4Scrz7qf6o8bROZ514ltazcIFJZevcfbo0x7A==}
     engines: {'0': node >= 6.0}
+
+  connect-mongo@6.0.0:
+    resolution: {integrity: sha512-mHxfnTiWk7ZtxmHdcrFBKlr7fCtgGoFpx/oe9jFW0yb2NinagsxEeuol78nUWMpnWyYK0nnuXMlU9wrgUjTE6g==}
+    engines: {node: '>=20.8.0'}
+    peerDependencies:
+      express-session: ^1.17.1
+      mongodb: '>=5.0.0'
 
   console-table-printer@2.15.0:
     resolution: {integrity: sha512-SrhBq4hYVjLCkBVOWaTzceJalvn5K1Zq5aQA6wXC/cYjI3frKWNPEMK3sZsJfNNQApvCQmgBcc13ZKmFj8qExw==}
@@ -2388,6 +2404,10 @@ packages:
     resolution: {integrity: sha512-VS8MWZz/cT+SqBCpVfNN4zoVz5VskR3N4+sTmUXme55e9avQHntpwpNq0yjnosISXqwJ3AQVjlbI4Dyzv//JtA==}
     engines: {node: '>=18.0.0'}
 
+  kruptein@3.0.8:
+    resolution: {integrity: sha512-0CyalFA0Cjp3jnziMp0u1uLZW2/ouhQ0mEMfYlroBXNe86na1RwAuwBcdRAegeWZNMfQy/G5fN47g/Axjtqrfw==}
+    engines: {node: '>8'}
+
   langchain@1.2.29:
     resolution: {integrity: sha512-ESQxESfWo2dZVjHfXBHvXOhC+XdG0ZchEmzgw4MHW+KBSXmiMu84Jm1SW4MZPD5cAAIBWe6MTiPyA1NTePMWiA==}
     engines: {node: '>=20'}
@@ -2546,6 +2566,9 @@ packages:
   mimic-fn@2.1.0:
     resolution: {integrity: sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==}
     engines: {node: '>=6'}
+
+  minimalistic-assert@1.0.1:
+    resolution: {integrity: sha512-UtJcAD4yEaGtjPezWuO9wC4nwUnVH/8/Im3yEHQP4b67cXlD/Qr9hdITCU1xDbSEXg2XKNaP8jsReV7vQd00/A==}
 
   minimatch@3.1.5:
     resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
@@ -4126,7 +4149,7 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/community@1.1.22(@browserbasehq/sdk@2.7.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8))(@ibm-cloud/watsonx-ai@1.7.8)(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(@pinecone-database/pinecone@5.1.2)(ibm-cloud-sdk-core@5.4.8)(jsonwebtoken@9.0.3)(openai@4.62.1(zod@3.23.8))(pdf-parse@2.4.5)(playwright@1.58.2)(ws@8.19.0)':
+  '@langchain/community@1.1.22(@browserbasehq/sdk@2.7.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8))(@ibm-cloud/watsonx-ai@1.7.8)(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(@pinecone-database/pinecone@5.1.2)(ibm-cloud-sdk-core@5.4.8)(jsonwebtoken@9.0.3)(mongodb@7.0.0)(openai@4.62.1(zod@3.23.8))(pdf-parse@2.4.5)(playwright@1.58.2)(ws@8.19.0)':
     dependencies:
       '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8)
       '@ibm-cloud/watsonx-ai': 1.7.8
@@ -4146,6 +4169,7 @@ snapshots:
       '@browserbasehq/sdk': 2.7.0
       '@pinecone-database/pinecone': 5.1.2
       jsonwebtoken: 9.0.3
+      mongodb: 7.0.0
       pdf-parse: 2.4.5
       playwright: 1.58.2
       ws: 8.19.0
@@ -4694,6 +4718,13 @@ snapshots:
 
   asap@2.0.6: {}
 
+  asn1.js@5.4.1:
+    dependencies:
+      bn.js: 4.12.3
+      inherits: 2.0.4
+      minimalistic-assert: 1.0.1
+      safer-buffer: 2.1.2
+
   asynckit@0.4.0: {}
 
   axios@1.13.6(debug@4.4.3):
@@ -4765,6 +4796,8 @@ snapshots:
   bcryptjs@3.0.3: {}
 
   binary-extensions@2.3.0: {}
+
+  bn.js@4.12.3: {}
 
   body-parser@1.20.4:
     dependencies:
@@ -4926,6 +4959,15 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
       typedarray: 0.0.6
+
+  connect-mongo@6.0.0(express-session@1.19.0)(mongodb@7.0.0):
+    dependencies:
+      debug: 4.4.3
+      express-session: 1.19.0
+      kruptein: 3.0.8
+      mongodb: 7.0.0
+    transitivePeerDependencies:
+      - supports-color
 
   console-table-printer@2.15.0:
     dependencies:
@@ -5876,6 +5918,10 @@ snapshots:
 
   kareem@3.2.0: {}
 
+  kruptein@3.0.8:
+    dependencies:
+      asn1.js: 5.4.1
+
   langchain@1.2.29(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(openai@4.62.1(zod@3.23.8))(zod-to-json-schema@3.25.1(zod@3.23.8)):
     dependencies:
       '@langchain/core': 1.1.30(openai@4.62.1(zod@3.23.8))
@@ -5996,6 +6042,8 @@ snapshots:
   mime@2.6.0: {}
 
   mimic-fn@2.1.0: {}
+
+  minimalistic-assert@1.0.1: {}
 
   minimatch@3.1.5:
     dependencies:

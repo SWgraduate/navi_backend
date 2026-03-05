@@ -99,7 +99,7 @@ describe('AuthService Test', () => {
 
         it('should successfully login with valid credentials', async () => {
             const result = await authService.login({
-                username: registerData.email,
+                email: registerData.email,
                 password: registerData.password,
             });
 
@@ -109,31 +109,31 @@ describe('AuthService Test', () => {
 
         it('should throw Error if password does not match', async () => {
             await expect(authService.login({
-                username: registerData.email,
+                email: registerData.email,
                 password: 'wrongpassword',
             })).rejects.toThrow('Invalid credentials');
         });
 
         it('should throw Error if user email does not exist', async () => {
             await expect(authService.login({
-                username: 'notfound@example.com',
+                email: 'notfound@example.com',
                 password: 'mypassword123',
             })).rejects.toThrow('Invalid credentials');
         });
 
         it('should throw Error if both email and password are not provided', async () => {
             await expect(authService.login({
-                username: registerData.email, // password 누락
+                email: registerData.email, // password 누락
             })).rejects.toThrow('Email and password are required');
         });
     });
 
-    describe('withdraw', () => {
-        it('should successfully withdraw(delete) user', async () => {
+    describe('leave', () => {
+        it('should successfully leave(delete) user', async () => {
             const userData = {
-                email: 'withdraw@example.com',
+                email: 'leave@example.com',
                 password: 'password123',
-                name: 'Withdraw User',
+                name: 'Leave User',
             };
 
             // 가입 진행
@@ -145,7 +145,7 @@ describe('AuthService Test', () => {
             expect(dbUser).not.toBeNull();
 
             // 탈퇴 처리
-            await authService.withdraw(userId);
+            await authService.leave(userId);
 
             // 데이터베이스에서 삭제되었는지 확인
             dbUser = await User.findById(userId);
@@ -156,7 +156,7 @@ describe('AuthService Test', () => {
             // 임의의 ObjectId
             const fakeId = new mongoose.Types.ObjectId().toString();
 
-            await expect(authService.withdraw(fakeId)).rejects.toThrow('User not found');
+            await expect(authService.leave(fakeId)).rejects.toThrow('User not found');
         });
     });
 });

@@ -28,9 +28,6 @@ export class AuthService {
     return AuthService.instance;
   }
 
-  /**
-   * 사용자 등록 (회원가입)
-   */
   public async register(data: RegisterRequest): Promise<AuthResponse> {
     const { email, password, name } = data;
 
@@ -59,11 +56,8 @@ export class AuthService {
     };
   }
 
-  /**
-   * 사용자 로그인
-   */
   public async login(data: LoginRequest): Promise<AuthResponse> {
-    const { username: email, password } = data; // username 필드를 email로 사용
+    const { email, password } = data;
 
     if (!email || !password) {
       throw new Error('Email and password are required');
@@ -91,11 +85,8 @@ export class AuthService {
     };
   }
 
-  /**
-   * 사용자 회원 탈퇴(삭제)
-   */
-  public async withdraw(userId: string): Promise<void> {
-    const deletedUser = await User.findByIdAndDelete(userId);
+  public async leave(email: string): Promise<void> {
+    const deletedUser = await User.findOneAndDelete({ email });
     if (!deletedUser) {
       throw new Error('User not found');
     }
