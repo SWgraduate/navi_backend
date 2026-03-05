@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Path, Post, Route, Tags, Response } from 'tsoa';
-import { ChatService, ChatTask } from '@/services/ChatService';
+import { ChatService, ChatTask } from 'src/services/ChatService';
 
 export interface ChatRequest {
   query: string;

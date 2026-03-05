@@ -1,5 +1,5 @@
-import User from '@/models/User';
-import { LoginRequest } from '@/controllers/AuthController';
+import User from 'src/models/User';
+import { LoginRequest } from 'src/controllers/AuthController';
 
 export interface RegisterRequest {
   email: string;

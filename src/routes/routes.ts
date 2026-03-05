@@ -56,7 +56,6 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "user": {"dataType":"nestedObjectLiteral","nestedProperties":{"role":{"dataType":"string","required":true},"name":{"dataType":"string","required":true},"email":{"dataType":"string","required":true},"id":{"dataType":"string","required":true}},"required":true},
-            "token": {"dataType":"string"},
         },
         "additionalProperties": false,
     },

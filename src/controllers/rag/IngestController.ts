@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Route, Tags, Request, UploadedFile, FormField } from 'tsoa';
-import { VectorStoreService } from '@/services/rag/VectorStoreService';
-import { FileService } from '@/services/rag/FileService';
+import { VectorStoreService } from 'src/services/rag/VectorStoreService';
+import { FileService } from 'src/services/rag/FileService';
 import multer from 'multer';
 import express from 'express';
 // Configure Multer (Memory Storage)

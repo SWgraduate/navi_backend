@@ -1,7 +1,7 @@
 // npm test -- tests/models/Student.test.ts
 import mongoose from 'mongoose';
-import Student from '../../src/models/Student';
-import User from '../../src/models/User';
+import Student from 'src/models/Student';
+import User from 'src/models/User';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.test.local' });

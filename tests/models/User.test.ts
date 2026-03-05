@@ -1,6 +1,6 @@
 // npm test -- tests/models/User.test.ts
 import mongoose from 'mongoose';
-import User from '../../src/models/User';
+import User from 'src/models/User';
 import dotenv from 'dotenv';
 
 // 테스트 환경 변수 로드 (.env.test.local이 있다면 사용)
