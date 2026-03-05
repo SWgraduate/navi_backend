@@ -31,6 +31,7 @@
     "@langchain/textsplitters": "^1.0.1",
     "@openrouter/sdk": "^0.5.1",
     "@pinecone-database/pinecone": "^5.0.2",
+    "@tsoa/runtime": "7.0.0-alpha.0",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.1",
     "chokidar": "^5.0.0",

@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import swaggerUi from 'swagger-ui-express';
-import { RegisterRoutes } from '@/routes/routes';
-import swaggerJson from '@/swagger/swagger.json';
+import { RegisterRoutes } from 'src/routes/routes';
+import swaggerJson from 'src/swagger/swagger.json';
 
 export const createApp = (): Express => {
 	const app: Express = express();

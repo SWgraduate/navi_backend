@@ -86,9 +86,6 @@
 							"id"
 						],
 						"type": "object"
-					},
-					"token": {
-						"type": "string"
 					}
 				},
 				"required": [
@@ -183,7 +180,7 @@
 		"securitySchemes": {}
 	},
 	"info": {
-		"title": "erica-capstone-2026-backend",
+		"title": "navi_backend",
 		"version": "1.0.0",
 		"license": {
 			"name": "ISC"

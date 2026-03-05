@@ -1,7 +1,7 @@
 // npm test -- tests/services/AuthService.test.ts
 import mongoose from 'mongoose';
-import User from '../../src/models/User';
-import { AuthService } from '../../src/services/AuthService';
+import User from 'src/models/User';
+import { AuthService } from 'src/services/AuthService';
 import dotenv from 'dotenv';
 
 // 테스트 환경 변수 로드 (.env.test.local이 있다면 사용)
