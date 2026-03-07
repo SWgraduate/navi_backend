@@ -1,9 +1,9 @@
 import 'express-session';
 
 declare module 'express-session' {
-    interface SessionData {
-        userEmail: string;
-        userId: string;
-        role: string;
-    }
+  interface SessionData {
+    userEmail: string;
+    userId: string;
+    isEmailVerified?: boolean;
+  }
 }
