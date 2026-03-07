@@ -3,10 +3,11 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { PineconeStore } from "@langchain/pinecone";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Document } from "@langchain/core/documents";
+import { logger } from "src/utils/log";
 
 export class VectorStoreService {
     private static instance: VectorStoreService;
-    private pinecone: Pinecone; 
+    private pinecone: Pinecone;
     private indexName: string;
 
     private constructor() {
@@ -15,7 +16,7 @@ export class VectorStoreService {
 
         if (!apiKey || !indexName) {
             throw new Error("VectorDB API key or Index name is missing.\nConfigure that in .env file!");
-        } 
+        }
 
         this.pinecone = new Pinecone({
             apiKey: apiKey
@@ -40,7 +41,7 @@ export class VectorStoreService {
             });
 
             const docs = await splitter.createDocuments([content], [metadata]);
-            console.log(`[VectorStore] Split into ${docs.length} chunks`);
+            logger.i(`[VectorStore] Split into ${docs.length} chunks`);
 
             // 2. Embedding & Storage
             const embeddings = new OpenAIEmbeddings({
@@ -59,10 +60,10 @@ export class VectorStoreService {
                 maxConcurrency: 5,
             });
 
-            console.log(`[VectorStore] Successfully stored ${docs.length} chunks in Pinecone`);
+            logger.s(`[VectorStore] Successfully stored ${docs.length} chunks in Pinecone`);
             return docs.length;
         } catch (error) {
-            console.error("[VectorStore] Error processing document:", error);
+            logger.e("[VectorStore] Error processing document:", error);
             throw error;
         }
     }

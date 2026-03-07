@@ -1,6 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
-import ChatModel, { IChat } from '../models/Chat';
+import ChatModel, { IChat } from 'src/models/Chat';
 import mongoose from 'mongoose';
 
 export interface ChatTask {

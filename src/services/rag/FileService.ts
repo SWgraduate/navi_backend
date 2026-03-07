@@ -1,10 +1,10 @@
 import fs from 'fs';
-import pdf from 'pdf-parse';
 import path from 'path';
+const pdf = require('pdf-parse');
 
 export class FileService {
     private static instance: FileService;
-    private constructor() {}
+    private constructor() { }
     public static getInstance(): FileService {
         if (!FileService.instance) {
             FileService.instance = new FileService();
@@ -20,10 +20,10 @@ export class FileService {
         if (extension === '.pdf') {
             const data = await pdf(buffer);
             return data.text;
-        } 
+        }
         else if (extension === '.txt' || extension === '.md' || extension === '.json') {
             return buffer.toString('utf-8');
-        } 
+        }
         else {
             throw new Error(`Unsupported file type: ${extension}`);
         }

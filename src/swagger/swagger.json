@@ -69,9 +69,6 @@
 							"role": {
 								"type": "string"
 							},
-							"name": {
-								"type": "string"
-							},
 							"email": {
 								"type": "string"
 							},
@@ -81,31 +78,15 @@
 						},
 						"required": [
 							"role",
-							"name",
 							"email",
 							"id"
 						],
 						"type": "object"
-					},
-					"token": {
-						"type": "string"
 					}
 				},
 				"required": [
 					"user"
 				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"LoginRequest": {
-				"properties": {
-					"username": {
-						"type": "string"
-					},
-					"password": {
-						"type": "string"
-					}
-				},
 				"type": "object",
 				"additionalProperties": false
 			},
@@ -116,28 +97,24 @@
 					},
 					"password": {
 						"type": "string"
-					},
-					"name": {
-						"type": "string"
 					}
 				},
 				"required": [
 					"email",
-					"password",
-					"name"
+					"password"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
-			"WithdrawRequest": {
+			"LoginRequest": {
 				"properties": {
-					"userId": {
+					"email": {
+						"type": "string"
+					},
+					"password": {
 						"type": "string"
 					}
 				},
-				"required": [
-					"userId"
-				],
 				"type": "object",
 				"additionalProperties": false
 			},
@@ -183,7 +160,7 @@
 		"securitySchemes": {}
 	},
 	"info": {
-		"title": "erica-capstone-2026-backend",
+		"title": "navi_backend",
 		"version": "1.0.0",
 		"license": {
 			"name": "ISC"
@@ -383,72 +360,6 @@
 				]
 			}
 		},
-		"/auth/login": {
-			"post": {
-				"operationId": "Login",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"anyOf": [
-										{
-											"$ref": "#/components/schemas/AuthResponse"
-										},
-										{
-											"properties": {
-												"error": {
-													"type": "string"
-												}
-											},
-											"required": [
-												"error"
-											],
-											"type": "object"
-										}
-									]
-								}
-							}
-						}
-					},
-					"401": {
-						"description": "Unauthorized",
-						"content": {
-							"application/json": {
-								"schema": {
-									"properties": {
-										"error": {
-											"type": "string"
-										}
-									},
-									"required": [
-										"error"
-									],
-									"type": "object"
-								}
-							}
-						}
-					}
-				},
-				"description": "사용자 로그인",
-				"tags": [
-					"Auth"
-				],
-				"security": [],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/LoginRequest"
-							}
-						}
-					}
-				}
-			}
-		},
 		"/auth/register": {
 			"post": {
 				"operationId": "Register",
@@ -497,7 +408,6 @@
 						}
 					}
 				},
-				"description": "사용자 회원가입",
 				"tags": [
 					"Auth"
 				],
@@ -515,9 +425,155 @@
 				}
 			}
 		},
-		"/auth/withdraw": {
+		"/auth/login": {
+			"post": {
+				"operationId": "Login",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"$ref": "#/components/schemas/AuthResponse"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/LoginRequest"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/auth/logout": {
+			"post": {
+				"operationId": "Logout",
+				"responses": {
+					"200": {
+						"description": "OK",
+						"content": {
+							"application/json": {
+								"schema": {
+									"anyOf": [
+										{
+											"properties": {
+												"message": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"message"
+											],
+											"type": "object"
+										},
+										{
+											"properties": {
+												"error": {
+													"type": "string"
+												}
+											},
+											"required": [
+												"error"
+											],
+											"type": "object"
+										}
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Internal Server Error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Auth"
+				],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/auth/leave": {
 			"delete": {
-				"operationId": "Withdraw",
+				"operationId": "Leave",
 				"responses": {
 					"200": {
 						"description": "Ok",
@@ -570,6 +626,24 @@
 							}
 						}
 					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"error": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"error"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
 					"404": {
 						"description": "Not Found",
 						"content": {
@@ -589,22 +663,11 @@
 						}
 					}
 				},
-				"description": "사용자 회원탈퇴",
 				"tags": [
 					"Auth"
 				],
 				"security": [],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/WithdrawRequest"
-							}
-						}
-					}
-				}
+				"parameters": []
 			}
 		},
 		"/ingest": {

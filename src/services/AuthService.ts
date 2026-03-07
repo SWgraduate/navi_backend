@@ -1,20 +1,17 @@
-import User, { IUser } from '../models/User';
-import { LoginRequest } from '../controllers/AuthController';
+import User from 'src/models/User';
+import { LoginRequest } from 'src/controllers/AuthController';
 
 export interface RegisterRequest {
   email: string;
   password: string;
-  name: string;
 }
 
 export interface AuthResponse {
   user: {
     id: string;
     email: string;
-    name: string;
     role: string;
   };
-  token?: string; // 추후 JWT 적용 시 사용
 }
 
 export class AuthService {
@@ -29,11 +26,8 @@ export class AuthService {
     return AuthService.instance;
   }
 
-  /**
-   * 사용자 등록 (회원가입)
-   */
   public async register(data: RegisterRequest): Promise<AuthResponse> {
-    const { email, password, name } = data;
+    const { email, password } = data;
 
     // 1. 이메일 중복 확인
     const existingUser = await User.findOne({ email });
@@ -45,7 +39,6 @@ export class AuthService {
     const newUser = new User({
       email,
       password,
-      name,
     });
 
     await newUser.save();
@@ -54,17 +47,13 @@ export class AuthService {
       user: {
         id: newUser._id.toString(),
         email: newUser.email,
-        name: newUser.name,
         role: newUser.role,
       },
     };
   }
 
-  /**
-   * 사용자 로그인
-   */
   public async login(data: LoginRequest): Promise<AuthResponse> {
-    const { username: email, password } = data; // username 필드를 email로 사용
+    const { email, password } = data;
 
     if (!email || !password) {
       throw new Error('Email and password are required');
@@ -86,19 +75,13 @@ export class AuthService {
       user: {
         id: user._id.toString(),
         email: user.email,
-        name: user.name,
         role: user.role,
       },
-      // TODO: Generate JWT token here
-      token: 'dummy-jwt-token',
     };
   }
 
-  /**
-   * 사용자 회원 탈퇴(삭제)
-   */
-  public async withdraw(userId: string): Promise<void> {
-    const deletedUser = await User.findByIdAndDelete(userId);
+  public async leave(email: string): Promise<void> {
+    const deletedUser = await User.findOneAndDelete({ email });
     if (!deletedUser) {
       throw new Error('User not found');
     }

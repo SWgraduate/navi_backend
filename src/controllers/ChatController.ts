@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Path, Post, Route, Tags, Response } from 'tsoa';
-import { ChatService, ChatTask } from '../services/ChatService';
+import { ChatService, ChatTask } from 'src/services/ChatService';
 
 export interface ChatRequest {
   query: string;
@@ -12,7 +12,7 @@ export interface ChatTaskResponse {
 
 // ChatService의 ChatTask 인터페이스를 사용하거나, 여기서 정의한 것을 사용하고 매핑해야 함.
 // 편의상 ChatService의 정의와 일치시킴.
-export interface ChatStatusResponse extends ChatTask {}
+export interface ChatStatusResponse extends ChatTask { }
 
 @Route('chat')
 @Tags('Chat')
@@ -38,7 +38,7 @@ export class ChatController extends Controller {
   @Response<{ error: string }>(404, "Task not found")
   public async getChatStatus(@Path() taskId: string): Promise<ChatStatusResponse | { error: string }> {
     const status = await this.chatService.getTaskStatus(taskId);
-    
+
     if (!status) {
       this.setStatus(404);
       return { error: 'Task not found' };
