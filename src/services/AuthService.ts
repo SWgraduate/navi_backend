@@ -4,14 +4,12 @@ import { LoginRequest } from 'src/controllers/AuthController';
 export interface RegisterRequest {
   email: string;
   password: string;
-  name: string;
 }
 
 export interface AuthResponse {
   user: {
     id: string;
     email: string;
-    name: string;
     role: string;
   };
 }
@@ -29,7 +27,7 @@ export class AuthService {
   }
 
   public async register(data: RegisterRequest): Promise<AuthResponse> {
-    const { email, password, name } = data;
+    const { email, password } = data;
 
     // 1. 이메일 중복 확인
     const existingUser = await User.findOne({ email });
@@ -41,7 +39,6 @@ export class AuthService {
     const newUser = new User({
       email,
       password,
-      name,
     });
 
     await newUser.save();
@@ -50,7 +47,6 @@ export class AuthService {
       user: {
         id: newUser._id.toString(),
         email: newUser.email,
-        name: newUser.name,
         role: newUser.role,
       },
     };
@@ -79,7 +75,6 @@ export class AuthService {
       user: {
         id: user._id.toString(),
         email: user.email,
-        name: user.name,
         role: user.role,
       },
     };
