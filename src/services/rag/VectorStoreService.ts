@@ -38,6 +38,12 @@ export class VectorStoreService {
         documentId: string,
         docHash: string
     ): Promise<number> {
+    public async processDocument(
+        content: string, 
+        metadata: Record<string, any> = {},
+        documentId: string,
+        docHash: string
+    ): Promise<number> {
         try {
             // 1. Chunking
             const splitter = new RecursiveCharacterTextSplitter({
@@ -45,7 +51,14 @@ export class VectorStoreService {
                 chunkOverlap: 200,
             });
 
-            const docs = await splitter.createDocuments([content], [metadata]);
+            // Metadata
+            const enhancedMetadata = {
+                ...metadata, 
+                documentId,
+                docHash
+            };
+
+            const docs = await splitter.createDocuments([content], [enhancedMetadata]);
             console.log(`[VectorStore] Split into ${docs.length} chunks`);
 
             // 2. Embedding & Storage
@@ -58,6 +71,13 @@ export class VectorStoreService {
             });
 
             const index = this.pinecone.Index(this.indexName);
+            const store = new PineconeStore(embeddings, { pineconeIndex: index });
+
+            // Generate deterministic IDs based on the documentId and chunk index
+            const documentIds = docs.map((_, index) => `${documentId}_chunk_${index}`);
+
+            // Use .addDocuments with specific IDs instead of .fromDocuments
+            await store.addDocuments(docs, { ids: documentIds });
             const store = new PineconeStore(embeddings, { pineconeIndex: index });
 
             // Generate deterministic IDs based on the documentId and chunk index

@@ -9,8 +9,8 @@ importers:
     dependencies:
       "@langchain/community":
         specifier: ^1.1.11
-        version: 1.1.22(@browserbasehq/sdk@2.7.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8))(@ibm-cloud/watsonx-ai@1.7.8)(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(@pinecone-database/pinecone@5.1.2)(ibm-cloud-sdk-core@5.4.8)(jsonwebtoken@9.0.3)(mongodb@7.0.0)(openai@4.62.1(zod@3.23.8))(pdf-parse@2.4.5)(playwright@1.58.2)(ws@8.19.0)
-      "@langchain/core":
+        version: 1.1.22(@browserbasehq/sdk@2.7.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8))(@ibm-cloud/watsonx-ai@1.7.8)(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(@pinecone-database/pinecone@5.1.2)(ibm-cloud-sdk-core@5.4.8)(jsonwebtoken@9.0.3)(mongodb@7.1.0)(openai@4.62.1(zod@3.23.8))(pdf-parse@2.4.5)(playwright@1.58.2)(ws@8.19.0)
+      '@langchain/core':
         specifier: ^1.1.12
         version: 1.1.30(openai@4.62.1(zod@3.23.8))
       "@langchain/openai":
@@ -40,6 +40,9 @@ importers:
       chokidar:
         specifier: ^5.0.0
         version: 5.0.0
+      crypto:
+        specifier: ^1.0.1
+        version: 1.0.1
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
@@ -2662,17 +2665,11 @@ packages:
     hasBin: true
 
   cross-spawn@7.0.6:
-    resolution:
-      {
-        integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==,
-      }
-    engines: { node: ">= 8" }
+    resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
+    engines: {node: '>= 8'}
 
   crypto@1.0.1:
-    resolution:
-      {
-        integrity: sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig==,
-      }
+    resolution: {integrity: sha512-VxBKmeNcqQdiUQUW2Tzq0t377b54N2bMtXO/qiLa+6eRRmmC4qT3D4OnTGoT/U6O9aklQ/jTwbOtRMTTY8G0Ig==}
     deprecated: This package is no longer supported. It's now a built-in Node module. If you've depended on crypto, you should switch to the one that's built-in.
 
   debug@2.6.9:
@@ -4139,23 +4136,20 @@ packages:
     engines: { node: ">=20.19.0" }
 
   mongodb@7.0.0:
-    resolution:
-      {
-        integrity: sha512-vG/A5cQrvGGvZm2mTnCSz1LUcbOPl83hfB6bxULKQ8oFZauyox/2xbZOoGNl+64m8VBrETkdGCDBdOsCr3F3jg==,
-      }
-    engines: { node: ">=20.19.0" }
+    resolution: {integrity: sha512-vG/A5cQrvGGvZm2mTnCSz1LUcbOPl83hfB6bxULKQ8oFZauyox/2xbZOoGNl+64m8VBrETkdGCDBdOsCr3F3jg==}
+    engines: {node: '>=20.19.0'}
     peerDependencies:
-      "@aws-sdk/credential-providers": ^3.806.0
-      "@mongodb-js/zstd": ^7.0.0
+      '@aws-sdk/credential-providers': ^3.806.0
+      '@mongodb-js/zstd': ^7.0.0
       gcp-metadata: ^7.0.1
       kerberos: ^7.0.0
-      mongodb-client-encryption: ">=7.0.0 <7.1.0"
+      mongodb-client-encryption: '>=7.0.0 <7.1.0'
       snappy: ^7.3.2
       socks: ^2.8.6
     peerDependenciesMeta:
-      "@aws-sdk/credential-providers":
+      '@aws-sdk/credential-providers':
         optional: true
-      "@mongodb-js/zstd":
+      '@mongodb-js/zstd':
         optional: true
       gcp-metadata:
         optional: true
@@ -4169,23 +4163,20 @@ packages:
         optional: true
 
   mongodb@7.1.0:
-    resolution:
-      {
-        integrity: sha512-kMfnKunbolQYwCIyrkxNJFB4Ypy91pYqua5NargS/f8ODNSJxT03ZU3n1JqL4mCzbSih8tvmMEMLpKTT7x5gCg==,
-      }
-    engines: { node: ">=20.19.0" }
+    resolution: {integrity: sha512-kMfnKunbolQYwCIyrkxNJFB4Ypy91pYqua5NargS/f8ODNSJxT03ZU3n1JqL4mCzbSih8tvmMEMLpKTT7x5gCg==}
+    engines: {node: '>=20.19.0'}
     peerDependencies:
-      "@aws-sdk/credential-providers": ^3.806.0
-      "@mongodb-js/zstd": ^7.0.0
+      '@aws-sdk/credential-providers': ^3.806.0
+      '@mongodb-js/zstd': ^7.0.0
       gcp-metadata: ^7.0.1
       kerberos: ^7.0.0
-      mongodb-client-encryption: ">=7.0.0 <7.1.0"
+      mongodb-client-encryption: '>=7.0.0 <7.1.0'
       snappy: ^7.3.2
       socks: ^2.8.6
     peerDependenciesMeta:
-      "@aws-sdk/credential-providers":
+      '@aws-sdk/credential-providers':
         optional: true
-      "@mongodb-js/zstd":
+      '@mongodb-js/zstd':
         optional: true
       gcp-metadata:
         optional: true
@@ -6340,7 +6331,7 @@ snapshots:
       - openai
       - ws
 
-  "@langchain/community@1.1.22(@browserbasehq/sdk@2.7.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8))(@ibm-cloud/watsonx-ai@1.7.8)(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(@pinecone-database/pinecone@5.1.2)(ibm-cloud-sdk-core@5.4.8)(jsonwebtoken@9.0.3)(openai@4.62.1(zod@3.23.8))(pdf-parse@2.4.5)(playwright@1.58.2)(ws@8.19.0)":
+  '@langchain/community@1.1.22(@browserbasehq/sdk@2.7.0)(@browserbasehq/stagehand@1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8))(@ibm-cloud/watsonx-ai@1.7.8)(@langchain/core@1.1.30(openai@4.62.1(zod@3.23.8)))(@pinecone-database/pinecone@5.1.2)(ibm-cloud-sdk-core@5.4.8)(jsonwebtoken@9.0.3)(mongodb@7.1.0)(openai@4.62.1(zod@3.23.8))(pdf-parse@2.4.5)(playwright@1.58.2)(ws@8.19.0)':
     dependencies:
       "@browserbasehq/stagehand": 1.14.0(@playwright/test@1.58.2)(deepmerge@4.3.1)(dotenv@16.6.1)(openai@4.62.1(zod@3.23.8))(zod@3.23.8)
       "@ibm-cloud/watsonx-ai": 1.7.8
@@ -6360,6 +6351,7 @@ snapshots:
       "@browserbasehq/sdk": 2.7.0
       "@pinecone-database/pinecone": 5.1.2
       jsonwebtoken: 9.0.3
+      mongodb: 7.1.0
       pdf-parse: 2.4.5
       playwright: 1.58.2
       ws: 8.19.0
@@ -8263,6 +8255,18 @@ snapshots:
   mongodb@7.1.0:
     dependencies:
       "@mongodb-js/saslprep": 1.4.6
+      bson: 7.2.0
+      mongodb-connection-string-url: 7.0.1
+
+  mongodb@7.1.0:
+    dependencies:
+      '@mongodb-js/saslprep': 1.4.6
+      bson: 7.2.0
+      mongodb-connection-string-url: 7.0.1
+
+  mongodb@7.1.0:
+    dependencies:
+      '@mongodb-js/saslprep': 1.4.6
       bson: 7.2.0
       mongodb-connection-string-url: 7.0.1
 
