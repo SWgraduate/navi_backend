@@ -2,11 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { PDFParse } from "pdf-parse";
 
-
-
 export class FileService {
     private static instance: FileService;
-    private constructor() { }
     private constructor() { }
     public static getInstance(): FileService {
         if (!FileService.instance) {
@@ -27,7 +24,6 @@ export class FileService {
         }
         else if (extension === '.txt' || extension === '.md' || extension === '.json') {
             return buffer.toString('utf-8');
-        }
         }
         else {
             throw new Error(`Unsupported file type: ${extension}`);

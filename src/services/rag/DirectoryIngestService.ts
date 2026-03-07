@@ -12,7 +12,7 @@ export class DirectoryIngestService {
 
     public async ingestDirectory(directoryPath: string): Promise<void> {
         if (!fs.existsSync(directoryPath)) {
-            logger.e(`Directory not found: ${directoryPath}`);
+            console.log(`Directory not found: ${directoryPath}`);
             return;
         }
         
