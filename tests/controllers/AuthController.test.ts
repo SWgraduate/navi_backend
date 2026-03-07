@@ -83,7 +83,6 @@ describe('AuthController Test', () => {
             const session = mockReq.session as any;
             expect(session.userEmail).toBe(result.user.email);
             expect(session.userId).toBe(result.user.id);
-            expect(session.role).toBe(result.user.role);
         });
 
         it('should return 400 error if user already exists', async () => {
@@ -132,7 +131,6 @@ describe('AuthController Test', () => {
             const session = mockReq.session as any;
             expect(session.userEmail).toBe(result.user.email);
             expect(session.userId).toBe(result.user.id);
-            expect(session.role).toBe(result.user.role);
         });
 
         it('should return 401 error if password does not match', async () => {

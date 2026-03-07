@@ -7,6 +7,15 @@ export interface LoginRequest {
   password?: string;
 }
 
+export interface SendEmailRequest {
+  email: string;
+}
+
+export interface VerifyEmailRequest {
+  email: string;
+  code: string;
+}
+
 @Route('auth')
 @Tags('Auth')
 export class AuthController extends Controller {
@@ -23,7 +32,10 @@ export class AuthController extends Controller {
       const result = await this.authService.register(body);
       req.session.userEmail = result.user.email;
       req.session.userId = result.user.id;
-      req.session.role = result.user.role;
+
+      // 가입 완료 후: 재사용 방지용 인증 제거
+      req.session.isEmailVerified = undefined;
+
       this.setStatus(201);
       return result;
     } catch (error: any) {
@@ -42,7 +54,6 @@ export class AuthController extends Controller {
       const result = await this.authService.login(body);
       req.session.userEmail = result.user.email;
       req.session.userId = result.user.id;
-      req.session.role = result.user.role;
       return result;
     } catch (error: any) {
       this.setStatus(401);
@@ -114,6 +125,42 @@ export class AuthController extends Controller {
       }
       this.setStatus(400);
       return { error: 'Leave failed' };
+    }
+  }
+
+  @Post('email/send')
+  @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(500, "Internal Server Error")
+  public async sendEmailVerification(
+    @Body() body: SendEmailRequest
+  ): Promise<{ message: string } | { error: string }> {
+    try {
+      await this.authService.requestEmailVerification(body.email);
+      return { message: "인증 메일이 성공적으로 발송되었습니다." };
+    } catch (error: any) {
+      this.setStatus(500);
+      return { error: error.message || "메일 발송에 실패했습니다." };
+    }
+  }
+
+  @Post('email/verify')
+  @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(400, "Bad Request")
+  public async verifyEmailCode(
+    @Body() body: VerifyEmailRequest,
+    @Request() req: ExRequest
+  ): Promise<{ message: string } | { error: string }> {
+    try {
+      // 서비스에서 에러를 던지지 않고 넘어오면 인증 성공!
+      await this.authService.verifyEmailCode(body.email, body.code);
+
+      // 💡 핵심: 현재 세션에 '이메일 인증 완료' 도장을 쾅 찍습니다.
+      req.session.isEmailVerified = true;
+
+      return { message: "이메일 인증이 완료되었습니다." };
+    } catch (error: any) {
+      this.setStatus(400);
+      return { error: error.message || "인증에 실패했습니다." };
     }
   }
 }
