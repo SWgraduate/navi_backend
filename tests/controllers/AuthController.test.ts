@@ -67,7 +67,6 @@ describe('AuthController Test', () => {
             const userData = {
                 email: 'controller_test@example.com',
                 password: 'password123',
-                name: 'Controller Test User',
             };
             const mockReq = createMockRequest();
 
@@ -91,7 +90,6 @@ describe('AuthController Test', () => {
             const userData = {
                 email: 'duplicate_controller@example.com',
                 password: 'password123',
-                name: 'Duplicate Controller User',
             };
 
             // 첫 번째 가입
@@ -112,7 +110,6 @@ describe('AuthController Test', () => {
         const loginData = {
             email: 'login_controller@example.com',
             password: 'password123',
-            name: 'Login Controller User',
         };
 
         beforeEach(async () => {
@@ -154,7 +151,7 @@ describe('AuthController Test', () => {
         it('should successfully destroy session and clear cookie', async () => {
             const mockReq = createMockRequest({ userEmail: 'test@example.com' });
 
-            const result = await authController.logout(mockReq);
+            const result = await authController.logout(mockReq) as { message: string };
 
             expect(result.message).toBe('Successfully logged out');
             expect(mockReq.session.destroy).toHaveBeenCalled();
@@ -166,7 +163,6 @@ describe('AuthController Test', () => {
         const leaveData = {
             email: 'leave_controller@example.com',
             password: 'password123',
-            name: 'Leave Controller User',
         };
 
         beforeEach(async () => {
