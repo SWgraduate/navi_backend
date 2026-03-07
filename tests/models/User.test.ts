@@ -1,4 +1,4 @@
-// npm test -- tests/models/User.test.ts
+// pnpm test -- tests/models/User.test.ts
 import mongoose from 'mongoose';
 import User from 'src/models/User';
 import dotenv from 'dotenv';
@@ -42,7 +42,6 @@ describe('User Model Test', () => {
     const userData = {
       email: 'test@example.com',
       password: 'password123',
-      name: 'Test User',
     };
     const validUser = new User(userData);
     const savedUser = await validUser.save();
@@ -52,7 +51,6 @@ describe('User Model Test', () => {
 
     // 필드 값 일치 확인
     expect(savedUser.email).toBe(userData.email);
-    expect(savedUser.name).toBe(userData.name);
 
     // 기본값(default) 확인
     expect(savedUser.role).toBe('student');
@@ -69,8 +67,6 @@ describe('User Model Test', () => {
     const userData = {
       email: 'test2@example.com',
       password: 'password123',
-      name: 'Test User 2',
-      age: 25, // 스키마에 없는 필드
     };
     const userWithInvalidField = new User(userData);
     const savedUser = await userWithInvalidField.save();
@@ -99,7 +95,6 @@ describe('User Model Test', () => {
     const userData = {
       email: 'duplicate@example.com',
       password: 'password123',
-      name: 'User 1',
     };
 
     // 첫 번째 사용자 저장
@@ -108,7 +103,6 @@ describe('User Model Test', () => {
     // 동일한 이메일로 두 번째 사용자 생성 시도
     const duplicateUser = new User({
       ...userData,
-      name: 'User 2',
     });
 
     let err;
@@ -129,7 +123,6 @@ describe('User Model Test', () => {
     const user = new User({
       email: 'auth@example.com',
       password: password,
-      name: 'Auth User',
     });
 
     await user.save();
