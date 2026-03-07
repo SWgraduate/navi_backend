@@ -25,6 +25,14 @@
 
 ## 📦 환경 세팅
 
+### ▍패키지 구동 및 의존성 설치
+본 프로젝트는 패키지 매니저로 `pnpm`을 사용합니다. 처음 시작하실 때 아래 명령어를 실행하여 pnpm을 전역으로 설치한 뒤 의존성 패키지를 설치해 주세요.
+
+```bash
+npm install -g pnpm
+pnpm install
+```
+
 ### ▍환경변수 설정 (.env / .env.test)
 ```bash
 LLM_TOKEN=""

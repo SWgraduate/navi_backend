@@ -1,9 +1,10 @@
 import dotenv from 'dotenv';
+
+dotenv.config();
+
 import { createApp } from 'src/app';
 import { connectDB } from 'src/config/database';
 import { logger } from 'src/utils/log';
-
-dotenv.config();
 
 const startServer = async () => {
   await connectDB();
