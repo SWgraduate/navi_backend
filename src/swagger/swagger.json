@@ -52,7 +52,10 @@
 					"displayMessage": {
 						"type": "string"
 					},
-					"result": {}
+					"result": {},
+					"error": {
+						"type": "string"
+					}
 				},
 				"required": [
 					"status",

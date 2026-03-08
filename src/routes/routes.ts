@@ -48,6 +48,7 @@ const models: TsoaRoute.Models = {
             "progress": {"dataType":"string","required":true},
             "displayMessage": {"dataType":"string","required":true},
             "result": {"dataType":"any"},
+            "error": {"dataType":"string"},
         },
         "additionalProperties": false,
     },

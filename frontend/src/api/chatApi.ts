@@ -13,6 +13,11 @@ export interface ChatResult {
   };
 }
 
+export interface ChatResponse {
+  taskId: string;
+  message: string;
+}
+
 export interface ChatStatus {
   status: "queued" | "processing" | "completed" | "failed";
   progress: string;

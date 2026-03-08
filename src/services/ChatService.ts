@@ -11,6 +11,7 @@ export interface ChatTask {
   progress: string;
   displayMessage: string;
   result?: any;
+  error?: string;
 }
 
 export class ChatService {
@@ -56,7 +57,7 @@ export class ChatService {
   }
 
   private async callGroundedLLM(query: string, contextText: string): Promise<string> {
-    const apiKey = process.env.LLM_TOKEN || process.env.OPENAI_API_KEY;
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("Missing LLM API key");
     }
@@ -211,6 +212,7 @@ export class ChatService {
       progress: chat.progress,
       displayMessage: chat.displayMessage,
       result: chat.result ?? chat.answer,
+      error: chat.error,
     };
   }
 }

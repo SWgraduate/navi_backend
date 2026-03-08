@@ -32,8 +32,8 @@ function App() {
               } else {
                 lastMsg.content = status.result.answer;
               }
-            } else if (status.status === 'failed') {
-              lastMsg.content = `Error: ${status.error || 'Unknown error'}`;
+            } else if (status.status === "failed") {
+              lastMsg.content = `Error: ${status.error || status.displayMessage || "Unknown error"}`;
             } else {
               lastMsg.content = `${status.displayMessage} (${status.progress})`;
             }
