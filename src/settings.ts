@@ -15,7 +15,7 @@ function requireEnv(key: string, defaultValue?: string): string {
 }
 
 export const APP_PORT = requireEnv('PORT', '3000');
-export const SESSION_SECRET = requireEnv('SESSION_SECRET', 'fallback-secret-key-for-dev');
+export const SESSION_SECRET = requireEnv('SESSION_SECRET');
 
 export const EMAIL_USER = requireEnv('EMAIL_USER');
 export const EMAIL_PASS = requireEnv('EMAIL_PASS');
