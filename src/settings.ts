@@ -14,7 +14,7 @@ function requireEnv(key: string, defaultValue?: string): string {
   return value;
 }
 
-export const APP_PORT = requireEnv('PORT', '3000');
+export const APP_PORT = parseInt(requireEnv('PORT', '3000'), 10);
 export const SESSION_SECRET = requireEnv('SESSION_SECRET');
 
 export const EMAIL_USER = requireEnv('EMAIL_USER');
