@@ -4,6 +4,7 @@ import { RegisterRoutes } from 'src/routes/routes';
 import swaggerJson from 'src/swagger/swagger.json';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import { MONGO_URI, SESSION_SECRET } from 'src/settings';
 
 export const createApp = (): Express => {
     const app: Express = express();
@@ -11,11 +12,11 @@ export const createApp = (): Express => {
     app.use(express.urlencoded({ extended: true }));
 
     app.use(session({
-        secret: process.env.SESSION_SECRET || 'fallback-secret-key-for-dev',
+        secret: SESSION_SECRET,
         resave: false, // 변경사항이 없을 때 세션을 다시 저장할지
         saveUninitialized: false, // 로그인하지 않은 빈 세션을 저장할지
         store: MongoStore.create({
-            mongoUrl: process.env.MONGO_URI,
+            mongoUrl: MONGO_URI,
             collectionName: 'sessions', // DB에 sessions라는 컬렉션이 자동 생성됨
         }),
         cookie: {
