@@ -48,7 +48,11 @@ const RagDocumentSchema = new Schema<IRagDocument>(
        processedAt: { type: Date },
        failedAt: { type: Date },
     },
-    { timestamps: true }
+    { 
+        timestamps: true,
+        collection: "rag_documents"
+    }
+
 );
 
 RagDocumentSchema.index({ createdAt: -1 });

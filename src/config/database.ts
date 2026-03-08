@@ -6,6 +6,7 @@ export const connectDB = async (): Promise<void> => {
     const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/erica-capstone';
     await mongoose.connect(mongoURI);
     logger.s('MongoDB Connected Successfully');
+    logger.i(`MongoDB DB name: ${mongoose.connection.name}`);
   } catch (error) {
     logger.e('MongoDB Connection Error: Database features will be disabled.', error);
   }
