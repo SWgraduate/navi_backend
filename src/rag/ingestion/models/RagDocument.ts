@@ -3,7 +3,7 @@
  */
 
 import { Document, Schema, model } from "mongoose";
-import { INGESTION_STATUS, IngestionStatus } from "../constants/IngestionStatus";
+import { INGESTION_STATUS, IngestionStatus } from "../../shared/constants/IngestionStatus";
 
 export interface IRagDocument extends Document {
     originalFileName: string;

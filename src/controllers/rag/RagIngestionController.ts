@@ -7,8 +7,8 @@ import {
     UploadedFile,
 } from "tsoa";  
 
-import { IngestPdfResult } from "../../modules/rag/types/rag.types";
-import { RagIngestionService } from "../../modules/rag/services/RagIngestionService";
+import { IngestPdfResult } from "../../rag/shared/types/rag.types";
+import { RagIngestionService } from "../../rag/services/RagIngestionService";
 
 @Route("rag/documents")
 @Tags("RAG")

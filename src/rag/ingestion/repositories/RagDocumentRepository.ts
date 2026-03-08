@@ -1,10 +1,10 @@
 import { Types } from "mongoose";
-import { INGESTION_STATUS } from "../constants/IngestionStatus";
+import { INGESTION_STATUS } from "../../shared/constants/IngestionStatus";
 import { RagDocumentModel, IRagDocument } from "../models/RagDocument";
 import { 
     RagDocumentCreateInput,
     RagDocumentProcessStats,
-} from "../types/rag.types";
+} from "../../shared/types/rag.types";
 
 export class RagDocumentRepository {
     // Deduplication check
