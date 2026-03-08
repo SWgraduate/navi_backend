@@ -10,7 +10,6 @@ export interface IIngestionRegistry extends Document {
     status: 'SUCCESS' | 'FAILED';  
 }
 
-
 const IngestionRegistrySchema: Schema = new Schema(
     {
     documentId: { type: String, required: true, unique: true },

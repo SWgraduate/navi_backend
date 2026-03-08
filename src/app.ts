@@ -4,6 +4,8 @@ import { RegisterRoutes } from 'src/routes/routes';
 import swaggerJson from 'src/swagger/swagger.json';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import { uploadPdfMiddleware } from './middleware/uploadPdfMiddleware';
+import { errorHandler } from './middleware/errorHandler';
 
 export const createApp = (): Express => {
     const app: Express = express();
@@ -26,10 +28,12 @@ export const createApp = (): Express => {
     }));
 
     // TSOA Routes 등록
-    RegisterRoutes(app);
+    RegisterRoutes(app, { multer: uploadPdfMiddleware });
 
     // Swagger UI 설정
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerJson));
+
+    app.use(errorHandler);
 
     return app;
 };
