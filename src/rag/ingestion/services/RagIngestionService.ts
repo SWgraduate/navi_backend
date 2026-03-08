@@ -1,5 +1,5 @@
-import { INGESTION_STATUS } from "../constants/IngestionStatus";
-import { RagDocumentRepository } from "../ingestion/repositories/RagDocumentRepository";
+import { INGESTION_STATUS } from "../../shared/constants/IngestionStatus";
+import { RagDocumentRepository } from "../repositories/RagDocumentRepository";
 import { RagDocumentCreateInput } from "../types/rag.types";
 import { IngestPdfCommand, IngestPdfResult } from "../types/rag.types";
 import { ContentHashService } from "./ContentHashService";

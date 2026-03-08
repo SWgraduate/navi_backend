@@ -3,7 +3,7 @@
     Confirm that each layer uses the same field
 */
 
-import { IngestionStatus } from "../constants/IngestionStatus";
+import { IngestionStatus } from "../../shared/constants/IngestionStatus";
 
 // Standard shape after chunking service
 export interface ChunkPayload {

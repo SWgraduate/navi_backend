@@ -4,7 +4,7 @@ import { RagDocumentModel, IRagDocument } from "../models/RagDocument";
 import { 
     RagDocumentCreateInput,
     RagDocumentProcessStats,
-} from "../../shared/types/rag.types";
+} from "../types/rag.types";
 
 export class RagDocumentRepository {
     // Deduplication check

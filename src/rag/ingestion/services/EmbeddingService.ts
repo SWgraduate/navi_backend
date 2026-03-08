@@ -8,7 +8,7 @@ export class EmbeddingService {
   private readonly embeddings: OpenAIEmbeddings;
 
   constructor() {
-    this.modelName = process.env.EMBEDDING_MODEL ?? "text-embedding-3-small";
+    this.modelName = process.env.EMBEDDING_MODEL ?? "text-embedding-3-large";
 
     this.embeddings = new OpenAIEmbeddings({
       model: this.modelName,
@@ -21,6 +21,15 @@ export class EmbeddingService {
 
   getModelName(): string {
     return this.modelName;
+  }
+
+  // for semantic search
+  async embedQuery(query: string): Promise<number[]> {
+    const vector = await this.embeddings.embedQuery(query);
+    if (!vector || vector.length === 0) {
+      throw new Error("Failed to generate query embedding");
+    }
+    return vector;
   }
 
   async embedChunks(chunks: ChunkPayload[]): Promise<EmbeddingPayload[]> {

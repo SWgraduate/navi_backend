@@ -1,5 +1,6 @@
 import { Pinecone, PineconeRecord } from "@pinecone-database/pinecone";
 import { EmbeddingPayload } from "../types/rag.types";
+import { RetrievedChunk } from "../../retrieval/types/retrieval.types";
 
 interface UpsertDocumentVectorsParams {
     documentId: string;
@@ -7,6 +8,12 @@ interface UpsertDocumentVectorsParams {
     originalFileName: string;
     namespace?: string;
     vectors: EmbeddingPayload[];
+}
+
+interface QueryTopKParams {
+    vector: number[];
+    topK: number;
+    namespace?: string;
 }
 
 export class PineconeIndexService {
@@ -52,6 +59,31 @@ export class PineconeIndexService {
         }));
 
         await index.upsert(records);
+    }
+
+    async queryTopK(params: QueryTopKParams): Promise<RetrievedChunk[]> {
+        const namespace = this.getNamespace(params.namespace);
+        const index = this.pinecone.Index(this.indexName).namespace(namespace);
+
+        const result = await index.query({
+            vector: params.vector,
+            topK: params.topK,
+            includeMetadata: true,
+            includeValues: false,
+        });
+
+        return (result.matches ?? []).map((match) => {
+            const metadata = (match.metadata ?? {}) as Record<string, unknown>;
+
+            return {
+                chunkId: String(metadata.chunkId ?? match.id ?? ""),
+                documentId: String(metadata.documentId ?? ""),
+                chunkIndex: Number(metadata.chunkIndex ?? 0),
+                score: Number(match.score ?? 0),
+                fileName: metadata.fileName ? String(metadata.fileName) : undefined,
+                contentHash: metadata.contentHash ? String(metadata.contentHash) : undefined,
+            };
+        });
     }
 
     async deleteByDocumentId(documentId: string, namespace?: string): Promise<void> {
