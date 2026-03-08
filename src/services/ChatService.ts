@@ -1,23 +1,24 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage } from "@langchain/core/messages";
-import ChatModel, { IChat } from 'src/models/Chat';
-import mongoose from 'mongoose';
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import ChatModel from "src/models/Chat";
+import mongoose from "mongoose";
+import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
+import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
+import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
 
 export interface ChatTask {
-  status: 'queued' | 'processing' | 'completed' | 'failed';
+  status: "queued" | "processing" | "completed" | "failed";
   progress: string;
   displayMessage: string;
   result?: any;
 }
 
 export class ChatService {
-  // Singleton instance
   private static instance: ChatService;
-
-  // Fallback in-memory store
   private inMemoryStore = new Map<string, any>();
+  private ragRetrievalService = new RagRetrievalService();
 
-  private constructor() { }
+  private constructor() {}
 
   public static getInstance(): ChatService {
     if (!ChatService.instance) {
@@ -26,55 +27,90 @@ export class ChatService {
     return ChatService.instance;
   }
 
-  // Helper: Check if DB is ready
   private isDbReady(): boolean {
     return mongoose.connection.readyState === 1;
   }
 
-  // Helper: Mock delay
-  private delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  private buildContextText(chunks: RetrievedChunk[], maxChunks = 4): string {
+    const selected = chunks.slice(0, maxChunks);
+
+    if (selected.length === 0) {
+      return "";
+    }
+
+    return selected
+      .map((chunk, index) => {
+        return [
+          `[CONTEXT ${index + 1}]`,
+          `documentId: ${chunk.documentId}`,
+          `chunkId: ${chunk.chunkId}`,
+          `chunkIndex: ${chunk.chunkIndex}`,
+          `score: ${chunk.score.toFixed(4)}`,
+          `fileName: ${chunk.fileName ?? "unknown"}`,
+          chunk.text ? `text: ${chunk.text}` : "",
+        ]
+          .filter(Boolean)
+          .join("\n");
+      })
+      .join("\n\n");
   }
 
-  // Helper: Real LLM call using LangChain
-  private async callLLM(query: string): Promise<string> {
-    // API key 확인
+  private async callGroundedLLM(query: string, contextText: string): Promise<string> {
     const apiKey = process.env.LLM_TOKEN || process.env.OPENAI_API_KEY;
-
     if (!apiKey) {
-      console.warn("API Key not found.");
+      throw new Error("Missing LLM API key");
     }
 
-    try {
-      const chat = new ChatOpenAI({
-        apiKey: apiKey,
-        modelName: "xiaomi/mimo-v2-flash:free", // NOTE: The free MiMo-V2-Flash period has ended. To continue using this model, please migrate to the paid slug: xiaomi/mimo-v2-flash (26. 2. 9. 정태영)
-        temperature: 0.7,
-        configuration: {
-          baseURL: "https://openrouter.ai/api/v1"
-        }
-      });
+    const chat = new ChatOpenAI({
+      apiKey,
+      modelName: process.env.LLM_MODEL ?? "xiaomi/mimo-v2-flash",
+      temperature: 0.2,
+      configuration: {
+        baseURL: process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
+      },
+    });
 
-      const response = await chat.invoke([
-        new HumanMessage(query),
-      ]);
+    const systemPrompt = ERICA_SYSTEM_PROMPT;
+    const userPrompt = [
+      `Question: ${query}`,
+      "",
+      "Context:",
+      contextText || "(no relevant context found)",
+    ].join("\n");
 
-      return typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
-    } catch (error) {
-      console.error("LangChain Error:", error);
-      throw error;
-    }
+    const response = await chat.invoke([
+      new SystemMessage(systemPrompt),
+      new HumanMessage(userPrompt),
+    ]);
+
+    return typeof response.content === "string"
+      ? response.content
+      : JSON.stringify(response.content);
   }
 
-  // Background task processor
   private async processChatTask(taskId: string, query: string) {
-    const update = async (progress: string, msg: string, finalAnswer?: string) => {
+    const update = async (
+      progress: string,
+      msg: string,
+      payload?: { answer?: string; sources?: any[]; retrievalMeta?: any }
+    ) => {
       const updateData: any = {
-        status: progress === 'done' ? 'completed' : 'processing',
+        status: progress === "done" ? "completed" : "processing",
         progress,
-        displayMessage: msg
+        displayMessage: msg,
       };
-      if (finalAnswer) updateData.answer = finalAnswer;
+
+      if (payload?.answer) {
+        updateData.answer = payload.answer;
+      }
+
+      if (payload?.sources || payload?.retrievalMeta) {
+        updateData.result = {
+          answer: payload.answer,
+          sources: payload.sources ?? [],
+          retrievalMeta: payload.retrievalMeta ?? {},
+        };
+      }
 
       if (this.isDbReady()) {
         await ChatModel.findByIdAndUpdate(taskId, updateData);
@@ -85,28 +121,43 @@ export class ChatService {
     };
 
     try {
-      // [Step 1] Searching (Simulated)
-      // await update('searching', 'searching school notices...');
-      // await this.delay(2000);
+      await update("embedding_query", "Embedding user query...");
+      await update("retrieving_chunks", "Retrieving relevant chunks...");
 
-      // [Step 2] Reading (Simulated)
-      // await update('reading', 'Reading 3 retrieved documents...');
-      // await this.delay(3000);
+      const retrieval = await this.ragRetrievalService.retrieveContext({
+        query,
+        topK: 5,
+        minScore: 0.0,
+      });
 
-      // [Step 3] Thinking (Real LLM)
-      await update('thinking', '분석중...');
-      const finalAnswer = await this.callLLM(query);
+      await update("building_context", "Building context for answer...");
+      const contextText = this.buildContextText(retrieval.chunks, 4);
 
-      // [Completed]
-      await update('done', 'Completed', finalAnswer);
+      await update("generating_answer", "Generating grounded answer...");
+      const answer = await this.callGroundedLLM(query, contextText);
 
+      const sources = retrieval.chunks.slice(0, 4).map((chunk) => ({
+        documentId: chunk.documentId,
+        fileName: chunk.fileName,
+        chunkId: chunk.chunkId,
+        chunkIndex: chunk.chunkIndex,
+        score: chunk.score,
+      }));
+
+      await update("done", "Completed", {
+        answer,
+        sources,
+        retrievalMeta: {
+          topK: retrieval.topK,
+          usedChunks: retrieval.usedChunks,
+        },
+      });
     } catch (err: any) {
-      console.error(`Task ${taskId} failed:`, err);
       const errorData = {
-        status: 'failed',
-        progress: 'error',
-        displayMessage: 'An error occurred.',
-        error: err.message || String(err)
+        status: "failed",
+        progress: "error",
+        displayMessage: "An error occurred.",
+        error: err?.message || String(err),
       };
 
       if (this.isDbReady()) {
@@ -118,35 +169,30 @@ export class ChatService {
     }
   }
 
-  public async startChatTask(query: string): Promise<{ taskId: string, message: string }> {
+  public async startChatTask(query: string): Promise<{ taskId: string; message: string }> {
     let taskId: string;
 
     if (this.isDbReady()) {
-      // Create initial record in MongoDB
       const chat = await ChatModel.create({
         query,
-        status: 'queued',
-        progress: 'init',
-        displayMessage: 'Analyzing question...',
+        status: "queued",
+        progress: "init",
+        displayMessage: "Analyzing question...",
       });
       taskId = chat._id.toString();
     } else {
-      // Fallback: Create in-memory record
-      taskId = Date.now().toString(); // Simple ID
+      taskId = Date.now().toString();
       this.inMemoryStore.set(taskId, {
         _id: taskId,
         query,
-        status: 'queued',
-        progress: 'init',
-        displayMessage: 'Analyzing question...',
+        status: "queued",
+        progress: "init",
+        displayMessage: "Analyzing question...",
       });
-      console.warn(`[ChatService] MongoDB not ready. Using in-memory store for task ${taskId}`);
     }
 
-    // Start background process (fire-and-forget)
     this.processChatTask(taskId, query);
-
-    return { taskId, message: 'Started' };
+    return { taskId, message: "Started" };
   }
 
   public async getTaskStatus(taskId: string): Promise<ChatTask | undefined> {
@@ -164,7 +210,7 @@ export class ChatService {
       status: chat.status,
       progress: chat.progress,
       displayMessage: chat.displayMessage,
-      result: chat.answer
+      result: chat.result ?? chat.answer,
     };
   }
 }

@@ -27,7 +27,11 @@ function App() {
           if (lastMsg.role === 'assistant') {
             // Show progress message if not done, or final result
             if (status.status === 'completed' && status.result) {
-              lastMsg.content = status.result;
+              if (typeof status.result === "string") {
+                lastMsg.content = status.result;
+              } else {
+                lastMsg.content = status.result.answer;
+              }
             } else if (status.status === 'failed') {
               lastMsg.content = `Error: ${status.error || 'Unknown error'}`;
             } else {
