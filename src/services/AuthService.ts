@@ -1,5 +1,8 @@
-import User from 'src/models/User';
+import crypto from 'crypto';
 import { LoginRequest } from 'src/controllers/AuthController';
+import User from 'src/models/User';
+import Verification from 'src/models/Verification';
+import { sendVerificationEmail } from 'src/utils/mailer';
 
 export interface RegisterRequest {
   email: string;
@@ -85,5 +88,36 @@ export class AuthService {
     if (!deletedUser) {
       throw new Error('User not found');
     }
+  }
+
+  public async requestEmailVerification(email: string): Promise<void> {
+    // 6자리 난수 생성 (예: 048291)
+    const code = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
+
+    // 기존에 요청한 인증번호가 있다면 덮어쓰기 (upsert)
+    await Verification.findOneAndUpdate(
+      { email },
+      { code, createdAt: new Date() },
+      { upsert: true, returnDocument: 'after' }
+    );
+
+    // 메일 발송 유틸리티 호출
+    await sendVerificationEmail(email, code);
+  }
+
+  public async verifyEmailCode(email: string, code: string): Promise<boolean> {
+    const record = await Verification.findOne({ email });
+
+    if (!record) {
+      throw new Error('인증번호가 만료되었거나 존재하지 않습니다.');
+    }
+
+    if (record.code !== code) {
+      throw new Error('인증번호가 일치하지 않습니다.');
+    }
+
+    // 인증 성공 시 DB에서 즉시 삭제 (재사용 방지)
+    await Verification.deleteOne({ email });
+    return true;
   }
 }

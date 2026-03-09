@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
+import { LLM_TOKEN } from 'src/settings';
 
 export interface ChatTask {
   status: "queued" | "processing" | "completed" | "failed";
