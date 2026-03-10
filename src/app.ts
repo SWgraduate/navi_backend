@@ -1,5 +1,6 @@
 import express, { Express } from 'express';
 import swaggerUi from 'swagger-ui-express';
+import cors from 'cors';
 import { RegisterRoutes } from 'src/routes/routes';
 import swaggerJson from 'src/swagger/swagger.json';
 import session from 'express-session';
@@ -8,6 +9,12 @@ import { MONGO_URI, SESSION_SECRET } from 'src/settings';
 
 export const createApp = (): Express => {
     const app: Express = express();
+
+    app.use(cors({
+        origin: ['http://localhost:3000', 'https://navi-frontend-one.vercel.app'],
+        credentials: true,
+    }));
+
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 
@@ -22,7 +29,9 @@ export const createApp = (): Express => {
         cookie: {
             maxAge: 1000 * 60 * 60 * 24, // 하루(24시간) 동안 로그인 유지
             httpOnly: true, // 자바스크립트에서 쿠키 탈취 방지 (XSS 보안)
-            // secure: true // 나중에 배포해서 HTTPS를 쓸 때는 주석을 해제 (로컬은 false)
+            // 크로스 도메인(Vercel 프론트엔드 - Render 백엔드) 환경 배포 시 아래 두 주석을 해제 고려 (26. 3. 10. 태영)
+            // sameSite: 'none',
+            // secure: true
         },
     }));
 
