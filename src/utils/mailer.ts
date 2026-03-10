@@ -8,6 +8,7 @@ const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 587, // 또는 465 (secure: true)
   secure: false, // 587번 포트를 사용할 경우 false, 465번 포트를 사용할 경우 true
+  family: 4, // IPv6 연결 시도 시 발생하는 ENETUNREACH 에러 방지 (IPv4만 사용 강제)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -15,7 +16,7 @@ const transporter = nodemailer.createTransport({
   connectionTimeout: 20000, // 20초 (서버 연결 대기 시간)
   greetingTimeout: 20000,   // 20초 (인사말 대기 시간)
   socketTimeout: 20000,     // 20초 (소켓 응답 대기 시간)
-});
+} as any);
 
 export const sendVerificationEmail = async (to: string, code: string) => {
   const mailOptions = {
