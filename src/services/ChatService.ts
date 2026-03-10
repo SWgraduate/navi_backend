@@ -1,11 +1,11 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
 import ChatModel from "src/models/Chat";
 import mongoose from "mongoose";
 import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
-import { LLM_TOKEN } from 'src/settings';
 
 export interface ChatTask {
   status: "queued" | "processing" | "completed" | "failed";
@@ -20,7 +20,7 @@ export class ChatService {
   private inMemoryStore = new Map<string, any>();
   private ragRetrievalService = new RagRetrievalService();
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): ChatService {
     if (!ChatService.instance) {
@@ -58,17 +58,17 @@ export class ChatService {
   }
 
   private async callGroundedLLM(query: string, contextText: string): Promise<string> {
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("Missing LLM API key");
     }
 
     const chat = new ChatOpenAI({
       apiKey,
-      modelName: process.env.LLM_MODEL ?? "xiaomi/mimo-v2-flash",
+      modelName: GLOBAL_CONFIG.chatModel,
       temperature: 0.2,
       configuration: {
-        baseURL: process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
+        baseURL: GLOBAL_CONFIG.llmBaseUrl,
       },
     });
 

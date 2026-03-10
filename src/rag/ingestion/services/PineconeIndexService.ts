@@ -1,4 +1,5 @@
 import { Pinecone, PineconeRecord } from "@pinecone-database/pinecone";
+import { GLOBAL_CONFIG, PINECONE_API_KEY } from "src/settings";
 import { EmbeddingPayload } from "../types/rag.types";
 import { RetrievedChunk } from "../../retrieval/types/retrieval.types";
 
@@ -22,8 +23,8 @@ export class PineconeIndexService {
     private readonly defaultNamespace: string;
 
     constructor() {
-        const apiKey = process.env.PINECONE_API_KEY;
-        const indexName = process.env.PINECONE_INDEX_NAME;
+        const apiKey = PINECONE_API_KEY;
+        const indexName = GLOBAL_CONFIG.pineconeIndexName;
 
         if (!apiKey)
             throw new Error("Missing PINECONE_API_KEY");
@@ -32,7 +33,7 @@ export class PineconeIndexService {
 
         this.pinecone = new Pinecone({ apiKey });
         this.indexName = indexName;
-        this.defaultNamespace = process.env.PINECONE_NAMESPACE ?? "default";
+        this.defaultNamespace = GLOBAL_CONFIG.pineconeNamespace;
     }
 
     getNamespace(namespace?: string): string {
@@ -93,7 +94,7 @@ export class PineconeIndexService {
 
         await index.deleteMany({
             filter: {
-                documentId: {$eq: documentId},
+                documentId: { $eq: documentId },
             },
         });
     }

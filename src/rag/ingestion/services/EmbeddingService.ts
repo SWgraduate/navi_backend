@@ -1,4 +1,5 @@
 import { OpenAIEmbeddings } from "@langchain/openai";
+import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from "src/settings";
 import { ChunkPayload, EmbeddingPayload } from "../types/rag.types";
 
 // Take the chunks and converts it into vector form 
@@ -8,13 +9,13 @@ export class EmbeddingService {
   private readonly embeddings: OpenAIEmbeddings;
 
   constructor() {
-    this.modelName = process.env.EMBEDDING_MODEL ?? "text-embedding-3-large";
+    this.modelName = GLOBAL_CONFIG.embeddingModel;
 
     this.embeddings = new OpenAIEmbeddings({
       model: this.modelName,
       configuration: {
-        baseURL: process.env.OPENROUTER_BASE_URL,
-        apiKey: process.env.OPENROUTER_API_KEY,
+        baseURL: GLOBAL_CONFIG.llmBaseUrl,
+        apiKey: OPENROUTER_API_KEY,
       },
     });
   }
@@ -42,21 +43,21 @@ export class EmbeddingService {
     );
 
     if (vectors.length !== chunks.length) {
-        throw new Error(`Embedding result length mismatch. chunks=${chunks.length}, vectors=${vectors.length}`);
+      throw new Error(`Embedding result length mismatch. chunks=${chunks.length}, vectors=${vectors.length}`);
     }
 
     return chunks.map((chunk, index) => {
-        const values = vectors[index];
-        if(!values) {
-            throw new Error(`Missing embedding vector at index ${index}`);
-        }
+      const values = vectors[index];
+      if (!values) {
+        throw new Error(`Missing embedding vector at index ${index}`);
+      }
 
-        return {
-            chunkId: chunk.chunkId,
-            chunkIndex: chunk.chunkIndex,
-            text: chunk.text,
-            values,
-        }
+      return {
+        chunkId: chunk.chunkId,
+        chunkIndex: chunk.chunkIndex,
+        text: chunk.text,
+        values,
+      }
     })
   }
 }
