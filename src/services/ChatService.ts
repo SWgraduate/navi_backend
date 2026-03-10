@@ -2,6 +2,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage } from "@langchain/core/messages";
 import ChatModel, { IChat } from 'src/models/Chat';
 import mongoose from 'mongoose';
+import { LLM_TOKEN } from 'src/settings';
 
 export interface ChatTask {
   status: 'queued' | 'processing' | 'completed' | 'failed';
@@ -39,7 +40,7 @@ export class ChatService {
   // Helper: Real LLM call using LangChain
   private async callLLM(query: string): Promise<string> {
     // API key 확인
-    const apiKey = process.env.LLM_TOKEN || process.env.OPENAI_API_KEY;
+    const apiKey = LLM_TOKEN;
 
     if (!apiKey) {
       console.warn("API Key not found.");

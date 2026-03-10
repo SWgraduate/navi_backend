@@ -2,12 +2,19 @@ import nodemailer from 'nodemailer';
 import { logger } from 'src/utils/log';
 
 // 메일 전송을 담당할 '트랜스포터' 객체 생성
+// Render 배포 환경에서의 ETIMEDOUT 방지를 위한 명시적인 타임아웃 설정
 const transporter = nodemailer.createTransport({
   service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587, // 또는 465 (secure: true)
+  secure: false, // 587번 포트를 사용할 경우 false, 465번 포트를 사용할 경우 true
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 20000, // 20초 (서버 연결 대기 시간)
+  greetingTimeout: 20000,   // 20초 (인사말 대기 시간)
+  socketTimeout: 20000,     // 20초 (소켓 응답 대기 시간)
 });
 
 export const sendVerificationEmail = async (to: string, code: string) => {
