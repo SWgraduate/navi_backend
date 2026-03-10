@@ -17,8 +17,7 @@ function requireEnv(key: string, defaultValue?: string): string {
 export const APP_PORT = parseInt(requireEnv('APP_PORT', '8000'), 10);
 export const SESSION_SECRET = requireEnv('SESSION_SECRET');
 
-export const EMAIL_USER = requireEnv('EMAIL_USER');
-export const EMAIL_PASS = requireEnv('EMAIL_PASS');
+export const RESEND_KEY = requireEnv('RESEND_KEY');
 
 export const MONGO_URI = requireEnv('MONGO_URI');
 export const LLM_TOKEN = requireEnv('LLM_TOKEN');
