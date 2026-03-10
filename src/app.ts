@@ -10,6 +10,8 @@ import { MONGO_URI, SESSION_SECRET } from 'src/settings';
 export const createApp = (): Express => {
     const app: Express = express();
 
+    app.set('trust proxy', 1);
+
     app.use(cors({
         origin: ['http://localhost:3000', 'https://navi-frontend-one.vercel.app'],
         credentials: true,
@@ -29,9 +31,8 @@ export const createApp = (): Express => {
         cookie: {
             maxAge: 1000 * 60 * 60 * 24, // 하루(24시간) 동안 로그인 유지
             httpOnly: true, // 자바스크립트에서 쿠키 탈취 방지 (XSS 보안)
-            // 크로스 도메인(Vercel 프론트엔드 - Render 백엔드) 환경 배포 시 아래 두 주석을 해제 고려 (26. 3. 10. 태영)
-            // sameSite: 'none',
-            // secure: true
+            sameSite: 'none',
+            secure: true
         },
     }));
 
