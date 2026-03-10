@@ -7,7 +7,7 @@ const resend = new Resend(RESEND_KEY);
 export const sendVerificationEmail = async (to: string, code: string) => {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'Navi 서비스 <navi_noreply@resend.dev>',
+      from: 'Navi 서비스 <navi_noreply@navimailer.kro.kr>',
       to,
       subject: '[Navi] 회원가입 이메일 인증 번호입니다.',
       html: `
