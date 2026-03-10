@@ -4,7 +4,6 @@ import { logger } from 'src/utils/log';
 // 메일 전송을 담당할 '트랜스포터' 객체 생성
 // Render 배포 환경에서의 ETIMEDOUT 방지를 위한 명시적인 타임아웃 설정
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
   host: 'smtp.gmail.com',
   port: 587, // 또는 465 (secure: true)
   secure: false, // 587번 포트를 사용할 경우 false, 465번 포트를 사용할 경우 true
