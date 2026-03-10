@@ -115,6 +115,10 @@
 						"type": "string"
 					}
 				},
+				"required": [
+					"email",
+					"password"
+				],
 				"type": "object",
 				"additionalProperties": false
 			},

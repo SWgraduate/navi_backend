@@ -3,8 +3,8 @@ import { Request as ExRequest } from 'express';
 import { AuthService, RegisterRequest, AuthResponse } from 'src/services/AuthService';
 
 export interface LoginRequest {
-  email?: string;
-  password?: string;
+  email: string;
+  password: string;
 }
 
 export interface SendEmailRequest {
