@@ -37,7 +37,7 @@ export class RagIngestionService {
 
         // 4. Dedup check in Mongo
         const existing = await this.ragDocumentRepository.findByContentHash(contentHash);
-        if (existing && existing.status == INGESTION_STATUS.PROCESSED){
+        if (existing && existing.status === INGESTION_STATUS.PROCESSED){
             return {
                 documentId: existing._id.toString(),
                 status: existing.status,
