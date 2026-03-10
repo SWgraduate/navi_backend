@@ -77,7 +77,7 @@ export class RagIngestionService {
             // 9. Upload vectors
             const vectorNamespace = this.pineconeIndexService.getNamespace();
 
-            this.pineconeIndexService.upsertDocumentVectors({
+            await this.pineconeIndexService.upsertDocumentVectors({
                 documentId,
                 contentHash,
                 originalFileName: command.originalFileName,
