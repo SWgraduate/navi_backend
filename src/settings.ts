@@ -23,6 +23,8 @@ export const MONGO_URI = requireEnv('MONGO_URI');
 export const OPENROUTER_API_KEY = requireEnv('OPENROUTER_API_KEY');
 export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
+export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
+
 export const GLOBAL_CONFIG = {
   llmBaseUrl: "https://openrouter.ai/api/v1",
   chatModel: "openai/gpt-5",

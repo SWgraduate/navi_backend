@@ -1,3 +1,4 @@
+import { DISCORD_WEBHOOK_URL } from 'src/settings';
 import util from 'util';
 
 const COLORS = {
@@ -72,3 +73,10 @@ class Logger {
 }
 
 export const logger = new Logger();
+
+export async function discordAlert(message: string) {
+  if (!DISCORD_WEBHOOK_URL) {
+    console.warn('DISCORD_WEBHOOK_URL is not defined. ');
+    return;
+  } // Discord 웹훅에 메시지 전송
+}
