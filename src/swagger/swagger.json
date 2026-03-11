@@ -52,7 +52,10 @@
 					"displayMessage": {
 						"type": "string"
 					},
-					"result": {}
+					"result": {},
+					"error": {
+						"type": "string"
+					}
 				},
 				"required": [
 					"status",
@@ -150,40 +153,40 @@
 				"type": "object",
 				"additionalProperties": false
 			},
-			"IngestResponse": {
+			"IngestionStatus": {
+				"type": "string",
+				"enum": [
+					"pending",
+					"processing",
+					"processed",
+					"failed"
+				]
+			},
+			"IngestPdfResult": {
 				"properties": {
+					"documentId": {
+						"type": "string"
+					},
+					"status": {
+						"$ref": "#/components/schemas/IngestionStatus"
+					},
 					"message": {
 						"type": "string"
 					},
-					"chunks": {
+					"isDuplicate": {
+						"type": "boolean"
+					},
+					"chunkCount": {
 						"type": "number",
 						"format": "double"
 					}
 				},
 				"required": [
+					"documentId",
+					"status",
 					"message",
-					"chunks"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
-			"Record_string.any_": {
-				"properties": {},
-				"additionalProperties": {},
-				"type": "object",
-				"description": "Construct a type with a set of properties K of type T"
-			},
-			"IngestRequest": {
-				"properties": {
-					"text": {
-						"type": "string"
-					},
-					"metadata": {
-						"$ref": "#/components/schemas/Record_string.any_"
-					}
-				},
-				"required": [
-					"text"
+					"isDuplicate",
+					"chunkCount"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -849,55 +852,23 @@
 				}
 			}
 		},
-		"/ingest": {
+		"/rag/documents/upload": {
 			"post": {
-				"operationId": "IngestDocument",
+				"operationId": "UploadPdf",
 				"responses": {
 					"200": {
 						"description": "Ok",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/IngestResponse"
+									"$ref": "#/components/schemas/IngestPdfResult"
 								}
 							}
 						}
 					}
 				},
 				"tags": [
-					"Ingest"
-				],
-				"security": [],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/IngestRequest"
-							}
-						}
-					}
-				}
-			}
-		},
-		"/ingest/upload": {
-			"post": {
-				"operationId": "UploadDocument",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/IngestResponse"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Ingest"
+					"RAG"
 				],
 				"security": [],
 				"parameters": [],
@@ -912,12 +883,16 @@
 										"type": "string",
 										"format": "binary"
 									},
-									"source": {
+									"userId": {
+										"type": "string"
+									},
+									"role": {
 										"type": "string"
 									}
 								},
 								"required": [
-									"file"
+									"file",
+									"userId"
 								]
 							}
 						}
