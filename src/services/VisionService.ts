@@ -1,17 +1,18 @@
-import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
-import { z } from 'zod';
+import { ChatOpenAI } from '@langchain/openai';
+import { GLOBAL_CONFIG } from 'src/settings';
 import { logger } from 'src/utils/log';
+import { z } from 'zod';
 
 export class VisionService {
   private visionModel: ChatOpenAI;
 
   constructor() {
     this.visionModel = new ChatOpenAI({
-      modelName: process.env.VISION_MODEL_NAME || 'gpt-4o',
+      modelName: GLOBAL_CONFIG.visionModel,
       temperature: 0,
       configuration: {
-        baseURL: process.env.CUSTOM_LLM_BASE_URL,
+        baseURL: GLOBAL_CONFIG.llmBaseUrl,
       },
     });
   }

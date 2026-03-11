@@ -28,6 +28,7 @@ export const GLOBAL_CONFIG = {
   chatModel: "openai/gpt-5",
   embeddingModel: "openai/text-embedding-3-large",
   embeddingDimensions: 1024,
+  visionModel: "google/gemini-3-flash-preview",
 
   // Vector DB
   pineconeIndexName: "rag-main",
