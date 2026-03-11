@@ -14,7 +14,7 @@ import { ChatController } from './../controllers/ChatController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { AuthController } from './../controllers/AuthController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { IngestController } from './../controllers/rag/IngestController';
+import { RagIngestionController } from './../controllers/rag/RagIngestionController';
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
 const multer = require('multer');
 
@@ -48,6 +48,7 @@ const models: TsoaRoute.Models = {
             "progress": {"dataType":"string","required":true},
             "displayMessage": {"dataType":"string","required":true},
             "result": {"dataType":"any"},
+            "error": {"dataType":"string"},
         },
         "additionalProperties": false,
     },
@@ -95,25 +96,36 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "IngestResponse": {
+    "SendEmailRequest": {
         "dataType": "refObject",
         "properties": {
-            "message": {"dataType":"string","required":true},
-            "chunks": {"dataType":"double","required":true},
+            "email": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Record_string.any_": {
-        "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"any"},"validators":{}},
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "IngestRequest": {
+    "VerifyEmailRequest": {
         "dataType": "refObject",
         "properties": {
-            "text": {"dataType":"string","required":true},
-            "metadata": {"ref":"Record_string.any_"},
+            "email": {"dataType":"string","required":true},
+            "code": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "IngestionStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["pending"]},{"dataType":"enum","enums":["processing"]},{"dataType":"enum","enums":["processed"]},{"dataType":"enum","enums":["failed"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "IngestPdfResult": {
+        "dataType": "refObject",
+        "properties": {
+            "documentId": {"dataType":"string","required":true},
+            "status": {"ref":"IngestionStatus","required":true},
+            "message": {"dataType":"string","required":true},
+            "isDuplicate": {"dataType":"boolean","required":true},
+            "chunkCount": {"dataType":"double","required":true},
         },
         "additionalProperties": false,
     },
@@ -495,62 +507,94 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsIngestController_ingestDocument: Record<string, TsoaRoute.ParameterSchema> = {
-                body: {"in":"body","name":"body","required":true,"ref":"IngestRequest"},
+        const argsAuthController_sendEmailVerification: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"SendEmailRequest"},
         };
-        app.post('/api/ingest',
-            ...(fetchMiddlewares<RequestHandler>(IngestController)),
-            ...(fetchMiddlewares<RequestHandler>(IngestController.prototype.ingestDocument)),
+        app.post('/api/auth/email/send',
+            ...(fetchMiddlewares<RequestHandler>(AuthController)),
+            ...(fetchMiddlewares<RequestHandler>(AuthController.prototype.sendEmailVerification)),
 
-            async function IngestController_ingestDocument(request: ExRequest, response: ExResponse, next: any) {
+            async function AuthController_sendEmailVerification(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsIngestController_ingestDocument, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsAuthController_sendEmailVerification, request, response });
 
-                const controller = new IngestController();
+                const controller = new AuthController();
 
               await templateService.apiHandler({
-                methodName: 'ingestDocument',
+                methodName: 'sendEmailVerification',
                 controller,
                 response,
                 next,
                 validatedArgs,
-                successStatus: undefined,
+                successStatus: 200,
               });
             } catch (err) {
                 return next(err);
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsIngestController_uploadDocument: Record<string, TsoaRoute.ParameterSchema> = {
-                file: {"in":"formData","name":"file","required":true,"dataType":"file"},
-                source: {"in":"formData","name":"source","dataType":"string"},
+        const argsAuthController_verifyEmailCode: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"VerifyEmailRequest"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
-        app.post('/api/ingest/upload',
+        app.post('/api/auth/email/verify',
+            ...(fetchMiddlewares<RequestHandler>(AuthController)),
+            ...(fetchMiddlewares<RequestHandler>(AuthController.prototype.verifyEmailCode)),
+
+            async function AuthController_verifyEmailCode(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAuthController_verifyEmailCode, request, response });
+
+                const controller = new AuthController();
+
+              await templateService.apiHandler({
+                methodName: 'verifyEmailCode',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsRagIngestionController_uploadPdf: Record<string, TsoaRoute.ParameterSchema> = {
+                file: {"in":"formData","name":"file","required":true,"dataType":"file"},
+                userId: {"in":"formData","name":"userId","required":true,"dataType":"string"},
+                role: {"in":"formData","name":"role","dataType":"string"},
+        };
+        app.post('/api/rag/documents/upload',
             upload.fields([
                 {
                     name: "file",
                     maxCount: 1
                 }
             ]),
-            ...(fetchMiddlewares<RequestHandler>(IngestController)),
-            ...(fetchMiddlewares<RequestHandler>(IngestController.prototype.uploadDocument)),
+            ...(fetchMiddlewares<RequestHandler>(RagIngestionController)),
+            ...(fetchMiddlewares<RequestHandler>(RagIngestionController.prototype.uploadPdf)),
 
-            async function IngestController_uploadDocument(request: ExRequest, response: ExResponse, next: any) {
+            async function RagIngestionController_uploadPdf(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsIngestController_uploadDocument, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsRagIngestionController_uploadPdf, request, response });
 
-                const controller = new IngestController();
+                const controller = new RagIngestionController();
 
               await templateService.apiHandler({
-                methodName: 'uploadDocument',
+                methodName: 'uploadPdf',
                 controller,
                 response,
                 next,
