@@ -118,6 +118,10 @@
 						"type": "string"
 					}
 				},
+				"required": [
+					"email",
+					"password"
+				],
 				"type": "object",
 				"additionalProperties": false
 			},
@@ -192,7 +196,8 @@
 	},
 	"info": {
 		"title": "navi_backend",
-		"version": "1.0.0",
+		"version": "1.0.1.alpha.v1",
+		"description": "asdfasdf",
 		"license": {
 			"name": "ISC"
 		},
