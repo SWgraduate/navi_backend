@@ -21,6 +21,14 @@ export interface VerifyEmailRequest {
 export class AuthController extends Controller {
   private authService = AuthService.getInstance();
 
+  /**
+   * 신규 사용자 회원가입 처리를 수행합니다.
+   * 이 엔드포인트는 사전에 **6자리 인증 코드**를 통해 이메일 검증이 완료된 상태에서만 호출 가능합니다.
+   * 성공적으로 가입이 완료되면 `express-session`에 사용자 정보(ID, 이메일)를 초기화하고,
+   * 보안을 위해 재사용 방지용 이메일 인증 상태 플래그를 즉시 제거합니다.
+   * @param body 회원가입에 필요한 이메일과 비밀번호
+   * @param req 세션 정보를 포함하는 Express 요청 객체
+   */
   @Post('register')
   @SuccessResponse("201", "Created")
   @Response<{ error: string }>(400, "Bad Request")
@@ -44,6 +52,13 @@ export class AuthController extends Controller {
     }
   }
 
+  /**
+   * 기존 사용자 로그인을 처리합니다.
+   * 이메일과 비밀번호를 검증한 후, 인증에 성공하면 `express-session`에 사용자 정보(ID, 이메일)를 저장합니다.
+   * 이후 요청에서 해당 세션 정보를 통해 로그인 여부를 판별합니다.
+   * @param body 로그인에 필요한 이메일과 비밀번호
+   * @param req 세션 정보를 포함하는 Express 요청 객체
+   */
   @Post('login')
   @Response<{ error: string }>(401, "Unauthorized")
   public async login(
@@ -61,6 +76,12 @@ export class AuthController extends Controller {
     }
   }
 
+  /**
+   * 현재 로그인된 사용자를 로그아웃 처리합니다.
+   * 서버에 저장된 세션 데이터를 파기하고, 클라이언트 브라우저의 세션 쿠키(`connect.sid`)를 삭제합니다.
+   * 로그인 상태가 아닌 경우 401 Unauthorized를 반환합니다.
+   * @param req 세션 정보를 포함하는 Express 요청 객체
+   */
   @Post("logout")
   @SuccessResponse("200", "OK")
   @Response<{ error: string }>(401, "Unauthorized")
@@ -90,6 +111,12 @@ export class AuthController extends Controller {
     });
   }
 
+  /**
+   * 현재 로그인된 사용자의 계정을 영구적으로 삭제(회원 탈퇴)합니다.
+   * 세션에서 이메일 정보를 확인하여 본인 여부를 검증한 후, 데이터베이스에서 사용자 정보를 삭제합니다.
+   * 탈퇴 완료 후에는 세션 데이터를 파기하고 세션 쿠키도 삭제합니다.
+   * @param req 세션 정보를 포함하는 Express 요청 객체 (로그인된 사용자의 이메일 사용)
+   */
   @Delete("leave")
   @Response<{ error: string }>(400, "Bad Request")
   @Response<{ error: string }>(401, "Unauthorized")
@@ -128,6 +155,12 @@ export class AuthController extends Controller {
     }
   }
 
+  /**
+   * 회원가입 전 이메일 인증을 위한 **6자리 인증 코드**를 발송합니다.
+   * 동일 이메일로 재요청 시 기존 인증 코드는 덮어쓰기(upsert)되어 새 코드가 발송됩니다.
+   * 인증 코드는 이후 `/auth/email/verify` 엔드포인트를 통해 검증해야 합니다.
+   * @param body 인증 코드를 수신할 이메일 주소
+   */
   @Post('email/send')
   @SuccessResponse("200", "OK")
   @Response<{ error: string }>(500, "Internal Server Error")
@@ -143,6 +176,14 @@ export class AuthController extends Controller {
     }
   }
 
+  /**
+   * 이메일로 발송된 **6자리 인증 코드**의 유효성을 검증합니다.
+   * 인증에 성공하면 현재 세션에 이메일 인증 완료 상태(`isEmailVerified: true`)를 기록합니다.
+   * 이 세션 플래그는 `/auth/register` 엔드포인트에서 회원가입 허용 여부를 판단하는 데 사용됩니다.
+   * 인증에 사용된 코드는 재사용을 방지하기 위해 즉시 데이터베이스에서 삭제됩니다.
+   * @param body 인증할 이메일 주소와 6자리 인증 코드
+   * @param req 세션 정보를 포함하는 Express 요청 객체
+   */
   @Post('email/verify')
   @SuccessResponse("200", "OK")
   @Response<{ error: string }>(400, "Bad Request")
