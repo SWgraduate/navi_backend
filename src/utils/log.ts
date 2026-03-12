@@ -79,4 +79,20 @@ export async function discordAlert(message: string) {
     console.warn('DISCORD_WEBHOOK_URL is not defined. ');
     return;
   } // Discord 웹훅에 메시지 전송
+
+  try {
+    const response = await fetch(DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content: message,
+      }),
+    });
+
+    console.log("discord status:", response.status);
+  } catch (error) {
+    console.error("discord webhook failed:", error);
+  }
 }
