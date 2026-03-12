@@ -14,6 +14,8 @@ import { ChatController } from './../controllers/ChatController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { AuthController } from './../controllers/AuthController';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { StudentController } from './../controllers/StudentController';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { RagIngestionController } from './../controllers/rag/RagIngestionController';
 import type { Request as ExRequest, Response as ExResponse, RequestHandler, Router } from 'express';
 const multer = require('multer');
@@ -96,23 +98,6 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "SendEmailRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "email": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "VerifyEmailRequest": {
-        "dataType": "refObject",
-        "properties": {
-            "email": {"dataType":"string","required":true},
-            "code": {"dataType":"string","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "IngestionStatus": {
         "dataType": "refAlias",
         "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["pending"]},{"dataType":"enum","enums":["processing"]},{"dataType":"enum","enums":["processed"]},{"dataType":"enum","enums":["failed"]}],"validators":{}},
@@ -126,6 +111,62 @@ const models: TsoaRoute.Models = {
             "message": {"dataType":"string","required":true},
             "isDuplicate": {"dataType":"boolean","required":true},
             "chunkCount": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SecondMajorType": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["다중전공"]},{"dataType":"enum","enums":["융합전공"]},{"dataType":"enum","enums":["부전공"]},{"dataType":"enum","enums":["복수전공"]},{"dataType":"enum","enums":["연계전공"]},{"dataType":"enum","enums":["마이크로전공"]},{"dataType":"enum","enums":["선택"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AcademicStatus": {
+        "dataType": "refAlias",
+        "type": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["재학생"]},{"dataType":"enum","enums":["휴학생"]}],"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpsertProfileRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "admissionYear": {"dataType":"double","required":true},
+            "name": {"dataType":"string","required":true},
+            "major": {"dataType":"string","required":true},
+            "secondMajorType": {"ref":"SecondMajorType","required":true},
+            "secondMajor": {"dataType":"string"},
+            "academicStatus": {"ref":"AcademicStatus","required":true},
+            "completedSemesters": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TakenCourse": {
+        "dataType": "refObject",
+        "properties": {
+            "courseCode": {"dataType":"string","required":true},
+            "courseName": {"dataType":"string","required":true},
+            "category": {"dataType":"string","required":true},
+            "credit": {"dataType":"double","required":true},
+            "isEnglish": {"dataType":"boolean","required":true},
+            "isPbl": {"dataType":"boolean","required":true},
+            "isMajorPbl": {"dataType":"boolean","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "UpdateAcademicRecordRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "earnedCredits": {"dataType":"nestedObjectLiteral","nestedProperties":{"total":{"dataType":"double"},"majorCore":{"dataType":"double"},"majorAdvanced":{"dataType":"double"},"majorTotal":{"dataType":"double"},"generalElective":{"dataType":"double"},"socialService":{"dataType":"double"},"industry":{"dataType":"double"}}},
+            "completedConditions": {"dataType":"nestedObjectLiteral","nestedProperties":{"englishCourses":{"dataType":"double"},"pblTotal":{"dataType":"double"},"pblMajor":{"dataType":"double"}}},
+            "takenCourses": {"dataType":"array","array":{"dataType":"refObject","ref":"TakenCourse"}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "ParseImageRequest": {
+        "dataType": "refObject",
+        "properties": {
+            "imageBase64": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -507,25 +548,26 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsAuthController_sendEmailVerification: Record<string, TsoaRoute.ParameterSchema> = {
-                body: {"in":"body","name":"body","required":true,"ref":"SendEmailRequest"},
+        const argsStudentController_upsertProfile: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"UpsertProfileRequest"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
-        app.post('/api/auth/email/send',
-            ...(fetchMiddlewares<RequestHandler>(AuthController)),
-            ...(fetchMiddlewares<RequestHandler>(AuthController.prototype.sendEmailVerification)),
+        app.post('/api/student/me/profile',
+            ...(fetchMiddlewares<RequestHandler>(StudentController)),
+            ...(fetchMiddlewares<RequestHandler>(StudentController.prototype.upsertProfile)),
 
-            async function AuthController_sendEmailVerification(request: ExRequest, response: ExResponse, next: any) {
+            async function StudentController_upsertProfile(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsAuthController_sendEmailVerification, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsStudentController_upsertProfile, request, response });
 
-                const controller = new AuthController();
+                const controller = new StudentController();
 
               await templateService.apiHandler({
-                methodName: 'sendEmailVerification',
+                methodName: 'upsertProfile',
                 controller,
                 response,
                 next,
@@ -537,26 +579,117 @@ export function RegisterRoutes(app: Router,opts?:{multer?:ReturnType<typeof mult
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsAuthController_verifyEmailCode: Record<string, TsoaRoute.ParameterSchema> = {
-                body: {"in":"body","name":"body","required":true,"ref":"VerifyEmailRequest"},
+        const argsStudentController_getProfile: Record<string, TsoaRoute.ParameterSchema> = {
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
         };
-        app.post('/api/auth/email/verify',
-            ...(fetchMiddlewares<RequestHandler>(AuthController)),
-            ...(fetchMiddlewares<RequestHandler>(AuthController.prototype.verifyEmailCode)),
+        app.get('/api/student/me/profile',
+            ...(fetchMiddlewares<RequestHandler>(StudentController)),
+            ...(fetchMiddlewares<RequestHandler>(StudentController.prototype.getProfile)),
 
-            async function AuthController_verifyEmailCode(request: ExRequest, response: ExResponse, next: any) {
+            async function StudentController_getProfile(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsAuthController_verifyEmailCode, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsStudentController_getProfile, request, response });
 
-                const controller = new AuthController();
+                const controller = new StudentController();
 
               await templateService.apiHandler({
-                methodName: 'verifyEmailCode',
+                methodName: 'getProfile',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStudentController_getAcademicRecord: Record<string, TsoaRoute.ParameterSchema> = {
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.get('/api/student/me/academic-record',
+            ...(fetchMiddlewares<RequestHandler>(StudentController)),
+            ...(fetchMiddlewares<RequestHandler>(StudentController.prototype.getAcademicRecord)),
+
+            async function StudentController_getAcademicRecord(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStudentController_getAcademicRecord, request, response });
+
+                const controller = new StudentController();
+
+              await templateService.apiHandler({
+                methodName: 'getAcademicRecord',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStudentController_updateAcademicRecord: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"UpdateAcademicRecordRequest"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.put('/api/student/me/academic-record',
+            ...(fetchMiddlewares<RequestHandler>(StudentController)),
+            ...(fetchMiddlewares<RequestHandler>(StudentController.prototype.updateAcademicRecord)),
+
+            async function StudentController_updateAcademicRecord(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStudentController_updateAcademicRecord, request, response });
+
+                const controller = new StudentController();
+
+              await templateService.apiHandler({
+                methodName: 'updateAcademicRecord',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: 200,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsStudentController_parseAndUpdateFromImage: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"ParseImageRequest"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.post('/api/student/me/academic-record/parse',
+            ...(fetchMiddlewares<RequestHandler>(StudentController)),
+            ...(fetchMiddlewares<RequestHandler>(StudentController.prototype.parseAndUpdateFromImage)),
+
+            async function StudentController_parseAndUpdateFromImage(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsStudentController_parseAndUpdateFromImage, request, response });
+
+                const controller = new StudentController();
+
+              await templateService.apiHandler({
+                methodName: 'parseAndUpdateFromImage',
                 controller,
                 response,
                 next,

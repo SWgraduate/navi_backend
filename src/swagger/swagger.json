@@ -190,7 +190,79 @@
 				],
 				"type": "object",
 				"additionalProperties": false
-			}
+			},
+		"UpsertProfileRequest": {
+			"properties": {
+				"admissionYear": { "type": "number", "format": "double" },
+				"name": { "type": "string" },
+				"major": { "type": "string" },
+				"secondMajorType": {
+					"type": "string",
+					"enum": ["다중전공", "융합전공", "부전공", "복수전공", "연계전공", "마이크로전공", "선택"]
+				},
+				"secondMajor": { "type": "string" },
+				"academicStatus": {
+					"type": "string",
+					"enum": ["재학생", "휴학생"]
+				},
+				"completedSemesters": { "type": "number", "format": "double" }
+			},
+			"required": ["admissionYear", "name", "major", "secondMajorType", "academicStatus", "completedSemesters"],
+			"type": "object",
+			"additionalProperties": false
+		},
+		"TakenCourse": {
+			"properties": {
+				"courseCode": { "type": "string" },
+				"courseName": { "type": "string" },
+				"category": { "type": "string" },
+				"credit": { "type": "number", "format": "double" },
+				"isEnglish": { "type": "boolean" },
+				"isPbl": { "type": "boolean" },
+				"isMajorPbl": { "type": "boolean" }
+			},
+			"required": ["courseCode", "courseName", "category", "credit", "isEnglish", "isPbl", "isMajorPbl"],
+			"type": "object",
+			"additionalProperties": false
+		},
+		"UpdateAcademicRecordRequest": {
+			"properties": {
+				"earnedCredits": {
+					"properties": {
+						"total": { "type": "number" },
+						"majorCore": { "type": "number" },
+						"majorAdvanced": { "type": "number" },
+						"majorTotal": { "type": "number" },
+						"generalElective": { "type": "number" },
+						"socialService": { "type": "number" },
+						"industry": { "type": "number" }
+					},
+					"type": "object"
+				},
+				"completedConditions": {
+					"properties": {
+						"englishCourses": { "type": "number" },
+						"pblTotal": { "type": "number" },
+						"pblMajor": { "type": "number" }
+					},
+					"type": "object"
+				},
+				"takenCourses": {
+					"type": "array",
+					"items": { "$ref": "#/components/schemas/TakenCourse" }
+				}
+			},
+			"type": "object",
+			"additionalProperties": false
+		},
+		"ParseImageRequest": {
+			"properties": {
+				"imageBase64": { "type": "string" }
+			},
+			"required": ["imageBase64"],
+			"type": "object",
+			"additionalProperties": false
+		}
 		},
 		"securitySchemes": {}
 	},
@@ -850,6 +922,76 @@
 						}
 					}
 				}
+			}
+		},
+		"/student/me/profile": {
+			"post": {
+				"operationId": "UpsertProfile",
+				"summary": "학적 기본정보 등록/수정",
+				"responses": {
+					"200": { "description": "OK", "content": { "application/json": { "schema": {} } } },
+					"401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } },
+					"400": { "description": "Bad Request", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } }
+				},
+				"tags": ["Student"],
+				"security": [],
+				"parameters": [],
+				"requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpsertProfileRequest" } } } }
+			},
+			"get": {
+				"operationId": "GetStudentProfile",
+				"summary": "학적 기본정보 조회",
+				"responses": {
+					"200": { "description": "OK", "content": { "application/json": { "schema": {} } } },
+					"401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } },
+					"404": { "description": "Not Found", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } }
+				},
+				"tags": ["Student"],
+				"security": [],
+				"parameters": []
+			}
+		},
+		"/student/me/academic-record": {
+			"get": {
+				"operationId": "GetAcademicRecord",
+				"summary": "이수 현황 조회",
+				"responses": {
+					"200": { "description": "OK", "content": { "application/json": { "schema": {} } } },
+					"401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } },
+					"404": { "description": "Not Found", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } }
+				},
+				"tags": ["Student"],
+				"security": [],
+				"parameters": []
+			},
+			"put": {
+				"operationId": "UpdateAcademicRecord",
+				"summary": "이수 현황 직접 수정",
+				"responses": {
+					"200": { "description": "OK", "content": { "application/json": { "schema": {} } } },
+					"401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } },
+					"400": { "description": "Bad Request", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } }
+				},
+				"tags": ["Student"],
+				"security": [],
+				"parameters": [],
+				"requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateAcademicRecordRequest" } } } }
+			}
+		},
+		"/student/me/academic-record/parse": {
+			"post": {
+				"operationId": "ParseAndUpdateFromImage",
+				"summary": "졸업사정표 이미지 파싱 후 이수 현황 자동 업데이트",
+				"responses": {
+					"200": { "description": "OK", "content": { "application/json": { "schema": {} } } },
+					"401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } },
+					"400": { "description": "Bad Request", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } },
+					"422": { "description": "Unprocessable Content", "content": { "application/json": { "schema": { "properties": { "error": { "type": "string" } }, "required": ["error"], "type": "object" } } } }
+				},
+				"tags": ["Student"],
+				"security": [],
+				"parameters": [],
+				"requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ParseImageRequest" } } } }
 			}
 		},
 		"/rag/documents/upload": {
