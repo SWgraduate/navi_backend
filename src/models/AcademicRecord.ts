@@ -1,4 +1,3 @@
-// src/models/AcademicRecord.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IAcademicRecord extends Document {
