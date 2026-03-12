@@ -1,4 +1,4 @@
-import { DISCORD_WEBHOOK_URL } from 'src/settings';
+import { DISCORD_WEBHOOK_URL, DISCORD_ALERT_ROLE_ID } from 'src/settings';
 import util from 'util';
 
 const COLORS = {
@@ -74,11 +74,17 @@ class Logger {
 
 export const logger = new Logger();
 
-export async function discordAlert(message: string) {
+export async function discordAlert(message: string, important=false) {
   if (!DISCORD_WEBHOOK_URL) {
     console.warn('DISCORD_WEBHOOK_URL is not defined. ');
     return;
   } // Discord 웹훅에 메시지 전송
+
+  let content=message;
+
+  if(important && DISCORD_ALERT_ROLE_ID){
+    content = `<@&${DISCORD_ALERT_ROLE_ID}>\n${message}`;
+  }
 
   try {
     const response = await fetch(DISCORD_WEBHOOK_URL, {
@@ -87,11 +93,15 @@ export async function discordAlert(message: string) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        content: message,
+        content,
       }),
     });
 
-    console.log("discord status:", response.status);
+    if(!response.ok){
+      const text=await response.text();
+      console.error("discord webhook failed:", response.status, text);
+    }
+  
   } catch (error) {
     console.error("discord webhook failed:", error);
   }
