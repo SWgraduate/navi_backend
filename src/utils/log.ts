@@ -103,6 +103,6 @@ export async function discordAlert(message: string, important=false) {
     }
   
   } catch (error) {
-    console.error("discord webhook failed:", error);
+    logger.e("discord webhook failed:", error);
   }
 }
