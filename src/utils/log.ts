@@ -76,9 +76,9 @@ export const logger = new Logger();
 
 export async function discordAlert(message: string, important=false) {
   if (!DISCORD_WEBHOOK_URL) {
-    console.warn('DISCORD_WEBHOOK_URL is not defined. ');
+    logger.w('DISCORD_WEBHOOK_URL is not defined. Discord alert will be skipped.');
     return;
-  } // Discord 웹훅에 메시지 전송
+  }
 
   let content=message;
 
