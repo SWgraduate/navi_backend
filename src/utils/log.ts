@@ -99,7 +99,7 @@ export async function discordAlert(message: string, important=false) {
 
     if(!response.ok){
       const text=await response.text();
-      console.error("discord webhook failed:", response.status, text);
+      logger.e("discord webhook failed:", response.status, text);
     }
   
   } catch (error) {
