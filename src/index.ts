@@ -1,8 +1,9 @@
 import { createApp } from 'src/app';
 import { connectDB } from 'src/config/database';
-import { logger } from 'src/utils/log';
+import { logger, discordAlert } from "src/utils/log";
 import { APP_PORT } from 'src/settings';
 import { version } from '../package.json';
+
 
 const startServer = async () => {
   logger.i(`Attempting to start server on version: ${version})...`);
@@ -16,3 +17,4 @@ const startServer = async () => {
 };
 
 startServer();
+
