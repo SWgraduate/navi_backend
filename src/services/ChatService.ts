@@ -1,9 +1,11 @@
+import ChatModel from "src/models/Chat";
+import mongoose from "mongoose";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
-import ChatModel from "src/models/Chat";
-import mongoose from "mongoose";
 import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
+import { EmbeddingService } from "src/rag/ingestion/services/EmbeddingService";
+import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexService";
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
 
@@ -17,7 +19,10 @@ export interface ChatTask {
 
 export class ChatService {
   private static instance: ChatService;
-  private ragRetrievalService = new RagRetrievalService();
+  private ragRetrievalService = new RagRetrievalService(
+    new EmbeddingService(),
+    new PineconeIndexService()
+  );
 
   private constructor() { }
 
