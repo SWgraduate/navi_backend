@@ -1,4 +1,3 @@
-import { LargeNumberLike } from 'crypto';
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IChatSource {
@@ -46,7 +45,8 @@ const ChatRetrievalMetaSchema = new Schema<IChatRetrievalMeta>(
   {
     topK: { type: Number, required: true },
     usedChunks: { type: Number, required: true },
-  }
+  },
+  { _id: false }
 )
 
 const ChatResultSchema = new Schema<IChatResult>(
