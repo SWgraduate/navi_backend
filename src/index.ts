@@ -9,10 +9,6 @@ const startServer = async () => {
   const app = createApp();
   const PORT = APP_PORT;
 
-   // 웹훅 테스트
-  //await discordAlert("웹훅 자동 테스트 메시지");
-  //await discordAlert("중요 테스트 메시지", true);
-
   app.listen(PORT, () => {
     logger.i(`Server is running on port ${PORT}`);
   });
