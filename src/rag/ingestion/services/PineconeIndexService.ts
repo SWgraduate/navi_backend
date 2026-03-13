@@ -1,5 +1,6 @@
 import { Pinecone, PineconeRecord } from "@pinecone-database/pinecone";
 import { GLOBAL_CONFIG, PINECONE_API_KEY } from "src/settings";
+import { logger } from "src/utils/log";
 import { EmbeddingPayload } from "../types/rag.types";
 import { RetrievedChunk } from "../../retrieval/types/retrieval.types";
 
@@ -26,76 +27,125 @@ export class PineconeIndexService {
         const apiKey = PINECONE_API_KEY;
         const indexName = GLOBAL_CONFIG.pineconeIndexName;
 
-        if (!apiKey)
-            throw new Error("Missing PINECONE_API_KEY");
-        if (!indexName)
-            throw new Error("Missing PINECONE_INDEX_NAME");
+        if (!apiKey) throw new Error("Missing PINECONE_API_KEY");
+        if (!indexName) throw new Error("Missing PINECONE_INDEX_NAME");
 
         this.pinecone = new Pinecone({ apiKey });
         this.indexName = indexName;
         this.defaultNamespace = GLOBAL_CONFIG.pineconeNamespace;
     }
 
-    getNamespace(namespace?: string): string {
+    public getNamespace(namespace?: string): string {
         return namespace ?? this.defaultNamespace;
     }
 
     async upsertDocumentVectors(params: UpsertDocumentVectorsParams): Promise<void> {
-        if (params.vectors.length === 0)
-            return;
+        try {
+            if (params.vectors.length === 0) return;
 
-        const namespace = this.getNamespace(params.namespace);
-        const index = this.pinecone.Index(this.indexName).namespace(namespace);
+            if (!params.documentId?.trim()) {
+                throw new Error("documentId cannot be empty");
+            }
+            if (!params.originalFileName?.trim()) {
+                throw new Error("originalFileName cannot be empty");
+            }
 
-        const records: PineconeRecord<Record<string, string | number | boolean>>[] = params.vectors.map((vector) => ({
-            id: vector.chunkId,
-            values: vector.values,
-            metadata: {
-                documentId: params.documentId,
-                chunkId: vector.chunkId,
-                chunkIndex: vector.chunkIndex,
-                contentHash: params.contentHash,
-                fileName: params.originalFileName,
-            },
-        }));
+            const namespace = this.getNamespace(params.namespace);
+            const index = this.pinecone.Index(this.indexName).namespace(namespace);
 
-        await index.upsert(records);
+            logger.i(`Upserting ${params.vectors.length} vectors for document: ${params.documentId}`);
+
+            const records: PineconeRecord<Record<string, string | number | boolean>>[] = params.vectors.map((vector) => ({
+                id: vector.chunkId,
+                values: vector.values,
+                metadata: {
+                    documentId: params.documentId,
+                    chunkId: vector.chunkId,
+                    chunkIndex: vector.chunkIndex,
+                    contentHash: params.contentHash,
+                    fileName: params.originalFileName,
+                },
+            }));
+
+            await index.upsert(records);
+
+            logger.i(`Successfully upserted ${params.vectors.length} vectors for document: ${params.documentId}`);
+        } catch (error) {
+            logger.e(`Failed to upsert document vectors for ${params.documentId}`, error);
+            throw new Error(
+                `Failed to upsert document vectors: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
     }
 
     async queryTopK(params: QueryTopKParams): Promise<RetrievedChunk[]> {
-        const namespace = this.getNamespace(params.namespace);
-        const index = this.pinecone.Index(this.indexName).namespace(namespace);
+        try {
+            if (!params.vector || params.vector.length === 0) {
+                throw new Error("Query vector cannot be empty");
+            }
+            if (params.topK <= 0) {
+                throw new Error("topK must be greater than 0");
+            }
 
-        const result = await index.query({
-            vector: params.vector,
-            topK: params.topK,
-            includeMetadata: true,
-            includeValues: false,
-        });
+            const namespace = this.getNamespace(params.namespace);
+            const index = this.pinecone.Index(this.indexName).namespace(namespace);
 
-        return (result.matches ?? []).map((match) => {
-            const metadata = (match.metadata ?? {}) as Record<string, unknown>;
+            logger.i(`Querying top ${params.topK} vectors from namespace: ${namespace}`);
 
-            return {
-                chunkId: String(metadata.chunkId ?? match.id ?? ""),
-                documentId: String(metadata.documentId ?? ""),
-                chunkIndex: Number(metadata.chunkIndex ?? 0),
-                score: Number(match.score ?? 0),
-                fileName: metadata.fileName ? String(metadata.fileName) : undefined,
-                contentHash: metadata.contentHash ? String(metadata.contentHash) : undefined,
-            };
-        });
+            const result = await index.query({
+                vector: params.vector,
+                topK: params.topK,
+                includeMetadata: true,
+                includeValues: false,
+            });
+
+            const retrievedChunks = (result.matches ?? []).map((match) => {
+                const metadata = (match.metadata ?? {}) as Record<string, unknown>;
+
+                return {
+                    chunkId: String(metadata.chunkId ?? match.id ?? ""),
+                    documentId: String(metadata.documentId ?? ""),
+                    chunkIndex: Number(metadata.chunkIndex ?? 0),
+                    score: Number(match.score ?? 0),
+                    fileName: metadata.fileName ? String(metadata.fileName) : undefined,
+                    contentHash: metadata.contentHash ? String(metadata.contentHash) : undefined,
+                };
+            });
+
+            logger.i(`Query returned ${retrievedChunks.length} results`);
+
+            return retrievedChunks;
+        } catch (error) {
+            logger.e("Failed to query Pinecone index", error);
+            throw new Error(
+                `Failed to query vector database: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
     }
 
     async deleteByDocumentId(documentId: string, namespace?: string): Promise<void> {
-        const resolvedNamespace = this.getNamespace(namespace);
-        const index = this.pinecone.Index(this.indexName).namespace(resolvedNamespace);
+        try {
+            if (!documentId?.trim()) {
+                throw new Error("documentId cannot be empty");
+            }
 
+            const resolvedNamespace = this.getNamespace(namespace);
+            const index = this.pinecone.Index(this.indexName).namespace(resolvedNamespace);
 
-        await index.deleteMany({
-            filter: {
-                documentId: { $eq: documentId },
-            },
-        });
+            logger.i(`Deleting vectors for document: ${documentId} from namespace: ${resolvedNamespace}`);
+
+            await index.deleteMany({
+                filter: {
+                    documentId: { $eq: documentId },
+                },
+            });
+
+            logger.i(`Successfully deleted vectors for document: ${documentId}`);
+        } catch (error) {
+            logger.e(`Failed to delete vectors for document ${documentId}`, error);
+            throw new Error(
+                `Failed to delete document vectors: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
     }
 }

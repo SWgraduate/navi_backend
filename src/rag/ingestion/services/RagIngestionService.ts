@@ -15,7 +15,7 @@ export class RagIngestionService {
         private readonly pdfExtractionService = new PdfExtractionService(),
         private readonly textNormalizationService = new TextNormalizationService(),
         private readonly contentHashService = new ContentHashService(),
-        private readonly textChunkingSerivice = new TextChunkingService(),
+        private readonly textChunkingService = new TextChunkingService(),
         private readonly embeddingService = new EmbeddingService(),
         private readonly pineconeIndexService = new PineconeIndexService()
     ) {}
@@ -65,7 +65,7 @@ export class RagIngestionService {
             await this.ragDocumentRepository.markProcessing(documentId);
 
             // 7. Chunk
-            const chunks = await this.textChunkingSerivice.chunkDocument({
+            const chunks = await this.textChunkingService.chunkDocument({
                 documentId,
                 contentHash,
                 normalizedText,

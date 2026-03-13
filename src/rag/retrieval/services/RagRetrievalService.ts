@@ -1,3 +1,4 @@
+import { logger } from "src/utils/log";
 import { EmbeddingService } from "../../ingestion/services/EmbeddingService";
 import { PineconeIndexService } from "../../ingestion/services/PineconeIndexService";
 import { 
@@ -51,8 +52,8 @@ export class RagRetrievalService {
 
             const filtered = this.filterAndSortChunks(rawChunks, minScore);
 
-            console.log(`Retrieving context for query: "${params.query}"`);
-            console.log(`Retrieved ${filtered.length} chunks`);
+            logger.i(`Retrieving context for query: "${params.query}"`);
+            logger.i(`Retrieved ${filtered.length} chunks`);
 
             return {
                 query: params.query,
