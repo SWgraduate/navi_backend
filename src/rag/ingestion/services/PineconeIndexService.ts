@@ -64,6 +64,7 @@ export class PineconeIndexService {
                     chunkIndex: vector.chunkIndex,
                     contentHash: params.contentHash,
                     fileName: params.originalFileName,
+                    text: vector.text,
                 },
             }));
 
@@ -109,6 +110,7 @@ export class PineconeIndexService {
                     score: Number(match.score ?? 0),
                     fileName: metadata.fileName ? String(metadata.fileName) : undefined,
                     contentHash: metadata.contentHash ? String(metadata.contentHash) : undefined,
+                    text: metadata.text ? String(metadata.text) : undefined,
                 };
             });
 
