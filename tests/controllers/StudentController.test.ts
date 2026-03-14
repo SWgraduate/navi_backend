@@ -102,14 +102,6 @@ describe('StudentController Test', () => {
 
   // ─── POST /student/me/profile ──────────────────────────────────────────────
   describe('upsertProfile', () => {
-    it('로그인 세션이 없으면 401을 반환해야 함', async () => {
-      const req = createMockRequest(); // userId 없음
-      const result = await studentController.upsertProfile(PROFILE_BODY, req) as any;
-
-      expect(studentController.getStatus()).toBe(401);
-      expect(result.error).toBeDefined();
-    });
-
     it('정상 세션으로 학적 정보를 등록하면 200과 Student 도큐먼트를 반환해야 함', async () => {
       const req = createMockRequest({ userId: testUserId });
       const result = await studentController.upsertProfile(PROFILE_BODY, req) as any;
@@ -140,20 +132,11 @@ describe('StudentController Test', () => {
 
   // ─── GET /student/me/profile ───────────────────────────────────────────────
   describe('getProfile', () => {
-    it('로그인 세션이 없으면 401을 반환해야 함', async () => {
-      const req = createMockRequest();
-      const result = await studentController.getProfile(req) as any;
-
-      expect(studentController.getStatus()).toBe(401);
-      expect(result.error).toBeDefined();
-    });
-
     it('학적 정보가 없으면 404를 반환해야 함', async () => {
       const req = createMockRequest({ userId: testUserId });
-      const result = await studentController.getProfile(req) as any;
+      await studentController.getProfile(req);
 
       expect(studentController.getStatus()).toBe(404);
-      expect(result.error).toBeDefined();
     });
 
     it('학적 정보가 있으면 200과 Student 도큐먼트를 반환해야 함', async () => {
@@ -171,14 +154,6 @@ describe('StudentController Test', () => {
 
   // ─── GET /student/me/academic-record ──────────────────────────────────────
   describe('getAcademicRecord', () => {
-    it('로그인 세션이 없으면 401을 반환해야 함', async () => {
-      const req = createMockRequest();
-      const result = await studentController.getAcademicRecord(req) as any;
-
-      expect(studentController.getStatus()).toBe(401);
-      expect(result.error).toBeDefined();
-    });
-
     it('Student가 없으면 404를 반환해야 함', async () => {
       const req = createMockRequest({ userId: testUserId });
       const result = await studentController.getAcademicRecord(req) as any;
@@ -193,10 +168,9 @@ describe('StudentController Test', () => {
       await studentController.upsertProfile(PROFILE_BODY, upsertReq);
 
       const req = createMockRequest({ userId: testUserId });
-      const result = await studentController.getAcademicRecord(req) as any;
+      await studentController.getAcademicRecord(req);
 
       expect(studentController.getStatus()).toBe(404);
-      expect(result.error).toBeDefined();
     });
 
     it('AcademicRecord가 있으면 200을 반환해야 함', async () => {
@@ -223,14 +197,6 @@ describe('StudentController Test', () => {
 
   // ─── PUT /student/me/academic-record ──────────────────────────────────────
   describe('updateAcademicRecord', () => {
-    it('로그인 세션이 없으면 401을 반환해야 함', async () => {
-      const req = createMockRequest();
-      const result = await studentController.updateAcademicRecord({}, req) as any;
-
-      expect(studentController.getStatus()).toBe(401);
-      expect(result.error).toBeDefined();
-    });
-
     it('Student가 없으면 400을 반환해야 함', async () => {
       const req = createMockRequest({ userId: testUserId });
       const result = await studentController.updateAcademicRecord(
@@ -261,17 +227,6 @@ describe('StudentController Test', () => {
 
   // ─── POST /student/me/academic-record/parse ────────────────────────────────
   describe('parseAndUpdateFromImage', () => {
-    it('로그인 세션이 없으면 401을 반환해야 함', async () => {
-      const req = createMockRequest();
-      const result = await studentController.parseAndUpdateFromImage(
-        { imageBase64: 'fakeBase64' },
-        req
-      ) as any;
-
-      expect(studentController.getStatus()).toBe(401);
-      expect(result.error).toBeDefined();
-    });
-
     it('imageBase64가 비어있으면 400을 반환해야 함', async () => {
       const req = createMockRequest({ userId: testUserId });
       const result = await studentController.parseAndUpdateFromImage(
@@ -323,17 +278,17 @@ describe('StudentController Test', () => {
       ) as any;
 
       expect(studentController.getStatus()).toBe(422);
-      expect(result.error).toContain('이미지 파싱에 실패');
+      expect(result.error).toContain('화질 저하로 인식 불가');
     });
 
-    it('Student 레코드가 없을 때 파싱 요청하면 400을 반환해야 함', async () => {
+    it('Student 레코드가 없을 때 파싱 요청하면 404를 반환해야 함', async () => {
       const req = createMockRequest({ userId: testUserId });
       const result = await studentController.parseAndUpdateFromImage(
         { imageBase64: 'fakeBase64Data' },
         req
       ) as any;
 
-      expect(studentController.getStatus()).toBe(400);
+      expect(studentController.getStatus()).toBe(404);
       expect(result.error).toBeDefined();
 
       // VisionService는 호출되지 않아야 함

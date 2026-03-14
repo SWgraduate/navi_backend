@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Student, { IStudent, SecondMajorType, AcademicStatus } from 'src/models/Student';
 import AcademicRecord, { IAcademicRecord } from 'src/models/AcademicRecord';
 import { VisionService } from 'src/services/VisionService';
+import { ImageParsingError, StudentNotFoundError, AcademicRecordNotFoundError } from 'src/errors/StudentErrors';
 import { logger } from 'src/utils/log';
 
 // ─── Request / Response 인터페이스 ──────────────────────────────────────────
@@ -218,7 +219,7 @@ export class StudentService {
     });
 
     if (!student) {
-      throw new Error('학적 정보가 존재하지 않습니다. 먼저 학적 정보를 등록해주세요.');
+      throw new StudentNotFoundError();
     }
 
     return {
@@ -244,19 +245,19 @@ export class StudentService {
 
     const student = await this._requireStudent(userId);
 
-    const record = await AcademicRecord.findOne({ studentId: student._id });
+    const record = await AcademicRecord.findOne({ studentId: student._id }).lean();
 
     if (!record) {
-      throw new Error('이수 현황 정보가 존재하지 않습니다.');
+      throw new AcademicRecordNotFoundError();
     }
 
     return {
       id: record._id.toString(),
       studentId: record.studentId.toString(),
-      earnedCredits: record.earnedCredits,
-      secondMajorCredits: record.secondMajorCredits,
-      completedConditions: record.completedConditions,
-      takenCourses: record.takenCourses as unknown as TakenCourse[],
+      earnedCredits: record.earnedCredits as EarnedCredits,
+      secondMajorCredits: record.secondMajorCredits as SecondMajorCredits,
+      completedConditions: record.completedConditions as CompletedConditions,
+      takenCourses: record.takenCourses as TakenCourse[],
     };
   }
 
@@ -291,19 +292,21 @@ export class StudentService {
       updatePayload['takenCourses'] = data.takenCourses;
     }
 
-    const updated = await AcademicRecord.findOneAndUpdate(
+    const rawDoc = await AcademicRecord.findOneAndUpdate(
       { studentId: student._id },
       { $set: updatePayload },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
+    
+    const updated = rawDoc!.toObject();
 
     return {
-      id: updated!._id.toString(),
-      studentId: updated!.studentId.toString(),
-      earnedCredits: updated!.earnedCredits,
-      secondMajorCredits: updated!.secondMajorCredits,
-      completedConditions: updated!.completedConditions,
-      takenCourses: updated!.takenCourses as unknown as TakenCourse[],
+      id: updated._id.toString(),
+      studentId: updated.studentId.toString(),
+      earnedCredits: updated.earnedCredits as EarnedCredits,
+      secondMajorCredits: updated.secondMajorCredits as SecondMajorCredits,
+      completedConditions: updated.completedConditions as CompletedConditions,
+      takenCourses: updated.takenCourses as TakenCourse[],
     };
   }
 
@@ -323,9 +326,7 @@ export class StudentService {
     const visionResult = await this.visionService.parseGraduationRecord(imageBase64);
 
     if (!visionResult.isSuccess || !visionResult.academicRecord) {
-      throw new Error(
-        `이미지 파싱에 실패했습니다. 사유: ${visionResult.reason ?? '알 수 없음'}`
-      );
+      throw new ImageParsingError(visionResult.reason || undefined);
     }
 
     const {
@@ -367,23 +368,25 @@ export class StudentService {
       updatePayload[`completedConditions.${key}`] = val;
     }
 
-    const updated = await AcademicRecord.findOneAndUpdate(
+    const rawDoc = await AcademicRecord.findOneAndUpdate(
       { studentId: student._id },
       { $set: updatePayload },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
+    
+    const updated = rawDoc!.toObject();
 
     logger.i(
       `StudentService: 이미지 파싱 완료 및 이수 현황 업데이트 성공 (신뢰도: ${visionResult.confidence}%)`
     );
 
     return {
-      id: updated!._id.toString(),
-      studentId: updated!.studentId.toString(),
-      earnedCredits: updated!.earnedCredits,
-      secondMajorCredits: updated!.secondMajorCredits,
-      completedConditions: updated!.completedConditions,
-      takenCourses: updated!.takenCourses as unknown as TakenCourse[],
+      id: updated._id.toString(),
+      studentId: updated.studentId.toString(),
+      earnedCredits: updated.earnedCredits as EarnedCredits,
+      secondMajorCredits: updated.secondMajorCredits as SecondMajorCredits,
+      completedConditions: updated.completedConditions as CompletedConditions,
+      takenCourses: updated.takenCourses as TakenCourse[],
     };
   }
 
@@ -396,7 +399,7 @@ export class StudentService {
     });
 
     if (!student) {
-      throw new Error('학적 정보가 존재하지 않습니다. 먼저 학적 기본정보를 등록해주세요.');
+      throw new StudentNotFoundError();
     }
 
     return student;

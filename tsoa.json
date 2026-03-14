@@ -8,9 +8,16 @@
     "outputDirectory": "src/generated",
     "specVersion": 3,
     "basePath": "/api",
-    "securityDefinitions": {}
+    "securityDefinitions": {
+      "sessionAuth": {
+        "type": "apiKey",
+        "name": "connect.sid",
+        "in": "cookie"
+      }
+    }
   },
   "routes": {
+    "authenticationModule": "src/authentication.ts",
     "routesDir": "src/generated",
     "basePath": "/api"
   },

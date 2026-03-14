@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import Student from 'src/models/Student';
 import AcademicRecord from 'src/models/AcademicRecord';
 import User from 'src/models/User';
+import { ImageParsingError } from 'src/errors/StudentErrors';
 import { StudentService } from 'src/services/StudentService';
 
 dotenv.config({ path: '.env.test.local' });
@@ -265,7 +266,7 @@ describe('StudentService Test', () => {
 
       await expect(studentService.parseAndUpdateFromImage(testUserId, 'fakeBase64Image'))
         .rejects
-        .toThrow('이미지 파싱에 실패했습니다');
+        .toThrow(ImageParsingError);
     });
 
     it('VisionService 시스템 에러 발생 시 그대로 전파되어야 함', async () => {
