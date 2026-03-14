@@ -1,7 +1,7 @@
 import { createApp } from 'src/app';
 import { connectDB } from 'src/config/database';
-import { logger, discordAlert } from "src/utils/log";
 import { APP_PORT } from 'src/settings';
+import { logger } from "src/utils/log";
 import { version } from '../package.json';
 
 

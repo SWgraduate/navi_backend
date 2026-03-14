@@ -5,13 +5,13 @@
     "src/controllers/**/*Controller.ts"
   ],
   "spec": {
-    "outputDirectory": "src/swagger",
+    "outputDirectory": "src/generated",
     "specVersion": 3,
     "basePath": "/api",
     "securityDefinitions": {}
   },
   "routes": {
-    "routesDir": "src/routes",
+    "routesDir": "src/generated",
     "basePath": "/api"
   },
   "compilerOptions": {
