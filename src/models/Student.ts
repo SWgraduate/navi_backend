@@ -7,6 +7,7 @@ export type AcademicStatus = '재학생' | '휴학생';
 export interface IStudent extends Document {
   userId: mongoose.Types.ObjectId | IUser;
   admissionYear: number;
+  studentNumber: string;
   name: string;
   major: string;
   secondMajorType: SecondMajorType;
@@ -19,11 +20,12 @@ const StudentSchema: Schema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     admissionYear: { type: Number, required: true },
+    studentNumber: { type: String, required: true },
     name: { type: String, required: true },
     major: { type: String, required: true },
     secondMajorType: {
       type: String,
-      enum: ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공', '선택'],
+      enum: ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공', '선택'], // TODO: 선택이 아니라 더 적절한 데이터 형식으로 변경해야 할 것. enum이니까 '없음'이 맞는건지는... 잘 모르겠음 (26. 3. 14. 태영)
       required: true,
     },
     secondMajor: { type: String },

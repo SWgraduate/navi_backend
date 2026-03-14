@@ -30,6 +30,7 @@ let mockParseGraduationRecord: jest.Mock;
 // ─── 공통 픽스처 ──────────────────────────────────────────────────────────────
 const PROFILE_BODY = {
   admissionYear: 2021,
+  studentNumber: '2021111111',
   name: '김테스트',
   major: '컴퓨터공학부',
   secondMajorType: '선택' as const,
@@ -207,7 +208,8 @@ describe('StudentController Test', () => {
       await AcademicRecord.create({
         studentId: student!._id,
         earnedCredits: { total: 80, majorCore: 20, majorAdvanced: 15, majorTotal: 35, generalElective: 30, socialService: 2, industry: 3 },
-        completedConditions: { englishCourses: 1, pblTotal: 2, pblMajor: 1 },
+        secondMajorCredits: { majorTotal: 0, majorCore: 0 },
+        completedConditions: { englishCourses: 1, pblTotal: 2, pblMajor: 1, hasPrerequisite: false, hasMandatoryCourse: false, hasThesis: false },
         takenCourses: [],
       });
 

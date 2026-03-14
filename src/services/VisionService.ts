@@ -35,10 +35,18 @@ export class VisionService {
       }).optional().describe("추출된 졸업 요건(기준) 학점 데이터"),
 
       academicRecord: z.object({
-        totalCredits: z.number().optional(),
-        majorCore: z.number().optional(),
-        majorAdvanced: z.number().optional(),
-        generalElective: z.number().optional()
+        // 주전공 학점
+        totalCredits: z.number().optional().describe("주전공 총 이수학점 (젠업학점)"),
+        majorCore: z.number().optional().describe("주전공 전공핵심 이수학점"),
+        majorAdvanced: z.number().optional().describe("주전공 전공심화 이수학점"),
+        generalElective: z.number().optional().describe("교양선택 이수학점"),
+        // 제2전공 학점
+        secondMajorTotal: z.number().optional().describe("제2전공 전공학점 합계"),
+        secondMajorCore: z.number().optional().describe("제2전공 전공핵심 이수학점"),
+        // 필수 요건 (O/X 또는 통과/미통과로 표시된 항목)
+        hasPrerequisite: z.boolean().optional().describe("선수강 이수 완료 여부"),
+        hasMandatoryCourse: z.boolean().optional().describe("미필과목 이수 완료 여부"),
+        hasThesis: z.boolean().optional().describe("졸업논문/시험/작품 통과 여부")
       }).optional().describe("추출된 학생의 실제 이수(취득) 학점 데이터")
     });
 
@@ -51,7 +59,11 @@ export class VisionService {
     const systemPrompt = `
       너는 대학교 학적 시스템의 졸업사정조회 표를 분석하는 데이터 추출 AI야.
       주어진 이미지를 분석하여 사용자의 '졸업 요건(Rule)'과 '현재 이수 내역(Record)'을 추출해.
-      만약 화질이 너무 낮아서 숫자를 도저히 읽을 수 없거나, 표가 아닌 엉뚱한 이미지라면 isSuccess를 false로 두고 reason에 명확한 이유를 적어줘.
+      추출 대상 항목:
+        - 주전공 주요 학점 (졸업학점, 전공핵심, 전공심화, 교양선택)
+        - 제2전공 학점 (전공합계, 전공핵심)
+        - 필수 요건 O/X 항목 (선수강 이수, 미필과목 이수, 졸업논문/시험/작품)
+      화질이 너무 낮아서 숫자를 도저히 읽을 수 없거나, 표가 아닌 엉뚱한 이미지라면 isSuccess를 false로 두고 reason에 명확한 이유를 적어줘.
     `;
 
     const messages = [

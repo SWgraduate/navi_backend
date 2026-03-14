@@ -14,6 +14,7 @@ function requireEnv(key: string, defaultValue?: string): string {
   return value;
 }
 
+export const NODE_ENV = requireEnv('NODE_ENV', 'development');
 export const APP_PORT = parseInt(requireEnv('APP_PORT', '8000'), 10);
 export const SESSION_SECRET = requireEnv('SESSION_SECRET');
 
@@ -36,3 +37,21 @@ export const GLOBAL_CONFIG = {
   pineconeIndexName: "rag-main",
   pineconeNamespace: "default",
 };
+
+// ─── 환경별 분기 설정 ────────────────────────────────────────────────────────
+// NODE_ENV=production 일 때만 배포 환경으로 간주.
+// 비밀값이 아닌 '환경 유형에서 파생되는 정책'은 여기서 코드로 정의하여 관리 부담을 줄임.
+
+const isProd = NODE_ENV === 'production';
+
+/**
+ * Express-session 쿠키 정책.
+ * - 로컬(HTTP): sameSite=lax, secure=false
+ * - 배포(HTTPS): sameSite=none, secure=true  ← sameSite:none은 spec상 secure:true 필수
+ */
+export const COOKIE_CONFIG = {
+  maxAge: 1000 * 60 * 60 * 24, // 24시간
+  httpOnly: true, // XSS 방어
+  sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+  secure: isProd,
+} as const;

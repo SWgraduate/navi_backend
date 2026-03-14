@@ -30,6 +30,7 @@ let mockParseGraduationRecord: jest.Mock;
 // ─── 공통 픽스처 ──────────────────────────────────────────────────────────────
 const PROFILE_DATA = {
   admissionYear: 2020,
+  studentNumber: '2020123456',
   name: '홍길동',
   major: '컴퓨터공학부',
   secondMajorType: '선택' as const,
@@ -94,6 +95,7 @@ describe('StudentService Test', () => {
       expect(result.name).toBe(PROFILE_DATA.name);
       expect(result.major).toBe(PROFILE_DATA.major);
       expect(result.admissionYear).toBe(PROFILE_DATA.admissionYear);
+      expect(result.studentNumber).toBe(PROFILE_DATA.studentNumber);
       expect(result.completedSemesters).toBe(PROFILE_DATA.completedSemesters);
 
       // DB 저장 확인
@@ -150,7 +152,8 @@ describe('StudentService Test', () => {
       await AcademicRecord.create({
         studentId: student.id,
         earnedCredits: { total: 90, majorCore: 30, majorAdvanced: 20, majorTotal: 50, generalElective: 30, socialService: 2, industry: 3 },
-        completedConditions: { englishCourses: 1, pblTotal: 2, pblMajor: 1 },
+        secondMajorCredits: { majorTotal: 0, majorCore: 0 },
+        completedConditions: { englishCourses: 1, pblTotal: 2, pblMajor: 1, hasPrerequisite: false, hasMandatoryCourse: false, hasThesis: false },
         takenCourses: [],
       });
 
