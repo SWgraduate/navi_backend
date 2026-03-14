@@ -15,8 +15,7 @@ export interface UpsertProfileRequest {
   admissionYear: number;
   /**
    * 학번 (예: "2021000000")
-   * @example "2021
-   * 00"
+   * @example "2021000000"
    */
   studentNumber: string;
   /**
@@ -30,8 +29,8 @@ export interface UpsertProfileRequest {
    */
   major: string;
   /**
-   * 제2전공 이수 유형 (없을 경우 '선택')
-   * @example "선택"
+   * 제2전공 이수 유형 (없을 경우 '없음')
+   * @example "없음"
    */
   secondMajorType: SecondMajorType;
   /**
@@ -81,8 +80,8 @@ export interface StudentResponse {
    */
   major: string;
   /**
-   * 제2전공 이수 유형 (없을 경우 '선택')
-   * @example "선택"
+   * 제2전공 이수 유형 (없을 경우 '없음')
+   * @example "없음"
    */
   secondMajorType: SecondMajorType;
   /**

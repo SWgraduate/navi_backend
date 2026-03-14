@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { IUser } from './User';
 
-export type SecondMajorType = '다중전공' | '융합전공' | '부전공' | '복수전공' | '연계전공' | '마이크로전공' | '선택';
+export type SecondMajorType = '다중전공' | '융합전공' | '부전공' | '복수전공' | '연계전공' | '마이크로전공' | '없음';
 export type AcademicStatus = '재학생' | '휴학생';
 
 export interface IStudent extends Document {

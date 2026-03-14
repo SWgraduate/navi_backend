@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import Student from 'src/models/Student';
 import AcademicRecord from 'src/models/AcademicRecord';
 import User from 'src/models/User';
-import { ImageParsingError } from 'src/errors/StudentErrors';
+import { ImageParsingError, StudentNotFoundError, AcademicRecordNotFoundError } from 'src/errors/StudentErrors';
 import { StudentService } from 'src/services/StudentService';
 
 dotenv.config({ path: '.env.test.local' });
@@ -34,7 +34,7 @@ const PROFILE_DATA = {
   studentNumber: '2020123456',
   name: '홍길동',
   major: '컴퓨터공학부',
-  secondMajorType: '선택' as const,
+  secondMajorType: '없음' as const,
   academicStatus: '재학생' as const,
   completedSemesters: 6,
 };
@@ -139,7 +139,7 @@ describe('StudentService Test', () => {
     it('학적 정보가 없을 때 에러를 throw해야 함', async () => {
       await expect(studentService.getProfile(testUserId))
         .rejects
-        .toThrow('학적 정보가 존재하지 않습니다.');
+        .toThrow(StudentNotFoundError);
     });
   });
 
@@ -167,7 +167,7 @@ describe('StudentService Test', () => {
     it('Student 레코드가 없을 때 에러를 throw해야 함', async () => {
       await expect(studentService.getAcademicRecord(testUserId))
         .rejects
-        .toThrow('학적 정보가 존재하지 않습니다');
+        .toThrow(StudentNotFoundError);
     });
 
     it('AcademicRecord가 없을 때 에러를 throw해야 함', async () => {
@@ -175,7 +175,7 @@ describe('StudentService Test', () => {
 
       await expect(studentService.getAcademicRecord(testUserId))
         .rejects
-        .toThrow('이수 현황 정보가 존재하지 않습니다.');
+        .toThrow(AcademicRecordNotFoundError);
     });
   });
 
@@ -223,7 +223,7 @@ describe('StudentService Test', () => {
     it('Student 레코드가 없을 때 에러를 throw해야 함', async () => {
       await expect(studentService.updateAcademicRecord(testUserId, { earnedCredits: { total: 10 } }))
         .rejects
-        .toThrow('학적 정보가 존재하지 않습니다');
+        .toThrow(StudentNotFoundError);
     });
   });
 
@@ -282,7 +282,7 @@ describe('StudentService Test', () => {
     it('Student 레코드가 없을 때 VisionService 호출 전에 에러를 throw해야 함', async () => {
       await expect(studentService.parseAndUpdateFromImage(testUserId, 'fakeBase64Image'))
         .rejects
-        .toThrow('학적 정보가 존재하지 않습니다');
+        .toThrow(StudentNotFoundError);
 
       // VisionService는 호출되지 않아야 함
       expect(mockParseGraduationRecord).not.toHaveBeenCalled();
