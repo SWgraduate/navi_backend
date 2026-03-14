@@ -3,7 +3,6 @@ import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from "src/settings";
 import { ChunkPayload, EmbeddingPayload } from "../types/rag.types";
 
 // Take the chunks and converts it into vector form 
-
 export class EmbeddingService {
   private readonly modelName: string;
   private readonly embeddings: OpenAIEmbeddings;
@@ -24,7 +23,6 @@ export class EmbeddingService {
     return this.modelName;
   }
 
-  // for semantic search
   async embedQuery(query: string): Promise<number[]> {
     const vector = await this.embeddings.embedQuery(query);
     if (!vector || vector.length === 0) {

@@ -8,6 +8,7 @@ import { PdfExtractionService } from "./PdfExtractionService";
 import { PineconeIndexService } from "./PineconeIndexService";
 import { TextChunkingService } from "./TextChunkingService";
 import { TextNormalizationService } from "./TextNormalizationService";
+import { logger } from "src/utils/log";
 
 export class RagIngestionService {
     constructor(
@@ -15,98 +16,124 @@ export class RagIngestionService {
         private readonly pdfExtractionService = new PdfExtractionService(),
         private readonly textNormalizationService = new TextNormalizationService(),
         private readonly contentHashService = new ContentHashService(),
-        private readonly textChunkingSerivice = new TextChunkingService(),
+        private readonly textChunkingService = new TextChunkingService(),
         private readonly embeddingService = new EmbeddingService(),
         private readonly pineconeIndexService = new PineconeIndexService()
     ) {}
 
     async ingestPdf(command: IngestPdfCommand): Promise<IngestPdfResult> {
-        // 1. Extract
-        const rawText = await this.pdfExtractionService.extractTextFromBuffer(
-            command.fileBuffer
-        );
-
-        // 2. Normalize
-        const normalizedText = this.textNormalizationService.normalize(rawText);
-        if (this.textNormalizationService.isEffectivelyEmpty(normalizedText)) {
-            throw new Error("Exracted text is empty after normalization!");
-        }
-
-        // 3. Hash
-        const contentHash = this.contentHashService.createHash(normalizedText);
-
-        // 4. Dedup check in Mongo
-        const existing = await this.ragDocumentRepository.findByContentHash(contentHash);
-        if (existing && existing.status === INGESTION_STATUS.PROCESSED){
-            return {
-                documentId: existing._id.toString(),
-                status: existing.status,
-                message: "Document already exists in Mongo. (duplicate content hash)",
-                isDuplicate: true,
-                chunkCount: existing.chunkCount,
-            };
-        }
-
-        // 5. Save source-of-truth document first
-        const created = await this.ragDocumentRepository.createPending({
-            originalFileName: command.originalFileName,
-            mimeType: command.mimeType,
-            fileSize: command.fileSize,
-            normalizedText,
-            contentHash,
-            status: INGESTION_STATUS.PENDING,
-            ingestedBy: command.actor.userId,
-        });
-
-        const documentId = created._id.toString();
-
         try {
-            // 6. Mark Processing
-            await this.ragDocumentRepository.markProcessing(documentId);
+            logger.i(`Starting PDF ingestion for file: ${command.originalFileName}`);
 
-            // 7. Chunk
-            const chunks = await this.textChunkingSerivice.chunkDocument({
-                documentId,
-                contentHash,
-                normalizedText,
-            });
+            // 1. Extract
+            logger.i("Step 1: Extracting text from PDF...");
+            const rawText = await this.pdfExtractionService.extractTextFromBuffer(
+                command.fileBuffer
+            );
+            logger.i(`Extracted ${rawText.length} characters from PDF`);
 
-            // 8. Embed
-            const embeddedChunks = await this.embeddingService.embedChunks(chunks);
+            // 2. Normalize
+            logger.i("Step 2: Normalizing text...");
+            const normalizedText = this.textNormalizationService.normalize(rawText);
+            if (this.textNormalizationService.isEffectivelyEmpty(normalizedText)) {
+                throw new Error("Extracted text is empty after normalization!");
+            }
+            logger.i(`Normalized text: ${normalizedText.length} characters`);
 
-            // 9. Upload vectors
-            const vectorNamespace = this.pineconeIndexService.getNamespace();
+            // 3. Hash
+            logger.i("Step 3: Computing content hash...");
+            const contentHash = this.contentHashService.createHash(normalizedText);
+            logger.i(`Content hash: ${contentHash}`);
 
-            await this.pineconeIndexService.upsertDocumentVectors({
-                documentId,
-                contentHash,
+            // 4. Dedup check in Mongo
+            logger.i("Step 4: Checking for duplicates...");
+            const existing = await this.ragDocumentRepository.findByContentHash(contentHash);
+            if (existing && existing.status !== INGESTION_STATUS.PENDING) {
+                logger.i(`Document already exists (status: ${existing.status}). Skipping ingestion.`);
+                return {
+                    documentId: existing._id.toString(),
+                    status: existing.status,
+                    message: `Document already exists in system (status: ${existing.status})`,
+                    isDuplicate: true,
+                    chunkCount: existing.chunkCount,
+                };
+            }
+
+            // 5. Save source-of-truth document first
+            logger.i("Step 5: Creating pending document record...");
+            const created = await this.ragDocumentRepository.createPending({
                 originalFileName: command.originalFileName,
-                namespace: vectorNamespace,
-                vectors: embeddedChunks,
+                mimeType: command.mimeType,
+                fileSize: command.fileSize,
+                normalizedText,
+                contentHash,
+                status: INGESTION_STATUS.PENDING,
+                ingestedBy: command.actor.userId,
             });
 
-            // 10. Mark processed
-            await this.ragDocumentRepository.markProcessed(documentId, {
-                chunkCount: chunks.length,
-                embeddingModel: this.embeddingService.getModelName(),
-                vectorNamespace,
-                processedAt: new Date(),
-            });
+            const documentId = created._id.toString();
+            logger.i(`Created pending document: ${documentId}`);
 
-            return {
-                documentId,
-                status: INGESTION_STATUS.PROCESSED,
-                message: "Document Ingested Successfully",
-                isDuplicate: false,
-                chunkCount: chunks.length,
-            };
-        } catch(error) {
-            // If Pinecone (or embedding/chunking) fails after Mongo save
-            const errorMessage = error instanceof Error ? error.message : "Unknown Ingestion Error";
+            try {
+                // 6. Mark Processing
+                logger.i("Step 6: Marking document as PROCESSING...");
+                await this.ragDocumentRepository.markProcessing(documentId);
 
-            await this.ragDocumentRepository.markFailed(documentId, errorMessage);
-            throw error;
+                // 7. Chunk
+                logger.i("Step 7: Chunking document...");
+                const chunks = await this.textChunkingService.chunkDocument({
+                    documentId,
+                    contentHash,
+                    normalizedText,
+                });
+                logger.i(`Created ${chunks.length} chunks`);
+
+                // 8. Embed
+                logger.i("Step 8: Embedding chunks...");
+                const embeddedChunks = await this.embeddingService.embedChunks(chunks);
+                logger.i(`Embedded ${embeddedChunks.length} chunks`);
+
+                // 9. Upload vectors
+                logger.i("Step 9: Upserting vectors to Pinecone...");
+                const vectorNamespace = this.pineconeIndexService.getNamespace();
+                await this.pineconeIndexService.upsertDocumentVectors({
+                    documentId,
+                    contentHash,
+                    originalFileName: command.originalFileName,
+                    namespace: vectorNamespace,
+                    vectors: embeddedChunks,
+                });
+                logger.i(`Vectors upserted to namespace: ${vectorNamespace}`);
+
+                // 10. Mark processed
+                logger.i("Step 10: Marking document as PROCESSED...");
+                await this.ragDocumentRepository.markProcessed(documentId, {
+                    chunkCount: chunks.length,
+                    embeddingModel: this.embeddingService.getModelName(),
+                    vectorNamespace,
+                    processedAt: new Date(),
+                });
+
+                logger.i(`PDF ingestion completed successfully for: ${command.originalFileName}`);
+
+                return {
+                    documentId,
+                    status: INGESTION_STATUS.PROCESSED,
+                    message: "Document Ingested Successfully",
+                    isDuplicate: false,
+                    chunkCount: chunks.length,
+                };
+            } catch (error) {
+                logger.e(`Processing failed for document ${documentId}`, error);
+                const errorMessage = error instanceof Error ? error.message : "Unknown Ingestion Error";
+                await this.ragDocumentRepository.markFailed(documentId, errorMessage);
+                throw error;
+            }
+        } catch (error) {
+            logger.e(`PDF ingestion failed for file: ${command.originalFileName}`, error);
+            throw new Error(
+                `PDF ingestion failed: ${error instanceof Error ? error.message : String(error)}`
+            );
         }
-
     }
 }

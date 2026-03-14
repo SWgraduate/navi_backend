@@ -1,9 +1,11 @@
+import ChatModel from "src/models/Chat";
+import mongoose from "mongoose";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
-import ChatModel from "src/models/Chat";
-import mongoose from "mongoose";
 import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
+import { EmbeddingService } from "src/rag/ingestion/services/EmbeddingService";
+import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexService";
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
 
@@ -17,8 +19,10 @@ export interface ChatTask {
 
 export class ChatService {
   private static instance: ChatService;
-  private inMemoryStore = new Map<string, any>();
-  private ragRetrievalService = new RagRetrievalService();
+  private ragRetrievalService = new RagRetrievalService(
+    new EmbeddingService(),
+    new PineconeIndexService()
+  );
 
   private constructor() { }
 
@@ -29,8 +33,33 @@ export class ChatService {
     return ChatService.instance;
   }
 
-  private isDbReady(): boolean {
-    return mongoose.connection.readyState === 1;
+  private ensureDbReady(): void {
+    if (!(mongoose.connection.readyState === 1)) {
+      throw new Error("Database connection is not ready");
+    }
+  }
+
+  private async updateTask(taskId: string, data: Record<string, any>): Promise<void> {
+    this.ensureDbReady();
+    await ChatModel.findByIdAndUpdate(taskId, data);
+  }
+
+  private async getTask(taskId: string): Promise<any> {
+    this.ensureDbReady();
+    return ChatModel.findById(taskId);
+  }
+
+  private async createTask(query: string): Promise<string> {
+    const initialData = {
+      query,
+      status: "queued",
+      progress: "init",
+      displayMessage: "Analyzing question...",
+    };
+
+    this.ensureDbReady();
+    const chat = await ChatModel.create(initialData);
+    return chat._id.toString();
   }
 
   private buildContextText(chunks: RetrievedChunk[], maxChunks = 4): string {
@@ -102,7 +131,7 @@ export class ChatService {
         displayMessage: msg,
       };
 
-      if (payload?.answer) {
+      if (payload?.answer !== undefined) {
         updateData.answer = payload.answer;
       }
 
@@ -114,12 +143,7 @@ export class ChatService {
         };
       }
 
-      if (this.isDbReady()) {
-        await ChatModel.findByIdAndUpdate(taskId, updateData);
-      } else {
-        const existing = this.inMemoryStore.get(taskId);
-        this.inMemoryStore.set(taskId, { ...existing, ...updateData });
-      }
+      await this.updateTask(taskId, updateData);
     };
 
     try {
@@ -155,56 +179,24 @@ export class ChatService {
         },
       });
     } catch (err: any) {
-      const errorData = {
+      await this.updateTask(taskId, {
         status: "failed",
         progress: "error",
         displayMessage: "An error occurred.",
         error: err?.message || String(err),
-      };
-
-      if (this.isDbReady()) {
-        await ChatModel.findByIdAndUpdate(taskId, errorData);
-      } else {
-        const existing = this.inMemoryStore.get(taskId);
-        this.inMemoryStore.set(taskId, { ...existing, ...errorData });
-      }
+      });
     }
   }
 
   public async startChatTask(query: string): Promise<{ taskId: string; message: string }> {
-    let taskId: string;
-
-    if (this.isDbReady()) {
-      const chat = await ChatModel.create({
-        query,
-        status: "queued",
-        progress: "init",
-        displayMessage: "Analyzing question...",
-      });
-      taskId = chat._id.toString();
-    } else {
-      taskId = Date.now().toString();
-      this.inMemoryStore.set(taskId, {
-        _id: taskId,
-        query,
-        status: "queued",
-        progress: "init",
-        displayMessage: "Analyzing question...",
-      });
-    }
+    const taskId = await this.createTask(query);
 
     this.processChatTask(taskId, query);
     return { taskId, message: "Started" };
   }
 
   public async getTaskStatus(taskId: string): Promise<ChatTask | undefined> {
-    let chat: any;
-
-    if (this.isDbReady()) {
-      chat = await ChatModel.findById(taskId);
-    } else {
-      chat = this.inMemoryStore.get(taskId);
-    }
+    const chat = await this.getTask(taskId);
 
     if (!chat) return undefined;
 
