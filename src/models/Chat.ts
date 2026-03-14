@@ -47,7 +47,7 @@ const ChatRetrievalMetaSchema = new Schema<IChatRetrievalMeta>(
     usedChunks: { type: Number, required: true },
   },
   { _id: false }
-)
+);
 
 const ChatResultSchema = new Schema<IChatResult>(
   {
