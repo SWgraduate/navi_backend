@@ -158,11 +158,17 @@ export interface UpdateAcademicRecordRequest {
 }
 
 export interface AcademicRecordResponse {
+  /** 이수 현황 레코드 고유 ID */
   id: string;
+  /** 해당 이수 현황을 소유한 학생의 고유 ID */
   studentId: string;
+  /** 주전공 및 공통 영역 이수 학점 세부 내역 */
   earnedCredits: EarnedCredits;
+  /** 제2전공 이수 학점 세부 내역 */
   secondMajorCredits: SecondMajorCredits;
+  /** 특수 요건(영어, PBL, 선수강 등) 이수 상태 */
   completedConditions: CompletedConditions;
+  /** 수강 완료한 개별 과목 목록 */
   takenCourses: TakenCourse[];
 }
 
@@ -323,25 +329,32 @@ export class StudentService {
     }
 
     const {
-      totalCredits, majorCore, majorAdvanced, generalElective,
+      totalCredits, majorTotal, majorCore, majorAdvanced, generalElective, socialService, industry,
       secondMajorTotal, secondMajorCore,
       hasPrerequisite, hasMandatoryCourse, hasThesis,
+      englishCourses, pblTotal, pblMajor
     } = visionResult.academicRecord;
 
     const earnedPartial: Partial<EarnedCredits> = {};
-    if (totalCredits !== undefined) earnedPartial.total = totalCredits;
-    if (majorCore !== undefined) earnedPartial.majorCore = majorCore;
-    if (majorAdvanced !== undefined) earnedPartial.majorAdvanced = majorAdvanced;
-    if (generalElective !== undefined) earnedPartial.generalElective = generalElective;
+    if (totalCredits != null) earnedPartial.total = totalCredits;
+    if (majorTotal != null) earnedPartial.majorTotal = majorTotal;
+    if (majorCore != null) earnedPartial.majorCore = majorCore;
+    if (majorAdvanced != null) earnedPartial.majorAdvanced = majorAdvanced;
+    if (generalElective != null) earnedPartial.generalElective = generalElective;
+    if (socialService != null) earnedPartial.socialService = socialService;
+    if (industry != null) earnedPartial.industry = industry;
 
     const secondMajorPartial: Partial<SecondMajorCredits> = {};
-    if (secondMajorTotal !== undefined) secondMajorPartial.majorTotal = secondMajorTotal;
-    if (secondMajorCore !== undefined) secondMajorPartial.majorCore = secondMajorCore;
+    if (secondMajorTotal != null) secondMajorPartial.majorTotal = secondMajorTotal;
+    if (secondMajorCore != null) secondMajorPartial.majorCore = secondMajorCore;
 
     const conditionsPartial: Partial<CompletedConditions> = {};
-    if (hasPrerequisite !== undefined) conditionsPartial.hasPrerequisite = hasPrerequisite;
-    if (hasMandatoryCourse !== undefined) conditionsPartial.hasMandatoryCourse = hasMandatoryCourse;
-    if (hasThesis !== undefined) conditionsPartial.hasThesis = hasThesis;
+    if (hasPrerequisite != null) conditionsPartial.hasPrerequisite = hasPrerequisite;
+    if (hasMandatoryCourse != null) conditionsPartial.hasMandatoryCourse = hasMandatoryCourse;
+    if (hasThesis != null) conditionsPartial.hasThesis = hasThesis;
+    if (englishCourses != null) conditionsPartial.englishCourses = englishCourses;
+    if (pblTotal != null) conditionsPartial.pblTotal = pblTotal;
+    if (pblMajor != null) conditionsPartial.pblMajor = pblMajor;
 
     const updatePayload: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(earnedPartial)) {
