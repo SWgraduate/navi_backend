@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { ChatLayout } from './components/Chat/ChatLayout'
+import { ChatLayout, type AppScreen } from './components/Chat/ChatLayout'
 import { MessageList } from './components/Chat/MessageList'
 import { MessageInput } from './components/Chat/MessageInput'
+import { UploadPanel } from './components/Upload/UploadPanel'
 import type { Message } from './types/chat'
 import { startChat, getChatStatus } from './api/chatApi'
 
@@ -14,6 +15,7 @@ function App() {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeScreen, setActiveScreen] = useState<AppScreen>('chat');
 
   const pollStatus = async (taskId: string) => {
     const interval = setInterval(async () => {
@@ -86,9 +88,15 @@ function App() {
   };
 
   return (
-    <ChatLayout>
-      <MessageList messages={messages} />
-      <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+    <ChatLayout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
+      {activeScreen === 'upload' ? (
+        <UploadPanel />
+      ) : (
+        <>
+          <MessageList messages={messages} />
+          <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+        </>
+      )}
     </ChatLayout>
   )
 }

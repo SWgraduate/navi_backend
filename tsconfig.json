@@ -53,7 +53,7 @@
   ],
   "exclude": [
     "node_modules",
-    "frontend",
+    "tools/test-ui",
     "dist"
   ]
 }
