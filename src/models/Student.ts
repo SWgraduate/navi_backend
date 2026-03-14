@@ -25,7 +25,7 @@ const StudentSchema: Schema = new Schema(
     major: { type: String, required: true },
     secondMajorType: {
       type: String,
-      enum: ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공', '선택'], // TODO: 선택이 아니라 더 적절한 데이터 형식으로 변경해야 할 것. enum이니까 '없음'이 맞는건지는... 잘 모르겠음 (26. 3. 14. 태영)
+      enum: ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공', '없음'], // TODO: '없음'으로 명확화. 추후 '해당 없음' 등 더 나은 표현 논의 필요 (26. 3. 14. 태영)
       required: true,
     },
     secondMajor: { type: String },
