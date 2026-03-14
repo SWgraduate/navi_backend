@@ -19,12 +19,13 @@ jest.mock('src/utils/log', () => ({
 }));
 
 // ─── VisionService 모킹 ───────────────────────────────────────────────────────
-const mockParseGraduationRecord = jest.fn();
 jest.mock('src/services/VisionService', () => ({
-  VisionService: jest.fn().mockImplementation(() => ({
-    parseGraduationRecord: mockParseGraduationRecord,
-  })),
+  VisionService: jest.fn(),
 }));
+
+import { VisionService } from 'src/services/VisionService';
+const MockedVisionService = jest.mocked(VisionService);
+let mockParseGraduationRecord: jest.Mock;
 
 // ─── 공통 픽스처 ──────────────────────────────────────────────────────────────
 const PROFILE_BODY = {
@@ -82,6 +83,12 @@ describe('StudentController Test', () => {
     const user = new User({ email: `ctrl_${Date.now()}@example.com`, password: 'password123' });
     const saved = await user.save();
     testUserId = saved._id.toString();
+
+    // 각 테스트마다 VisionService mock 인스턴스를 새로 세팅
+    mockParseGraduationRecord = jest.fn();
+    MockedVisionService.mockImplementation(() => ({
+      parseGraduationRecord: mockParseGraduationRecord,
+    }) as unknown as VisionService);
 
     studentController = new StudentController();
   });

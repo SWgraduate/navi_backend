@@ -38,6 +38,7 @@ describe('Student Model Test', () => {
 
     const studentData = {
       userId: savedUser._id,
+      admissionYear: 2021,
       name: 'Test Student',
       major: '컴퓨터공학부',
       secondMajorType: '선택',
@@ -69,6 +70,7 @@ describe('Student Model Test', () => {
 
     const studentData = {
       userId: savedUser._id,
+      admissionYear: 2020,
       name: 'Test Student 2',
       major: '기계공학부',
       secondMajorType: '다중전공',

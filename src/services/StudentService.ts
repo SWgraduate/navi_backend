@@ -16,6 +16,19 @@ export interface UpsertProfileRequest {
   completedSemesters: number;
 }
 
+export interface StudentResponse {
+  id: string;
+  userId: string;
+  admissionYear: number;
+  name: string;
+  major: string;
+  secondMajorType: SecondMajorType;
+  secondMajor?: string;
+  academicStatus: AcademicStatus;
+  completedSemesters: number;
+}
+
+
 export interface EarnedCredits {
   total: number;
   majorCore: number;
@@ -48,6 +61,14 @@ export interface UpdateAcademicRecordRequest {
   takenCourses?: TakenCourse[];
 }
 
+export interface AcademicRecordResponse {
+  id: string;
+  studentId: string;
+  earnedCredits: EarnedCredits;
+  completedConditions: CompletedConditions;
+  takenCourses: TakenCourse[];
+}
+
 // ─── StudentService ──────────────────────────────────────────────────────────
 
 export class StudentService {
@@ -60,7 +81,7 @@ export class StudentService {
   public async upsertProfile(
     userId: string,
     data: UpsertProfileRequest
-  ): Promise<IStudent> {
+  ): Promise<StudentResponse> {
     logger.i(`StudentService: 학적 정보 upsert 요청 (userId=${userId})`);
 
     const updated = await Student.findOneAndUpdate(
@@ -69,13 +90,23 @@ export class StudentService {
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
 
-    return updated;
+    return {
+      id: updated!._id.toString(),
+      userId: updated!.userId.toString(),
+      admissionYear: updated!.admissionYear,
+      name: updated!.name,
+      major: updated!.major,
+      secondMajorType: updated!.secondMajorType,
+      secondMajor: updated!.secondMajor,
+      academicStatus: updated!.academicStatus,
+      completedSemesters: updated!.completedSemesters,
+    };
   }
 
   /**
    * 학적 기본정보 조회
    */
-  public async getProfile(userId: string): Promise<IStudent> {
+  public async getProfile(userId: string): Promise<StudentResponse> {
     logger.i(`StudentService: 학적 정보 조회 (userId=${userId})`);
 
     const student = await Student.findOne({
@@ -86,14 +117,24 @@ export class StudentService {
       throw new Error('학적 정보가 존재하지 않습니다. 먼저 학적 정보를 등록해주세요.');
     }
 
-    return student;
+    return {
+      id: student._id.toString(),
+      userId: student.userId.toString(),
+      admissionYear: student.admissionYear,
+      name: student.name,
+      major: student.major,
+      secondMajorType: student.secondMajorType,
+      secondMajor: student.secondMajor,
+      academicStatus: student.academicStatus,
+      completedSemesters: student.completedSemesters,
+    };
   }
 
   /**
    * 이수 현황 조회
    * Student 레코드가 선행되어야 함.
    */
-  public async getAcademicRecord(userId: string): Promise<IAcademicRecord> {
+  public async getAcademicRecord(userId: string): Promise<AcademicRecordResponse> {
     logger.i(`StudentService: 이수 현황 조회 (userId=${userId})`);
 
     const student = await this._requireStudent(userId);
@@ -104,7 +145,13 @@ export class StudentService {
       throw new Error('이수 현황 정보가 존재하지 않습니다.');
     }
 
-    return record;
+    return {
+      id: record._id.toString(),
+      studentId: record.studentId.toString(),
+      earnedCredits: record.earnedCredits,
+      completedConditions: record.completedConditions,
+      takenCourses: record.takenCourses as unknown as TakenCourse[],
+    };
   }
 
   /**
@@ -113,7 +160,7 @@ export class StudentService {
   public async updateAcademicRecord(
     userId: string,
     data: UpdateAcademicRecordRequest
-  ): Promise<IAcademicRecord> {
+  ): Promise<AcademicRecordResponse> {
     logger.i(`StudentService: 이수 현황 직접 수정 (userId=${userId})`);
 
     const student = await this._requireStudent(userId);
@@ -139,7 +186,13 @@ export class StudentService {
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
 
-    return updated;
+    return {
+      id: updated!._id.toString(),
+      studentId: updated!.studentId.toString(),
+      earnedCredits: updated!.earnedCredits,
+      completedConditions: updated!.completedConditions,
+      takenCourses: updated!.takenCourses as unknown as TakenCourse[],
+    };
   }
 
   /**
@@ -149,7 +202,7 @@ export class StudentService {
   public async parseAndUpdateFromImage(
     userId: string,
     imageBase64: string
-  ): Promise<IAcademicRecord> {
+  ): Promise<AcademicRecordResponse> {
     logger.i(`StudentService: 이미지 파싱 기반 이수 현황 업데이트 (userId=${userId})`);
 
     const student = await this._requireStudent(userId);
@@ -187,7 +240,13 @@ export class StudentService {
       `StudentService: 이미지 파싱 완료 및 이수 현황 업데이트 성공 (신뢰도: ${visionResult.confidence}%)`
     );
 
-    return updated;
+    return {
+      id: updated!._id.toString(),
+      studentId: updated!.studentId.toString(),
+      earnedCredits: updated!.earnedCredits,
+      completedConditions: updated!.completedConditions,
+      takenCourses: updated!.takenCourses as unknown as TakenCourse[],
+    };
   }
 
   // ─── Private 헬퍼 ────────────────────────────────────────────────────────

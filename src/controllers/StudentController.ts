@@ -15,9 +15,9 @@ import {
   StudentService,
   UpsertProfileRequest,
   UpdateAcademicRecordRequest,
+  StudentResponse,
+  AcademicRecordResponse,
 } from 'src/services/StudentService';
-import { IStudent } from 'src/models/Student';
-import { IAcademicRecord } from 'src/models/AcademicRecord';
 
 export interface ParseImageRequest {
   /** Base64 인코딩된 졸업사정표 이미지 문자열 */
@@ -40,7 +40,7 @@ export class StudentController extends Controller {
   public async upsertProfile(
     @Body() body: UpsertProfileRequest,
     @Request() req: ExRequest
-  ): Promise<IStudent | { error: string }> {
+  ): Promise<StudentResponse | { error: string }> {
     const userId = req.session.userId;
     if (!userId) {
       this.setStatus(401);
@@ -48,7 +48,9 @@ export class StudentController extends Controller {
     }
 
     try {
-      return await this.studentService.upsertProfile(userId, body);
+      const result = await this.studentService.upsertProfile(userId, body);
+      this.setStatus(200);
+      return result;
     } catch (error: any) {
       this.setStatus(400);
       return { error: error.message || '학적 정보 등록/수정에 실패했습니다.' };
@@ -64,7 +66,7 @@ export class StudentController extends Controller {
   @Response<{ error: string }>(404, 'Not Found')
   public async getProfile(
     @Request() req: ExRequest
-  ): Promise<IStudent | { error: string }> {
+  ): Promise<StudentResponse | { error: string }> {
     const userId = req.session.userId;
     if (!userId) {
       this.setStatus(401);
@@ -72,7 +74,9 @@ export class StudentController extends Controller {
     }
 
     try {
-      return await this.studentService.getProfile(userId);
+      const result = await this.studentService.getProfile(userId);
+      this.setStatus(200);
+      return result;
     } catch (error: any) {
       this.setStatus(404);
       return { error: error.message || '학적 정보를 찾을 수 없습니다.' };
@@ -88,7 +92,7 @@ export class StudentController extends Controller {
   @Response<{ error: string }>(404, 'Not Found')
   public async getAcademicRecord(
     @Request() req: ExRequest
-  ): Promise<IAcademicRecord | { error: string }> {
+  ): Promise<AcademicRecordResponse | { error: string }> {
     const userId = req.session.userId;
     if (!userId) {
       this.setStatus(401);
@@ -96,7 +100,9 @@ export class StudentController extends Controller {
     }
 
     try {
-      return await this.studentService.getAcademicRecord(userId);
+      const result = await this.studentService.getAcademicRecord(userId);
+      this.setStatus(200);
+      return result;
     } catch (error: any) {
       this.setStatus(404);
       return { error: error.message || '이수 현황을 찾을 수 없습니다.' };
@@ -114,7 +120,7 @@ export class StudentController extends Controller {
   public async updateAcademicRecord(
     @Body() body: UpdateAcademicRecordRequest,
     @Request() req: ExRequest
-  ): Promise<IAcademicRecord | { error: string }> {
+  ): Promise<AcademicRecordResponse | { error: string }> {
     const userId = req.session.userId;
     if (!userId) {
       this.setStatus(401);
@@ -122,7 +128,9 @@ export class StudentController extends Controller {
     }
 
     try {
-      return await this.studentService.updateAcademicRecord(userId, body);
+      const result = await this.studentService.updateAcademicRecord(userId, body);
+      this.setStatus(200);
+      return result;
     } catch (error: any) {
       this.setStatus(400);
       return { error: error.message || '이수 현황 수정에 실패했습니다.' };
@@ -141,7 +149,7 @@ export class StudentController extends Controller {
   public async parseAndUpdateFromImage(
     @Body() body: ParseImageRequest,
     @Request() req: ExRequest
-  ): Promise<IAcademicRecord | { error: string }> {
+  ): Promise<AcademicRecordResponse | { error: string }> {
     const userId = req.session.userId;
     if (!userId) {
       this.setStatus(401);
@@ -154,7 +162,9 @@ export class StudentController extends Controller {
     }
 
     try {
-      return await this.studentService.parseAndUpdateFromImage(userId, body.imageBase64);
+      const result = await this.studentService.parseAndUpdateFromImage(userId, body.imageBase64);
+      this.setStatus(200);
+      return result;
     } catch (error: any) {
       // 파싱 실패(AI 판단)와 시스템 에러를 구분
       if (error.message?.includes('이미지 파싱에 실패')) {

@@ -148,7 +148,7 @@ describe('StudentService Test', () => {
 
       // AcademicRecord 직접 삽입
       await AcademicRecord.create({
-        studentId: student._id,
+        studentId: student.id,
         earnedCredits: { total: 90, majorCore: 30, majorAdvanced: 20, majorTotal: 50, generalElective: 30, socialService: 2, industry: 3 },
         completedConditions: { englishCourses: 1, pblTotal: 2, pblMajor: 1 },
         takenCourses: [],
