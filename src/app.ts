@@ -4,7 +4,7 @@ import express, { Express } from 'express';
 import session from 'express-session';
 import { RegisterRoutes } from 'src/generated/routes';
 import swaggerJson from 'src/generated/swagger.json';
-import { MONGO_URI, SESSION_SECRET } from 'src/settings';
+import { COOKIE_CONFIG, MONGO_URI, SESSION_SECRET } from 'src/settings';
 import swaggerUi from 'swagger-ui-express';
 import { errorHandler } from './middleware/errorHandler';
 import { uploadPdfMiddleware } from './middleware/uploadPdfMiddleware';
@@ -24,18 +24,13 @@ export const createApp = (): Express => {
 
   app.use(session({
     secret: SESSION_SECRET,
-    resave: false, // 변경사항이 없을 때 세션을 다시 저장할지
+    resave: false,          // 변경사항이 없을 때 세션을 다시 저장할지
     saveUninitialized: false, // 로그인하지 않은 빈 세션을 저장할지
     store: MongoStore.create({
       mongoUrl: MONGO_URI,
-      collectionName: 'sessions', // DB에 sessions라는 컬렉션이 자동 생성됨
+      collectionName: 'sessions',
     }),
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24, // 하루(24시간) 동안 로그인 유지
-      httpOnly: true, // 자바스크립트에서 쿠키 탈취 방지 (XSS 보안)
-      sameSite: 'none',
-      secure: true
-    },
+    cookie: COOKIE_CONFIG,
   }));
 
   // TSOA Routes 등록

@@ -1,45 +1,49 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { IUser } from './User';
 
-export type SecondMajorType = '다중전공' | '융합전공' | '부전공' | '복수전공' | '연계전공' | '마이크로전공' | '선택';
+export type SecondMajorType = '다중전공' | '융합전공' | '부전공' | '복수전공' | '연계전공' | '마이크로전공' | '없음';
 export type AcademicStatus = '재학생' | '휴학생';
 
 export interface IStudent extends Document {
-    userId: mongoose.Types.ObjectId | IUser;
-    name: string;
-    major: string;
-    secondMajorType: SecondMajorType;
-    secondMajor?: string;
-    academicStatus: AcademicStatus;
-    completedSemesters: number;
+  userId: mongoose.Types.ObjectId | IUser;
+  admissionYear: number;
+  studentNumber: string;
+  name: string;
+  major: string;
+  secondMajorType: SecondMajorType;
+  secondMajor?: string;
+  academicStatus: AcademicStatus;
+  completedSemesters: number;
 }
 
 const StudentSchema: Schema = new Schema(
-    {
-        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-        name: { type: String, required: true },
-        major: { type: String, required: true },
-        secondMajorType: {
-            type: String,
-            enum: ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공', '선택'],
-            required: true,
-        },
-        secondMajor: { type: String },
-        academicStatus: {
-            type: String,
-            enum: ['재학생', '휴학생'],
-            required: true,
-        },
-        completedSemesters: {
-            type: Number,
-            required: true,
-            min: 1,
-            max: 12,
-        },
+  {
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    admissionYear: { type: Number, required: true },
+    studentNumber: { type: String, required: true },
+    name: { type: String, required: true },
+    major: { type: String, required: true },
+    secondMajorType: {
+      type: String,
+      enum: ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공', '없음'], // TODO: '없음'으로 명확화. 추후 '해당 없음' 등 더 나은 표현 논의 필요 (26. 3. 14. 태영)
+      required: true,
     },
-    {
-        timestamps: true,
-    }
+    secondMajor: { type: String },
+    academicStatus: {
+      type: String,
+      enum: ['재학생', '휴학생'],
+      required: true,
+    },
+    completedSemesters: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 12,
+    },
+  },
+  {
+    timestamps: true,
+  }
 );
 
 export default mongoose.model<IStudent>('Student', StudentSchema);

@@ -49,6 +49,7 @@
   "include": [
     "src/**/*",
     "tests/**/*",
+    "tools/**/*",
     "src/types/**/*.d.ts"
   ],
   "exclude": [
