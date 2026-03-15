@@ -20,6 +20,8 @@ export interface IChatResult {
 }
 
 export interface IChat extends Document {
+  conversationId?: string;
+  userId?: string;
   status: "queued" | "processing" | "completed" | "failed";
   progress: string;
   displayMessage: string;
@@ -68,12 +70,20 @@ const ChatSchema: Schema = new Schema(
     progress: { type: String, default: 'init' },
     displayMessage: { type: String, default: 'Initializing...' },
     query: { type: String, required: true },
+
+    conversationId: { type: String, index: true },
+    userId: { type: String, index: true },
+
     answer: { type: String },
-    error: { type: String }
+    error: { type: String },
+
+    result: { type: ChatResultSchema }
   },
   {
     timestamps: true,
   }
 );
+
+ChatSchema.index({ userId: 1, conversationId: 1, createdAt: -1 });
 
 export default mongoose.model<IChat>('Chat', ChatSchema);
