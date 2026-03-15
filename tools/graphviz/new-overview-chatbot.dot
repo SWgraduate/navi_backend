@@ -1,0 +1,129 @@
+digraph ChatArchitectureV2 {
+  rankdir=LR;
+  splines=ortho;
+  compound=true;
+  nodesep=0.45;
+  ranksep=0.8;
+  fontname="Helvetica";
+
+  node [
+    shape=box
+    style="rounded,filled"
+    fillcolor="white"
+    color="#555555"
+    fontname="Helvetica"
+    fontsize=10
+    margin="0.10,0.06"
+  ];
+
+  edge [
+    color="#666666"
+    fontname="Helvetica"
+    fontsize=9
+    arrowsize=0.7
+  ];
+
+  subgraph cluster_client {
+    label="Client Layer";
+    color="#BBBBBB";
+    style="rounded";
+
+    Frontend [label="Frontend App"];
+  }
+
+  subgraph cluster_api {
+    label="Stable API Layer";
+    color="#BBBBBB";
+    style="rounded";
+
+    ChatSubmit [label="POST /chat\n{ query }"];
+    ChatStatus [label="GET /chat/status/{taskId}"];
+    UploadPdf [label="POST /rag/documents/upload"];
+    BindCtx [label="POST /chat/context/attachments"];
+    ListCtx [label="GET /chat/context/attachments"];
+    UnbindCtx [label="DELETE /chat/context/attachments/{documentId}"];
+
+    Frontend -> UploadPdf [label="upload file"];
+    Frontend -> BindCtx [label="bind documentId"];
+    Frontend -> ListCtx [label="show bound files"];
+    Frontend -> UnbindCtx [label="remove bound file"];
+    Frontend -> ChatSubmit [label="send prompt"];
+    Frontend -> ChatStatus [label="poll result"];
+  }
+
+  subgraph cluster_orch {
+    label="Chat Orchestration";
+    color="#BBBBBB";
+    style="rounded";
+
+    ChatController [label="ChatController"];
+    ChatContextController [label="ChatContextController"];
+    ChatService [label="ChatService"];
+    ResolveCtx [label="AttachmentContextService\nresolve(user/session)"];
+    IntentRouter [label="ChatIntentRouter"];
+    FlagGate [label="ENABLE_FILE_AWARE_CHAT", shape=diamond, style="filled", fillcolor="white"];
+    FlowDecision [label="File-aware?", shape=diamond, style="filled", fillcolor="white"];
+    ContextBuilder [label="Context Builder"];
+    LLM [label="LLM"];
+    TaskStore [label="Task State Update\nqueued/processing/completed/failed"];
+
+    ChatSubmit -> ChatController;
+    ChatStatus -> ChatController [label="status query"];
+    BindCtx -> ChatContextController;
+    ListCtx -> ChatContextController;
+    UnbindCtx -> ChatContextController;
+
+    ChatController -> ChatService [label="create task"];
+    ChatContextController -> ResolveCtx [label="bind/list/unbind"];
+
+    ChatService -> ResolveCtx [label="load bound docs"];
+    ChatService -> IntentRouter [label="analyze query"];
+    IntentRouter -> FlagGate;
+    FlagGate -> FlowDecision [label="ON"];
+    FlagGate -> ContextBuilder [label="OFF -> prompt-only"];
+  }
+
+  subgraph cluster_rag {
+    label="RAG Layer";
+    color="#BBBBBB";
+    style="rounded";
+
+    PromptEmbed [label="EmbeddingService\n(embed query)"];
+    ScopedRetrieval [label="RagRetrievalService\n(filterByDocumentIds?)"];
+    RetrievalFilter [label="Namespace + Metadata Filter"];
+    PromptOnlyPath [label="Prompt-only Retrieval"];
+    FileAwarePath [label="File-aware Retrieval"];
+
+    FlowDecision -> PromptOnlyPath [label="No"];
+    FlowDecision -> FileAwarePath [label="Yes"];
+
+    PromptOnlyPath -> PromptEmbed;
+    FileAwarePath -> PromptEmbed;
+    PromptEmbed -> ScopedRetrieval;
+    ScopedRetrieval -> RetrievalFilter;
+    RetrievalFilter -> ContextBuilder [label="retrieved chunks"];
+  }
+
+  subgraph cluster_storage {
+    label="Storage";
+    color="#BBBBBB";
+    style="rounded";
+
+    MongoChat [label="MongoDB\nchats"];
+    MongoBindings [label="MongoDB\nchat_attachment_bindings"];
+    MongoDocs [label="MongoDB\nrag_documents"];
+    Pinecone [label="Pinecone\nvectors"];
+  }
+
+  UploadPdf -> MongoDocs [label="save metadata/text/status"];
+  UploadPdf -> Pinecone [label="upsert vectors"];
+
+  ResolveCtx -> MongoBindings [label="bind/list/unbind docs"];
+  ChatService -> MongoChat [label="task + result persist"];
+  ScopedRetrieval -> Pinecone [label="vector search"];
+  ScopedRetrieval -> MongoDocs [label="optional doc metadata"];
+
+  ContextBuilder -> LLM;
+  LLM -> TaskStore [label="answer"];
+  TaskStore -> MongoChat [label="save result"];
+}
