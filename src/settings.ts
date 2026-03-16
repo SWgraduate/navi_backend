@@ -25,7 +25,7 @@ export const OPENROUTER_API_KEY = requireEnv('OPENROUTER_API_KEY');
 export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
-export const DISCORD_ALERT_ROLE_ID = process.env.DISCORD_ALERT_ROLE_ID || null;
+
 export const GLOBAL_CONFIG = {
   llmBaseUrl: "https://openrouter.ai/api/v1",
   chatModel: "openai/gpt-5",
@@ -36,6 +36,13 @@ export const GLOBAL_CONFIG = {
   // Vector DB
   pineconeIndexName: "rag-main",
   pineconeNamespace: "default",
+
+  discordAlertRoleID:{
+    backend: "1482976770763395207",
+    frontend: "1482985143705534498",
+    designer: "1482985245291581440",
+    ai: "1482986345507848213"
+  },
 };
 
 // ─── 환경별 분기 설정 ────────────────────────────────────────────────────────

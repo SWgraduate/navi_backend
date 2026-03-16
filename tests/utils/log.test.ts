@@ -29,6 +29,6 @@ describe('Discord Alert Test', () => {
     await discordAlert("테스트 메시지입니다.", true);
   });
   it('should send important discord alert', async () => {
-    await discordAlert("중요 테스트 메시지", true);
+    await discordAlert("중요 테스트 메시지입니다.", true);
   });
 });
