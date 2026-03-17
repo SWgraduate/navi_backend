@@ -1,13 +1,16 @@
-import { Body, Controller, Get, Path, Post, Route, Tags, Response } from 'tsoa';
+import { Body, Controller, Get, Path, Post, Route, Tags, Response, Request } from 'tsoa';
+import { Request as ExRequest } from 'express';
 import { ChatService, ChatTask } from 'src/services/ChatService';
 
 export interface ChatRequest {
   query: string;
+  conversationId?: string;
 }
 
 export interface ChatTaskResponse {
   taskId: string;
   message: string;
+  conversationId?: string;
 }
 
 // ChatService의 ChatTask 인터페이스를 사용하거나, 여기서 정의한 것을 사용하고 매핑해야 함.
@@ -23,12 +26,19 @@ export class ChatController extends Controller {
    * 사용자의 질문을 전송하고 비동기 처리용 `taskId`를 발급받습니다.
    * 질문은 즉시 처리되지 않고 비동기 작업으로 등록되며, 반환된 `taskId`를 통해
    * `/chat/status/{taskId}` 엔드포인트에서 처리 상태와 결과를 조회할 수 있습니다.
-   * @param body 사용자가 입력한 질문 내용 (`query` 필드)
+   * @param body 사용자가 입력한 질문 내용 (`query`, optional `conversationId`)
+   * @param req  세션 정보를 포함하는 Express 요청 객체
    */
   @Post('/')
-  public async createChatTask(@Body() body: ChatRequest): Promise<ChatTaskResponse> {
-    const { query } = body;
-    const result = await this.chatService.startChatTask(query);
+  public async createChatTask(
+    @Body() body: ChatRequest,
+    @Request() req: ExRequest
+  ): Promise<ChatTaskResponse> {
+    const { query, conversationId } = body;
+    const userId = req.session.userId;
+
+    const result = await this.chatService.startChatTask(query, userId, conversationId);
+
     this.setStatus(202); // Accepted
     return result;
   }
