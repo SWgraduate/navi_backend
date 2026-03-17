@@ -1,4 +1,6 @@
 import ChatModel from "src/models/Chat";
+import { IChat, IChatResult, IChatSource } from "src/models/Chat";
+import { ConversationService } from "./ConversationService";
 import mongoose from "mongoose";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
@@ -9,16 +11,36 @@ import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexSe
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
 
-export interface ChatTask {
-  status: "queued" | "processing" | "completed" | "failed";
+
+type ChatStatus = "queued" | "processing" | "completed" | "failed";
+
+type ProcessPayload = {
+  answer?: string;
+  sources?: IChatSource[];
+  retrievalMeta?: IChatResult["retrievalMeta"];
+};
+
+type TaskUpdateData = Partial<{
+  status: ChatStatus;
   progress: string;
   displayMessage: string;
-  result?: any;
+  answer: string;
+  error: string;
+  result: IChatResult;
+}>;
+
+export interface ChatTask {
+  status: ChatStatus;
+  progress: string;
+  displayMessage: string;
+  result?: IChatResult | string;
   error?: string;
 }
 
 export class ChatService {
   private static instance: ChatService;
+
+  private conversationService = ConversationService.getInstance();
   private ragRetrievalService = new RagRetrievalService(
     new EmbeddingService(),
     new PineconeIndexService()
@@ -39,19 +61,21 @@ export class ChatService {
     }
   }
 
-  private async updateTask(taskId: string, data: Record<string, any>): Promise<void> {
+  private async updateTask(taskId: string, data: TaskUpdateData): Promise<void> {
     this.ensureDbReady();
     await ChatModel.findByIdAndUpdate(taskId, data);
   }
 
-  private async getTask(taskId: string): Promise<any> {
+  private async getTask(taskId: string): Promise<IChat | null> {
     this.ensureDbReady();
     return ChatModel.findById(taskId);
   }
 
-  private async createTask(query: string): Promise<string> {
+  private async createTask(query: string, userId?: string, conversationId?: string): Promise<string> {
     const initialData = {
       query,
+      userId,
+      conversationId,
       status: "queued",
       progress: "init",
       displayMessage: "Analyzing question...",
@@ -119,32 +143,33 @@ export class ChatService {
       : JSON.stringify(response.content);
   }
 
-  private async processChatTask(taskId: string, query: string) {
+  private async processChatTask(taskId: string, query: string, userId?: string, conversationId?: string) {
+    // helper function
     const update = async (
       progress: string,
       msg: string,
-      payload?: { answer?: string; sources?: any[]; retrievalMeta?: any }
-    ) => {
-      const updateData: any = {
+      payload?: ProcessPayload
+    ): Promise<void> => {
+      const updateData: TaskUpdateData = {
         status: progress === "done" ? "completed" : "processing",
         progress,
         displayMessage: msg,
       };
 
-      if (payload?.answer !== undefined) {
+      if (payload?.answer !== undefined ) {
         updateData.answer = payload.answer;
       }
 
       if (payload?.sources || payload?.retrievalMeta) {
         updateData.result = {
-          answer: payload.answer,
+          answer: payload.answer ?? "",
           sources: payload.sources ?? [],
-          retrievalMeta: payload.retrievalMeta ?? {},
+          retrievalMeta: payload.retrievalMeta ?? { topK: 0, usedChunks: 0},
         };
       }
 
       await this.updateTask(taskId, updateData);
-    };
+    }
 
     try {
       await update("embedding_query", "Embedding user query...");
@@ -178,21 +203,41 @@ export class ChatService {
           usedChunks: retrieval.usedChunks,
         },
       });
-    } catch (err: any) {
+      
+      if (userId && conversationId) {
+        await this.conversationService.touchConversation(userId, conversationId);
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
       await this.updateTask(taskId, {
         status: "failed",
         progress: "error",
         displayMessage: "An error occurred.",
-        error: err?.message || String(err),
+        error: message,
       });
     }
   }
 
-  public async startChatTask(query: string): Promise<{ taskId: string; message: string }> {
-    const taskId = await this.createTask(query);
+  public async startChatTask(
+    query: string,
+    userId?: string,
+    conversationId?: string
+  ): Promise<{ taskId: string; message: string; conversationId?: string }> {
+    let resolvedConversationId = conversationId;
 
-    this.processChatTask(taskId, query);
-    return { taskId, message: "Started" };
+    if (userId) {
+      if (resolvedConversationId) {
+        await this.conversationService.ensureOwnership(userId, resolvedConversationId);
+      } else {
+        const created = await this.conversationService.createConversation(userId, query.slice(0, 50));
+        resolvedConversationId = created.conversationId;
+      }
+    }
+
+    const taskId = await this.createTask(query, userId, resolvedConversationId);
+    void this.processChatTask(taskId, query, userId, resolvedConversationId);
+
+    return { taskId, message: "Started", conversationId: resolvedConversationId };
   }
 
   public async getTaskStatus(taskId: string): Promise<ChatTask | undefined> {

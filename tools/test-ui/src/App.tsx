@@ -1,10 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChatLayout, type AppScreen } from './components/Chat/ChatLayout'
 import { MessageList } from './components/Chat/MessageList'
 import { MessageInput } from './components/Chat/MessageInput'
 import { UploadPanel } from './components/Upload/UploadPanel'
 import type { Message } from './types/chat'
-import { startChat, getChatStatus } from './api/chatApi'
+import {
+  createConversation,
+  getChatStatus,
+  getConversationMessages,
+  listConversations,
+  startChat,
+  type ConversationMessageItem,
+  type ConversationSummary,
+} from './api/chatApi'
 
 function App() {
   const [messages, setMessages] = useState<Message[]>([
@@ -16,8 +24,89 @@ function App() {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeScreen, setActiveScreen] = useState<AppScreen>('chat');
+  const [activeConversationId, setActiveConversationId] = useState<string | undefined>(undefined);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const pollStatus = async (taskId: string) => {
+  const mapConversationMessages = (items: ConversationMessageItem[]): Message[] => {
+    const mapped: Message[] = [];
+
+    for (const item of items) {
+      mapped.push({
+        id: `${item.id}-q`,
+        role: 'user',
+        content: item.query,
+      });
+
+      if (item.answer) {
+        mapped.push({
+          id: `${item.id}-a`,
+          role: 'assistant',
+          content: item.answer,
+        });
+      }
+    }
+
+    return mapped.length > 0
+      ? mapped
+      : [{
+        id: 'empty-conversation',
+        role: 'assistant',
+        content: '아직 대화가 없습니다. 질문을 시작해보세요.',
+      }];
+  };
+
+  const refreshConversations = async (q?: string) => {
+    try {
+      const rows = await listConversations(q);
+      setConversations(rows);
+    } catch (error) {
+      console.error('Failed to load conversations', error);
+    }
+  };
+
+  useEffect(() => {
+    refreshConversations();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      refreshConversations(searchQuery);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleNewChat = async () => {
+    try {
+      const created = await createConversation();
+      setActiveConversationId(created.conversationId);
+      setMessages([
+        {
+          id: `new-${Date.now()}`,
+          role: 'assistant',
+          content: '새 대화를 시작합니다. 무엇이든 물어보세요',
+        },
+      ]);
+      setActiveScreen('chat');
+      refreshConversations(searchQuery);
+    } catch (error) {
+      console.error('Failed to create conversation', error);
+    }
+  };
+
+  const handleSelectConversation = async (conversationId: string) => {
+    try {
+      const rows = await getConversationMessages(conversationId);
+      setActiveConversationId(conversationId);
+      setMessages(mapConversationMessages(rows));
+      setActiveScreen('chat');
+    } catch (error) {
+      console.error('Failed to load conversation messages', error);
+    }
+  };
+
+  const pollStatus = async (taskId: string, resolvedConversationId?: string) => {
     const interval = setInterval(async () => {
       try {
         const status = await getChatStatus(taskId);
@@ -46,6 +135,10 @@ function App() {
         if (status.status === 'completed' || status.status === 'failed') {
           clearInterval(interval);
           setIsLoading(false);
+          if (resolvedConversationId) {
+            setActiveConversationId(resolvedConversationId);
+          }
+          refreshConversations(searchQuery);
         }
       } catch (error) {
         console.error("Polling error", error);
@@ -74,8 +167,14 @@ function App() {
         content: '분석중...'
       }]);
 
-      const { taskId } = await startChat(content);
-      pollStatus(taskId);
+      const { taskId, conversationId } = await startChat(content, activeConversationId);
+      const resolvedConversationId = conversationId ?? activeConversationId;
+
+      if (!activeConversationId && conversationId) {
+        setActiveConversationId(conversationId);
+      }
+
+      pollStatus(taskId, resolvedConversationId);
     } catch (error) {
       console.error("Failed to start chat", error);
       setIsLoading(false);
@@ -88,7 +187,16 @@ function App() {
   };
 
   return (
-    <ChatLayout activeScreen={activeScreen} onScreenChange={setActiveScreen}>
+    <ChatLayout
+      activeScreen={activeScreen}
+      onScreenChange={setActiveScreen}
+      conversations={conversations}
+      activeConversationId={activeConversationId}
+      onNewChat={handleNewChat}
+      onSelectConversation={handleSelectConversation}
+      searchQuery={searchQuery}
+      onSearchQueryChange={setSearchQuery}
+    >
       {activeScreen === 'upload' ? (
         <UploadPanel />
       ) : (

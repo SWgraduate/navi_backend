@@ -10,6 +10,14 @@ export interface ConversationListItem {
   updatedAt: Date;
 }
 
+export interface ConversationMessageItem {
+  id: string;
+  query: string;
+  answer?: string;
+  status: "queued" | "processing" | "completed" | "failed";
+  createdAt: Date;
+}
+
 export class ConversationService {
   private static instance: ConversationService;
   private readonly DEFAULT_TITLE = "New Chat";
@@ -182,5 +190,32 @@ export class ConversationService {
     );
 
     return Boolean(updated);
+  }
+
+  public async getConversationMessages(
+    userId: string,
+    conversationId: string
+  ): Promise<ConversationMessageItem[]> {
+    this.ensureDbReady();
+
+    await this.ensureOwnership(userId, conversationId);
+
+    const rows = await ChatModel.find({ userId, conversationId })
+      .sort({ createdAt: 1 })
+      .select({
+        _id: 1,
+        query: 1,
+        answer: 1,
+        status: 1,
+        createdAt: 1,
+      });
+
+    return rows.map((row) => ({
+      id: row._id.toString(),
+      query: row.query,
+      answer: row.answer,
+      status: row.status,
+      createdAt: row.createdAt,
+    }));
   }
 }
