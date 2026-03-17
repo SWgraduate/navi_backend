@@ -197,14 +197,14 @@ describe('StudentController Test', () => {
 
   // ─── PUT /student/me/academic-record ──────────────────────────────────────
   describe('updateAcademicRecord', () => {
-    it('Student가 없으면 400을 반환해야 함', async () => {
+    it('Student가 없으면 404를 반환해야 함', async () => {
       const req = createMockRequest({ userId: testUserId });
       const result = await studentController.updateAcademicRecord(
         { earnedCredits: { total: 50 } },
         req
       ) as any;
 
-      expect(studentController.getStatus()).toBe(400);
+      expect(studentController.getStatus()).toBe(404);
       expect(result.error).toBeDefined();
     });
 

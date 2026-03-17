@@ -193,17 +193,21 @@ export class StudentService {
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
 
+    if (!updated) {
+      throw new Error('학적 정보를 업데이트하거나 생성하는 데 실패했습니다.');
+    }
+
     return {
-      id: updated!._id.toString(),
-      userId: updated!.userId.toString(),
-      admissionYear: updated!.admissionYear,
-      studentNumber: updated!.studentNumber,
-      name: updated!.name,
-      major: updated!.major,
-      secondMajorType: updated!.secondMajorType,
-      secondMajor: updated!.secondMajor,
-      academicStatus: updated!.academicStatus,
-      completedSemesters: updated!.completedSemesters,
+      id: updated._id.toString(),
+      userId: updated.userId.toString(),
+      admissionYear: updated.admissionYear,
+      studentNumber: updated.studentNumber,
+      name: updated.name,
+      major: updated.major,
+      secondMajorType: updated.secondMajorType,
+      secondMajor: updated.secondMajor,
+      academicStatus: updated.academicStatus,
+      completedSemesters: updated.completedSemesters,
     };
   }
 
@@ -297,7 +301,10 @@ export class StudentService {
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
     
-    const updated = rawDoc!.toObject();
+    if (!rawDoc) {
+      throw new Error('이수 현황 정보를 업데이트하거나 생성하는 데 실패했습니다.');
+    }
+    const updated = rawDoc.toObject();
 
     return {
       id: updated._id.toString(),
@@ -373,7 +380,10 @@ export class StudentService {
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
     
-    const updated = rawDoc!.toObject();
+    if (!rawDoc) {
+      throw new Error('이수 현황 정보를 업데이트하거나 생성하는 데 실패했습니다.');
+    }
+    const updated = rawDoc.toObject();
 
     logger.i(
       `StudentService: 이미지 파싱 완료 및 이수 현황 업데이트 성공 (신뢰도: ${visionResult.confidence}%)`

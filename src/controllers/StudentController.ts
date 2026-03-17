@@ -51,8 +51,12 @@ export class StudentController extends Controller {
       this.setStatus(200);
       return result;
     } catch (error: any) {
-      this.setStatus(400);
-      return { error: error.message || '학적 정보 등록/수정에 실패했습니다.' };
+      if (error.name === 'ValidationError') {
+        this.setStatus(400);
+        return { error: error.message || '잘못된 학적 정보입니다.' };
+      }
+      this.setStatus(500);
+      return { error: '학적 정보 등록/수정 중 서버 오류가 발생했습니다.' };
     }
   }
 
@@ -76,10 +80,11 @@ export class StudentController extends Controller {
     } catch (error: any) {
       if (error instanceof StudentNotFoundError) {
         this.setStatus(404);
+        return { error: error.message };
       } else {
-        this.setStatus(400);
+        this.setStatus(500);
+        return { error: '학적 정보 조회 중 서버 오류가 발생했습니다.' };
       }
-      return { error: error.message || '학적 정보를 찾을 수 없습니다.' };
     }
   }
 
@@ -103,10 +108,11 @@ export class StudentController extends Controller {
     } catch (error: any) {
       if (error instanceof StudentNotFoundError || error instanceof AcademicRecordNotFoundError) {
         this.setStatus(404);
+        return { error: error.message };
       } else {
-        this.setStatus(400);
+        this.setStatus(500);
+        return { error: '이수 현황 조회 중 서버 오류가 발생했습니다.' };
       }
-      return { error: error.message || '이수 현황을 찾을 수 없습니다.' };
     }
   }
 
@@ -130,8 +136,15 @@ export class StudentController extends Controller {
       this.setStatus(200);
       return result;
     } catch (error: any) {
-      this.setStatus(400);
-      return { error: error.message || '이수 현황 수정에 실패했습니다.' };
+      if (error.name === 'ValidationError') {
+        this.setStatus(400);
+        return { error: error.message || '잘못된 이수 현황 정보입니다.' };
+      } else if (error instanceof StudentNotFoundError) {
+        this.setStatus(404);
+        return { error: error.message };
+      }
+      this.setStatus(500);
+      return { error: '이수 현황 수정 중 서버 오류가 발생했습니다.' };
     }
   }
 
@@ -163,12 +176,17 @@ export class StudentController extends Controller {
     } catch (error: any) {
       if (error instanceof StudentNotFoundError) {
         this.setStatus(404);
+        return { error: error.message };
       } else if (error instanceof ImageParsingError) {
         this.setStatus(422);
-      } else {
+        return { error: error.message };
+      } else if (error.name === 'ValidationError') {
         this.setStatus(400);
+        return { error: error.message || '잘못된 이수 현황 정보입니다.' };
+      } else {
+        this.setStatus(500);
+        return { error: '이미지 파싱 및 이수 현황 업데이트 중 서버 오류가 발생했습니다.' };
       }
-      return { error: error.message || '이미지 파싱 및 이수 현황 업데이트에 실패했습니다.' };
     }
   }
 }

@@ -6,7 +6,7 @@ export async function expressAuthentication(
   scopes?: string[]
 ): Promise<any> {
   if (securityName === "sessionAuth") {
-    const userId = (request as any).session?.userId;
+    const userId = request.session?.userId;
     
     if (!userId) {
       return Promise.reject(new Error("Unauthorized"));
