@@ -1,0 +1,93 @@
+digraph ChatEndpointsMap {
+  rankdir=LR;
+  splines=ortho;
+  nodesep=0.45;
+  ranksep=0.8;
+  fontname="Helvetica";
+  labelloc="t";
+  label="Chat/Conversation Endpoint Map (Frontend View)";
+
+  node [
+    shape=box
+    style="rounded,filled"
+    fillcolor="white"
+    color="#555555"
+    fontname="Helvetica"
+    fontsize=10
+    margin="0.10,0.06"
+  ];
+
+  edge [
+    color="#666666"
+    fontname="Helvetica"
+    fontsize=9
+    arrowsize=0.7
+  ];
+
+  subgraph cluster_frontend {
+    label="Frontend Actions";
+    color="#BBBBBB";
+    style="rounded";
+
+    FE_Load   [label="App load"];
+    FE_Search [label="Search history"];
+    FE_New    [label="New Conversation"];
+    FE_Select [label="Click history item"];
+    FE_Send   [label="Send message"]; 
+    FE_Poll   [label="Poll status"];
+    FE_Rename [label="Rename conversation"];
+    FE_Delete [label="Delete conversation"];
+  }
+
+  subgraph cluster_endpoints {
+    label="Backend Endpoints";
+    color="#BBBBBB";
+    style="rounded";
+
+    E_List     [label="GET /chat/conversations?searchQuery?"];
+    E_Create   [label="POST /chat/conversations"];
+    E_Messages [label="GET /chat/conversations/{conversationId}/messages"];
+    E_Chat     [label="POST /chat"];
+    E_Status   [label="GET /chat/status/{taskId}"];
+    E_Rename   [label="PATCH /chat/conversations/{conversationId}/title"];
+    E_Delete   [label="DELETE /chat/conversations/{conversationId}"];
+  }
+
+  subgraph cluster_responses {
+    label="Typical Responses";
+    color="#BBBBBB";
+    style="rounded";
+
+    R_List     [label="200 { conversations[] }", fillcolor="#E8F5E9", color="#2E7D32"];
+    R_Create   [label="201 { conversationId }", fillcolor="#E8F5E9", color="#2E7D32"];
+    R_Messages [label="200 { messages[] }", fillcolor="#E8F5E9", color="#2E7D32"];
+    R_Chat     [label="202 { taskId, conversationId? }", fillcolor="#E8F5E9", color="#2E7D32"];
+    R_Status   [label="200 { status, progress, result? }", fillcolor="#E8F5E9", color="#2E7D32"];
+    R_Generic  [label="401/404/400 { error }", fillcolor="#FDECEA", color="#C62828"];
+  }
+
+  FE_Load   -> E_List;
+  FE_Search -> E_List;
+  FE_New    -> E_Create;
+  FE_Select -> E_Messages;
+  FE_Send   -> E_Chat;
+  FE_Poll   -> E_Status;
+  FE_Rename -> E_Rename;
+  FE_Delete -> E_Delete;
+
+  E_List     -> R_List;
+  E_Create   -> R_Create;
+  E_Messages -> R_Messages;
+  E_Chat     -> R_Chat;
+  E_Status   -> R_Status;
+  E_Rename   -> R_List   [label="refresh list"];
+  E_Delete   -> R_List   [label="refresh list"];
+
+  E_List     -> R_Generic [style=dashed];
+  E_Create   -> R_Generic [style=dashed];
+  E_Messages -> R_Generic [style=dashed];
+  E_Chat     -> R_Generic [style=dashed];
+  E_Status   -> R_Generic [style=dashed];
+  E_Rename   -> R_Generic [style=dashed];
+  E_Delete   -> R_Generic [style=dashed];
+}

@@ -11,7 +11,6 @@ import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexSe
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
 
-
 type ChatStatus = "queued" | "processing" | "completed" | "failed";
 
 type ProcessPayload = {

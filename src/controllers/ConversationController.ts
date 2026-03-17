@@ -55,7 +55,7 @@ export class ConversationController extends Controller {
   @Response<{ error: string }>(401, "Unauthorized")
   public async listConversations(
     @Request() req: ExRequest,
-    @Query() q?: string
+    @Query() searchQuery?: string
   ): Promise<{ conversations: unknown[] } | { error: string }> {
     const userId = req.session.userId;
     if (!userId) {
@@ -63,8 +63,8 @@ export class ConversationController extends Controller {
       return { error: "Unauthorized" };
     }
 
-    const conversations = q?.trim()
-      ? await this.conversationService.searchConversations(userId, q)
+    const conversations = searchQuery?.trim()
+      ? await this.conversationService.searchConversations(userId, searchQuery)
       : await this.conversationService.listConversations(userId);
 
     return { conversations };
