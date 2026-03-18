@@ -6,7 +6,7 @@ import { version } from '../package.json';
 
 
 const startServer = async () => {
-  logger.i(`Attempting to start server on version: ${version})...`);
+  logger.i(`Attempting to start server on version: ${version}...`);
 
   await connectDB();
   const app = createApp();
