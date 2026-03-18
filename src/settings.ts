@@ -14,6 +14,7 @@ function requireEnv(key: string, defaultValue?: string): string {
   return value;
 }
 
+export const NODE_ENV = requireEnv('NODE_ENV', 'development');
 export const APP_PORT = parseInt(requireEnv('APP_PORT', '8000'), 10);
 export const SESSION_SECRET = requireEnv('SESSION_SECRET');
 
@@ -23,13 +24,34 @@ export const MONGO_URI = requireEnv('MONGO_URI');
 export const OPENROUTER_API_KEY = requireEnv('OPENROUTER_API_KEY');
 export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
+export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
+export const DISCORD_ALERT_ROLE_ID = process.env.DISCORD_ALERT_ROLE_ID || null;
 export const GLOBAL_CONFIG = {
   llmBaseUrl: "https://openrouter.ai/api/v1",
   chatModel: "openai/gpt-5",
   embeddingModel: "openai/text-embedding-3-large",
   embeddingDimensions: 1024,
+  visionModel: "google/gemini-3-flash-preview",
 
   // Vector DB
   pineconeIndexName: "rag-main",
   pineconeNamespace: "default",
 };
+
+// ─── 환경별 분기 설정 ────────────────────────────────────────────────────────
+// NODE_ENV=production 일 때만 배포 환경으로 간주.
+// 비밀값이 아닌 '환경 유형에서 파생되는 정책'은 여기서 코드로 정의하여 관리 부담을 줄임.
+
+const isProd = NODE_ENV === 'production';
+
+/**
+ * Express-session 쿠키 정책.
+ * - 로컬(HTTP): sameSite=lax, secure=false
+ * - 배포(HTTPS): sameSite=none, secure=true  ← sameSite:none은 spec상 secure:true 필수
+ */
+export const COOKIE_CONFIG = {
+  maxAge: 1000 * 60 * 60 * 24, // 24시간
+  httpOnly: true, // XSS 방어
+  sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+  secure: isProd,
+} as const;

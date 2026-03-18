@@ -24,6 +24,7 @@ dist
 build
 lib
 out
+src/generated/
 
 # 의존성 디렉터리
 node_modules/

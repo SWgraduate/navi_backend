@@ -1,3 +1,4 @@
+import { DISCORD_WEBHOOK_URL, DISCORD_ALERT_ROLE_ID } from 'src/settings';
 import util from 'util';
 
 const COLORS = {
@@ -72,3 +73,36 @@ class Logger {
 }
 
 export const logger = new Logger();
+
+export async function discordAlert(message: string, important=false) {
+  if (!DISCORD_WEBHOOK_URL) {
+    logger.w('DISCORD_WEBHOOK_URL is not defined. Discord alert will be skipped.');
+    return;
+  }
+
+  let content=message;
+
+  if(important && DISCORD_ALERT_ROLE_ID){
+    content = `<@&${DISCORD_ALERT_ROLE_ID}>\n${message}`;
+  }
+
+  try {
+    const response = await fetch(DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        content,
+      }),
+    });
+
+    if(!response.ok){
+      const text=await response.text();
+      logger.e("discord webhook failed:", response.status, text);
+    }
+  
+  } catch (error) {
+    logger.e("discord webhook failed:", error);
+  }
+}

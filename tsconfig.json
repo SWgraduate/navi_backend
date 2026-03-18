@@ -49,11 +49,12 @@
   "include": [
     "src/**/*",
     "tests/**/*",
+    "tools/**/*",
     "src/types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
-    "frontend",
+    "tools/test-ui",
     "dist"
   ]
 }
