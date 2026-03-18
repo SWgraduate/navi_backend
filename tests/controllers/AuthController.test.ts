@@ -55,6 +55,7 @@ describe('AuthController Test', () => {
             session: {
                 ...sessionData,
                 destroy: jest.fn((callback) => callback(null)),
+                save: jest.fn((callback) => callback(null)),
             },
             res: {
                 clearCookie: jest.fn(),

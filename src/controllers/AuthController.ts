@@ -44,6 +44,12 @@ export class AuthController extends Controller {
       // 가입 완료 후: 재사용 방지용 인증 제거
       req.session.isEmailVerified = undefined;
 
+      // 세션이 MongoDB에 완전히 커밋된 후 응답을 반환하여
+      // 이후 요청에서 세션을 반드시 읽을 수 있도록 보장함
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => (err ? reject(err) : resolve()));
+      });
+
       this.setStatus(201);
       return result;
     } catch (error: any) {
@@ -69,6 +75,13 @@ export class AuthController extends Controller {
       const result = await this.authService.login(body);
       req.session.userEmail = result.user.email;
       req.session.userId = result.user.id;
+
+      // 세션이 MongoDB에 완전히 커밋된 후 응답을 반환하여
+      // 이후 요청에서 세션을 반드시 읽을 수 있도록 보장함
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => (err ? reject(err) : resolve()));
+      });
+
       return result;
     } catch (error: any) {
       this.setStatus(401);
