@@ -37,10 +37,8 @@ export const GLOBAL_CONFIG = {
   pineconeIndexName: "rag-main",
   pineconeNamespace: "default",
 
-  discordAlertRoleID:{
+  discordAlertRoleID: {
     backend: "1482976770763395207",
-    frontend: "1482985143705534498",
-    designer: "1482985245291581440",
     ai: "1482986345507848213"
   },
 };

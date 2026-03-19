@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { DISCORD_WEBHOOK_URL, GLOBAL_CONFIG } from 'src/settings';
 import util from 'util';
 
@@ -74,12 +75,10 @@ class Logger {
 
 export const logger = new Logger();
 
-type MentionTarget = 'backend' | 'frontend' | 'designer' | 'ai' | 'none';
-
 export async function discordAlert(
-  message: string, 
-  important = false, 
-  target: MentionTarget = 'backend' // default 값
+  message: string,
+  important = false,
+  with_ai = false
 ) {
   if (!DISCORD_WEBHOOK_URL) {
     logger.w('DISCORD_WEBHOOK_URL is not defined. Discord alert will be skipped.');
@@ -88,20 +87,26 @@ export async function discordAlert(
 
   let content = message;
 
-  //  중요 알림이면서, 타겟이 'none'이 아닐 때만 멘션을 보냄
-  if (important && target !== 'none' && GLOBAL_CONFIG.discordAlertRoleID) {
-    const roleId = GLOBAL_CONFIG.discordAlertRoleID[target]; 
+  if (important) {
+    const roleId = GLOBAL_CONFIG.discordAlertRoleID['backend'];
     if (roleId) {
       content = `<@&${roleId}>\n${message}`;
     }
   }
 
+  if (with_ai) {
+    const roleId_AI = GLOBAL_CONFIG.discordAlertRoleID['ai'];
+    const roleId_backend = GLOBAL_CONFIG.discordAlertRoleID['backend'];
+    if (roleId_AI && roleId_backend) {
+      content = `<@&${roleId_AI}><@&${roleId_backend}>\n${message}`;
+    }
+  }
+
   try {
-    await fetch(DISCORD_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
+    await
+      axios.post(DISCORD_WEBHOOK_URL, {
+        content
+      });
   } catch (error) {
     logger.e("discord webhook failed:", error);
   }
