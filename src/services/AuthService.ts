@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
+import { JWT_SECRET, GLOBAL_CONFIG } from 'src/settings';
 import { LoginRequest } from 'src/controllers/AuthController';
 import User from 'src/models/User';
 import Verification from 'src/models/Verification';
@@ -15,6 +17,7 @@ export interface AuthResponse {
     email: string;
     role: string;
   };
+  accessToken: string;
 }
 
 export class AuthService {
@@ -29,6 +32,10 @@ export class AuthService {
     return AuthService.instance;
   }
 
+  private generateToken(userId: string): string {
+    return jwt.sign({ userId }, JWT_SECRET, { expiresIn: GLOBAL_CONFIG.jwtExpiresIn as any });
+  }
+
   public async register(data: RegisterRequest): Promise<AuthResponse> {
     const { email, password } = data;
 
@@ -39,11 +46,10 @@ export class AuthService {
     }
 
     // 2. 사용자 생성 (비밀번호는 모델의 pre-save 훅에서 자동 암호화됨)
-    const newUser = new User({
-      email,
-      password,
-    });
+    const newUser = new User({ email, password });
+    const token = this.generateToken(newUser._id.toString());
 
+    newUser.activeTokens = [token];
     await newUser.save();
 
     return {
@@ -52,6 +58,7 @@ export class AuthService {
         email: newUser.email,
         role: newUser.role,
       },
+      accessToken: token,
     };
   }
 
@@ -74,17 +81,26 @@ export class AuthService {
       throw new Error('Invalid credentials');
     }
 
+    const token = this.generateToken(user._id.toString());
+    user.activeTokens.push(token);
+    await user.save();
+
     return {
       user: {
         id: user._id.toString(),
         email: user.email,
         role: user.role,
       },
+      accessToken: token,
     };
   }
 
-  public async leave(email: string): Promise<void> {
-    const deletedUser = await User.findOneAndDelete({ email });
+  public async logout(userId: string, token: string): Promise<void> {
+    await User.findByIdAndUpdate(userId, { $pull: { activeTokens: token } });
+  }
+
+  public async leave(userId: string): Promise<void> {
+    const deletedUser = await User.findByIdAndDelete(userId);
     if (!deletedUser) {
       throw new Error('User not found');
     }
@@ -97,7 +113,7 @@ export class AuthService {
     // 기존에 요청한 인증번호가 있다면 덮어쓰기 (upsert)
     await Verification.findOneAndUpdate(
       { email },
-      { code, createdAt: new Date() },
+      { code, createdAt: new Date(), isVerified: false },
       { upsert: true, returnDocument: 'after' }
     );
 
