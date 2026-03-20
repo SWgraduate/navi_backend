@@ -10,6 +10,7 @@ export interface IUser extends Document {
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
+  activeToken: string;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -18,6 +19,7 @@ const UserSchema: Schema = new Schema(
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'staff', 'admin'], default: 'student' },
+    activeToken: { type: String, default: null },
   },
   {
     timestamps: true, // createdAt, updatedAt 자동 생성

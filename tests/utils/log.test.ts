@@ -26,9 +26,9 @@ describe('Discord Alert Test', () => {
   it('should send a test alert to Discord webhook', async () => {
     // 이 테스트는 실제로 디스코드 웹훅에 메시지를 보내는 테스트입니다.
     // 웹훅 URL이 설정되어 있지 않으면 경고 메시지가 출력되고 테스트는 패스됩니다.
-    await discordAlert("테스트 메시지입니다.", true);
+    await discordAlert("테스트 메시지입니다.", true, false);
   });
   it('should send important discord alert', async () => {
-    await discordAlert("중요 테스트 메시지", true);
+    await discordAlert("중요 테스트 메시지입니다.", true, false);
   });
 });

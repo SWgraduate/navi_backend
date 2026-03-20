@@ -1,4 +1,5 @@
-import { DISCORD_WEBHOOK_URL, DISCORD_ALERT_ROLE_ID } from 'src/settings';
+import axios from 'axios';
+import { DISCORD_WEBHOOK_URL, GLOBAL_CONFIG } from 'src/settings';
 import util from 'util';
 
 const COLORS = {
@@ -74,34 +75,38 @@ class Logger {
 
 export const logger = new Logger();
 
-export async function discordAlert(message: string, important=false) {
+export async function discordAlert(
+  message: string,
+  important = false,
+  with_ai = false
+) {
   if (!DISCORD_WEBHOOK_URL) {
     logger.w('DISCORD_WEBHOOK_URL is not defined. Discord alert will be skipped.');
     return;
   }
 
-  let content=message;
+  let content = message;
 
-  if(important && DISCORD_ALERT_ROLE_ID){
-    content = `<@&${DISCORD_ALERT_ROLE_ID}>\n${message}`;
+  if (important) {
+    const roleId = GLOBAL_CONFIG.discordAlertRoleID['backend'];
+    if (roleId) {
+      content = `<@&${roleId}>\n${message}`;
+    }
+  }
+
+  if (with_ai) {
+    const roleId_AI = GLOBAL_CONFIG.discordAlertRoleID['ai'];
+    const roleId_backend = GLOBAL_CONFIG.discordAlertRoleID['backend'];
+    if (roleId_AI && roleId_backend) {
+      content = `<@&${roleId_AI}><@&${roleId_backend}>\n${message}`;
+    }
   }
 
   try {
-    const response = await fetch(DISCORD_WEBHOOK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        content,
-      }),
-    });
-
-    if(!response.ok){
-      const text=await response.text();
-      logger.e("discord webhook failed:", response.status, text);
-    }
-  
+    await
+      axios.post(DISCORD_WEBHOOK_URL, {
+        content
+      });
   } catch (error) {
     logger.e("discord webhook failed:", error);
   }
