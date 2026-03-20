@@ -41,13 +41,15 @@ export class AuthService {
 
     // 이메일 중복 확인
     const existingUser = await User.findOne({ email });
-    if (existingUser) 
+    if (existingUser) {
       throw new Error('User already exists');
-    
+    }
+
     // 이메일 인증 여부 확인
     const verifiedRecord = await Verification.findOne({ email, isVerified: true });
-    if (!verifiedRecord) 
+    if (!verifiedRecord) {
       throw new Error('Email not verified');
+    }
 
     // 사용자 생성 (비밀번호는 모델의 pre-save 훅에서 자동 암호화됨)
     const newUser = new User({ email, password });
@@ -71,21 +73,21 @@ export class AuthService {
   public async login(data: LoginRequest): Promise<AuthResponse> {
     const { email, password } = data;
 
-    if (!email || !password) 
+    if (!email || !password) {
       throw new Error('Email and password are required');
-    
+    }
 
     // 사용자 조회
     const user = await User.findOne({ email });
-    if (!user) 
+    if (!user) {
       throw new Error('Invalid credentials');
-    
+    }
 
     // 비밀번호 확인
     const isMatch = await user.comparePassword(password);
-    if (!isMatch) 
+    if (!isMatch) {
       throw new Error('Invalid credentials');
-    
+    }
 
     const token = this.generateToken(user._id.toString());
     user.activeToken = token;
@@ -107,8 +109,9 @@ export class AuthService {
 
   public async leave(userId: string): Promise<void> {
     const deletedUser = await User.findByIdAndDelete(userId);
-    if (!deletedUser) 
+    if (!deletedUser) {
       throw new Error('User not found');
+    }
   }
 
   public async requestEmailVerification(email: string): Promise<void> {
@@ -129,11 +132,13 @@ export class AuthService {
   public async verifyEmailCode(email: string, code: string): Promise<boolean> {
     const record = await Verification.findOne({ email });
 
-    if (!record)
+    if (!record) {
       throw new Error('인증번호가 만료되었거나 존재하지 않습니다.');
+    }
 
-    if (record.code !== code) 
+    if (record.code !== code) {
       throw new Error('인증번호가 일치하지 않습니다.');
+    }
 
     record.isVerified = true;
     await record.save();
