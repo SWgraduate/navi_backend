@@ -75,11 +75,8 @@ export class AuthController extends Controller {
   public async logout(@Request() req: any): Promise<{ message: string } | { error: string }> {
     try {
       const userId = req.user;
-      const token = req.headers.authorization?.split(" ")[1];
 
-      if (!token) throw new Error("Token missing");
-
-      await this.authService.logout(userId, token);
+      await this.authService.logout(userId);
       return { message: "Successfully logged out" };
     } catch (error) {
       this.setStatus(500);

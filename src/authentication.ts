@@ -43,7 +43,7 @@ export async function expressAuthentication(
       // DB에서 유저 조회 및 해당 토큰이 활성화 상태인지(activeTokens에 있는지) 검사
       const user = await User.findOne({
         _id: decoded.userId,
-        activeTokens: token
+        activeToken: token
       });
 
       if (!user) {

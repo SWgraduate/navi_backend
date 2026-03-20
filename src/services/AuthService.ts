@@ -49,7 +49,7 @@ export class AuthService {
     const newUser = new User({ email, password });
     const token = this.generateToken(newUser._id.toString());
 
-    newUser.activeTokens = [token];
+    newUser.activeToken = token;
     await newUser.save();
 
     return {
@@ -82,7 +82,7 @@ export class AuthService {
     }
 
     const token = this.generateToken(user._id.toString());
-    user.activeTokens.push(token);
+    user.activeToken = token;
     await user.save();
 
     return {
@@ -95,8 +95,8 @@ export class AuthService {
     };
   }
 
-  public async logout(userId: string, token: string): Promise<void> {
-    await User.findByIdAndUpdate(userId, { $pull: { activeTokens: token } });
+  public async logout(userId: string): Promise<void> {
+    await User.findByIdAndUpdate(userId, { $set: { activeToken: null } });
   }
 
   public async leave(userId: string): Promise<void> {
