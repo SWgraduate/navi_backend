@@ -1,4 +1,7 @@
 import * as express from "express";
+import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "./settings";
+import User from "./models/User";
 
 class AuthenticationError extends Error {
   public status: number;
@@ -10,20 +13,61 @@ class AuthenticationError extends Error {
   }
 }
 
+// JWT를 생성할 때 넣을 데이터 구조
+interface TokenPayload extends jwt.JwtPayload {
+  userId: string;
+}
+
 export async function expressAuthentication(
   request: express.Request,
   securityName: string,
   scopes?: string[]
 ): Promise<any> {
-  if (securityName === "sessionAuth") {
-    const userId = request.session?.userId;
+  if (securityName === "jwt") {
+    const authHeader = request.headers.authorization;
 
-    if (!userId) {
-      return Promise.reject(new AuthenticationError("Unauthorized", 401));
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return Promise.reject(new AuthenticationError("No token provided", 401));
     }
 
-    // 인증 성공 시 userId 반환 (컨트롤러에서 @Request() req 안에서 접근 가능하게 처리됨)
-    return Promise.resolve(userId);
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      return Promise.reject(new AuthenticationError("Invalid token format", 401));
+    }
+
+    try {
+      // JWT 서명 및 만료일 검증
+      const decodedPayload = jwt.verify(token, JWT_SECRET) as TokenPayload;
+
+      if (
+        typeof decodedPayload !== "object"
+        || decodedPayload === null
+        || !('userId' in decodedPayload)
+      )
+        return Promise.reject(new AuthenticationError("Invalid token payload", 401));
+
+      const decoded = decodedPayload as TokenPayload;
+
+      // DB에서 유저 조회 및 해당 토큰이 활성화 상태인지(activeTokens에 있는지) 검사
+      const user = await User.findOne({
+        _id: decoded.userId,
+        activeToken: token
+      });
+
+      if (!user) {
+        return Promise.reject(new AuthenticationError("Token is invalidated or user not found", 401));
+      }
+
+      // 인증 성공, 컨트롤러에서 사용할 userId 반환
+      return Promise.resolve(decoded.userId);
+
+    } catch (err: any) {
+      if (err.name === "TokenExpiredError") {
+        return Promise.reject(new AuthenticationError("Token expired", 401));
+      }
+      return Promise.reject(new AuthenticationError("Invalid token", 401));
+    }
   }
 
   return Promise.reject(new AuthenticationError("Unknown security name", 401));

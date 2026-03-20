@@ -43,17 +43,11 @@ describe('StudentController Test', () => {
   let testUserId: string;
 
   /**
-   * Express Request 모킹 헬퍼 – AuthController.test.ts와 동일한 패턴 사용
+   * Express Request 모킹 헬퍼 – JWT 미들웨어가 통과시킨 user(userId)를 주입
    */
-  const createMockRequest = (sessionData: Record<string, any> = {}): ExRequest => {
+  const createMockRequest = (userId: string): ExRequest => {
     return {
-      session: {
-        ...sessionData,
-        destroy: jest.fn((cb) => cb(null)),
-      },
-      res: {
-        clearCookie: jest.fn(),
-      },
+      user: userId, // [수정] session 대신 user 속성에 ID 직접 할당
     } as unknown as ExRequest;
   };
 
@@ -103,7 +97,7 @@ describe('StudentController Test', () => {
   // ─── POST /student/me/profile ──────────────────────────────────────────────
   describe('upsertProfile', () => {
     it('정상 세션으로 학적 정보를 등록하면 200과 Student 도큐먼트를 반환해야 함', async () => {
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.upsertProfile(PROFILE_BODY, req) as any;
 
       expect(studentController.getStatus()).toBe(200);
@@ -112,10 +106,10 @@ describe('StudentController Test', () => {
     });
 
     it('동일 세션으로 다시 호출하면 갱신(upsert)되어야 함', async () => {
-      const req1 = createMockRequest({ userId: testUserId });
+      const req1 = createMockRequest(testUserId);
       await studentController.upsertProfile(PROFILE_BODY, req1);
 
-      const req2 = createMockRequest({ userId: testUserId });
+      const req2 = createMockRequest(testUserId);
       const result = await studentController.upsertProfile(
         { ...PROFILE_BODY, major: '소프트웨어학부' },
         req2
@@ -133,7 +127,7 @@ describe('StudentController Test', () => {
   // ─── GET /student/me/profile ───────────────────────────────────────────────
   describe('getProfile', () => {
     it('학적 정보가 없으면 404를 반환해야 함', async () => {
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       await studentController.getProfile(req);
 
       expect(studentController.getStatus()).toBe(404);
@@ -141,10 +135,10 @@ describe('StudentController Test', () => {
 
     it('학적 정보가 있으면 200과 Student 도큐먼트를 반환해야 함', async () => {
       // 먼저 등록
-      const upsertReq = createMockRequest({ userId: testUserId });
+      const upsertReq = createMockRequest(testUserId);
       await studentController.upsertProfile(PROFILE_BODY, upsertReq);
 
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.getProfile(req) as any;
 
       expect(studentController.getStatus()).toBe(200);
@@ -155,7 +149,7 @@ describe('StudentController Test', () => {
   // ─── GET /student/me/academic-record ──────────────────────────────────────
   describe('getAcademicRecord', () => {
     it('Student가 없으면 404를 반환해야 함', async () => {
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.getAcademicRecord(req) as any;
 
       expect(studentController.getStatus()).toBe(404);
@@ -164,10 +158,10 @@ describe('StudentController Test', () => {
 
     it('AcademicRecord가 없으면 404를 반환해야 함', async () => {
       // Student만 등록, AcademicRecord는 없음
-      const upsertReq = createMockRequest({ userId: testUserId });
+      const upsertReq = createMockRequest(testUserId);
       await studentController.upsertProfile(PROFILE_BODY, upsertReq);
 
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       await studentController.getAcademicRecord(req);
 
       expect(studentController.getStatus()).toBe(404);
@@ -175,7 +169,7 @@ describe('StudentController Test', () => {
 
     it('AcademicRecord가 있으면 200을 반환해야 함', async () => {
       // Student 등록 + AcademicRecord 생성
-      const upsertReq = createMockRequest({ userId: testUserId });
+      const upsertReq = createMockRequest(testUserId);
       await studentController.upsertProfile(PROFILE_BODY, upsertReq);
 
       const student = await Student.findOne({ userId: new mongoose.Types.ObjectId(testUserId) });
@@ -187,7 +181,7 @@ describe('StudentController Test', () => {
         takenCourses: [],
       });
 
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.getAcademicRecord(req) as any;
 
       expect(studentController.getStatus()).toBe(200);
@@ -198,7 +192,7 @@ describe('StudentController Test', () => {
   // ─── PUT /student/me/academic-record ──────────────────────────────────────
   describe('updateAcademicRecord', () => {
     it('Student가 없으면 404를 반환해야 함', async () => {
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.updateAcademicRecord(
         { earnedCredits: { total: 50 } },
         req
@@ -210,10 +204,10 @@ describe('StudentController Test', () => {
 
     it('earnedCredits 수정 요청이 정상 처리되어야 함', async () => {
       // Student 등록
-      const upsertReq = createMockRequest({ userId: testUserId });
+      const upsertReq = createMockRequest(testUserId);
       await studentController.upsertProfile(PROFILE_BODY, upsertReq);
 
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.updateAcademicRecord(
         { earnedCredits: { total: 120, majorCore: 40 } },
         req
@@ -228,7 +222,7 @@ describe('StudentController Test', () => {
   // ─── POST /student/me/academic-record/parse ────────────────────────────────
   describe('parseAndUpdateFromImage', () => {
     it('imageBase64가 비어있으면 400을 반환해야 함', async () => {
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.parseAndUpdateFromImage(
         { imageBase64: '' },
         req
@@ -240,7 +234,7 @@ describe('StudentController Test', () => {
 
     it('파싱 성공 시 200과 갱신된 AcademicRecord를 반환해야 함', async () => {
       // Student 등록
-      const upsertReq = createMockRequest({ userId: testUserId });
+      const upsertReq = createMockRequest(testUserId);
       await studentController.upsertProfile(PROFILE_BODY, upsertReq);
 
       mockParseGraduationRecord.mockResolvedValueOnce({
@@ -250,7 +244,7 @@ describe('StudentController Test', () => {
         academicRecord: { totalCredits: 105, majorCore: 34, majorAdvanced: 38, generalElective: 29 },
       });
 
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.parseAndUpdateFromImage(
         { imageBase64: 'fakeBase64Data' },
         req
@@ -262,7 +256,7 @@ describe('StudentController Test', () => {
     });
 
     it('VisionService가 isSuccess=false를 반환하면 422를 반환해야 함', async () => {
-      const upsertReq = createMockRequest({ userId: testUserId });
+      const upsertReq = createMockRequest(testUserId);
       await studentController.upsertProfile(PROFILE_BODY, upsertReq);
 
       mockParseGraduationRecord.mockResolvedValueOnce({
@@ -271,7 +265,7 @@ describe('StudentController Test', () => {
         reason: '화질 저하로 인식 불가',
       });
 
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.parseAndUpdateFromImage(
         { imageBase64: 'fakeBase64Data' },
         req
@@ -282,7 +276,7 @@ describe('StudentController Test', () => {
     });
 
     it('Student 레코드가 없을 때 파싱 요청하면 404를 반환해야 함', async () => {
-      const req = createMockRequest({ userId: testUserId });
+      const req = createMockRequest(testUserId);
       const result = await studentController.parseAndUpdateFromImage(
         { imageBase64: 'fakeBase64Data' },
         req

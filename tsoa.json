@@ -9,10 +9,10 @@
     "specVersion": 3,
     "basePath": "/api",
     "securityDefinitions": {
-      "sessionAuth": {
-        "type": "apiKey",
-        "name": "connect.sid",
-        "in": "cookie"
+      "jwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       }
     }
   },
