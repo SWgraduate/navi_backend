@@ -38,7 +38,16 @@ export async function expressAuthentication(
 
     try {
       // JWT 서명 및 만료일 검증
-      const decoded = jwt.verify(token, JWT_SECRET) as unknown as TokenPayload;
+      const decodedPayload = jwt.verify(token, JWT_SECRET) as TokenPayload;
+
+      if (
+        typeof decodedPayload !== "object"
+        || decodedPayload === null
+        || !('userId' in decodedPayload)
+      )
+        return Promise.reject(new AuthenticationError("Invalid token payload", 401));
+
+      const decoded = decodedPayload as TokenPayload;
 
       // DB에서 유저 조회 및 해당 토큰이 활성화 상태인지(activeTokens에 있는지) 검사
       const user = await User.findOne({

@@ -180,9 +180,14 @@ export class StudentController extends Controller {
   @Response<{ error: string }>(422, 'Unprocessable Content')
   public async parseAndUpdateFromImage(
     @Body() body: ParseImageRequest,
-    @Request() req: any
+    @Request() req: ExRequest
   ): Promise<AcademicRecordResponse | { error: string }> {
     const userId = req.user;
+
+    if (!userId) {
+      this.setStatus(401);
+      return { error: 'Unauthorized' };
+    }
 
     if (!body.imageBase64) {
       this.setStatus(400);

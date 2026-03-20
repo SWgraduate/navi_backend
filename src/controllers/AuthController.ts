@@ -72,9 +72,14 @@ export class AuthController extends Controller {
   @SuccessResponse("200", "OK")
   @Response<{ error: string }>(401, "Unauthorized")
   @Response<{ error: string }>(500, "Internal Server Error")
-  public async logout(@Request() req: any): Promise<{ message: string } | { error: string }> {
+  public async logout(@Request() req: ExRequest): Promise<{ message: string } | { error: string }> {
     try {
       const userId = req.user;
+
+      if (!userId) {
+        this.setStatus(401);
+        return { error: "Unauthorized" };
+      }
 
       await this.authService.logout(userId);
       return { message: "Successfully logged out" };
