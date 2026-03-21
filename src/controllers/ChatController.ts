@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Path, Post, Route, Tags, Response, Request } from 'tsoa';
+import { Body, Controller, Get, Path, Post, Route, Tags, Response, Request, Security } from 'tsoa';
 import { Request as ExRequest } from 'express';
 import { ChatService, ChatTask } from 'src/services/ChatService';
 
@@ -27,15 +27,21 @@ export class ChatController extends Controller {
    * 질문은 즉시 처리되지 않고 비동기 작업으로 등록되며, 반환된 `taskId`를 통해
    * `/chat/status/{taskId}` 엔드포인트에서 처리 상태와 결과를 조회할 수 있습니다.
    * @param body 사용자가 입력한 질문 내용 (`query`, optional `conversationId`)
-   * @param req  세션 정보를 포함하는 Express 요청 객체
+   * @param req JWT 인증 미들웨어 통과한 Express 요청 객체 (req.user에 userId 포함)
    */
   @Post('/')
+  @Security("jwt")
   public async createChatTask(
     @Body() body: ChatRequest,
     @Request() req: ExRequest
-  ): Promise<ChatTaskResponse> {
+  ): Promise<ChatTaskResponse | { error: string}> {
     const { query, conversationId } = body;
-    const userId = req.session.userId;
+    const userId = req.user;
+
+    if(!userId) {
+        this.setStatus(401);
+        return { error: "Unauthorized" };
+    }
 
     const result = await this.chatService.startChatTask(query, userId, conversationId);
 

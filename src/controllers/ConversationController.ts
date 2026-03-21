@@ -10,6 +10,7 @@ import {
   Request,
   Response,
   Route,
+  Security,
   Tags,
 } from "tsoa";
 import { Request as ExRequest } from "express";
@@ -28,16 +29,25 @@ interface RenameConversationRequest {
 export class ConversationController extends Controller {
   private conversationService = ConversationService.getInstance();
 
+  private getUserIdOrUnauthorized(req: ExRequest): string | null {
+    const userId = req.user;
+    if (!userId) {
+        this.setStatus(401);
+        return null;
+    }
+    return userId;
+  }
+
   @Post("/")
+  @Security("jwt")
   @Response<{ error: string }>(401, "Unauthorized")
   @Response<{ error: string }>(400, "Bad Request")
   public async createConversation(
     @Body() body: CreateConversationRequest,
     @Request() req: ExRequest
   ): Promise<{ conversationId: string } | { error: string }> {
-    const userId = req.session.userId;
+    const userId = this.getUserIdOrUnauthorized(req);
     if (!userId) {
-      this.setStatus(401);
       return { error: "Unauthorized" };
     }
 
@@ -52,14 +62,14 @@ export class ConversationController extends Controller {
   }
 
   @Get("/")
+  @Security("jwt")
   @Response<{ error: string }>(401, "Unauthorized")
   public async listConversations(
     @Request() req: ExRequest,
     @Query() searchQuery?: string
   ): Promise<{ conversations: unknown[] } | { error: string }> {
-    const userId = req.session.userId;
+    const userId = this.getUserIdOrUnauthorized(req);
     if (!userId) {
-      this.setStatus(401);
       return { error: "Unauthorized" };
     }
 
@@ -71,6 +81,7 @@ export class ConversationController extends Controller {
   }
 
   @Patch("/{conversationId}/title")
+  @Security("jwt")
   @Response<{ error: string }>(401, "Unauthorized")
   @Response<{ error: string }>(404, "Not Found")
   @Response<{ error: string }>(400, "Bad Request")
@@ -79,9 +90,8 @@ export class ConversationController extends Controller {
     @Body() body: RenameConversationRequest,
     @Request() req: ExRequest
   ): Promise<{ message: string } | { error: string }> {
-    const userId = req.session.userId;
+    const userId = this.getUserIdOrUnauthorized(req); 
     if (!userId) {
-      this.setStatus(401);
       return { error: "Unauthorized" };
     }
 
@@ -96,15 +106,15 @@ export class ConversationController extends Controller {
   }
 
   @Delete("/{conversationId}")
+  @Security("jwt")
   @Response<{ error: string }>(401, "Unauthorized")
   @Response<{ error: string }>(404, "Not Found")
   public async deleteConversation(
     @Path() conversationId: string,
     @Request() req: ExRequest
   ): Promise<{ message: string } | { error: string }> {
-    const userId = req.session.userId;
+    const userId = this.getUserIdOrUnauthorized(req);
     if (!userId) {
-      this.setStatus(401);
       return { error: "Unauthorized" };
     }
 
@@ -119,15 +129,15 @@ export class ConversationController extends Controller {
   }
 
   @Get("/{conversationId}/messages")
+  @Security("jwt")
   @Response<{ error: string }>(401, "Unauthorized")
   @Response<{ error: string }>(404, "Not Found")
   public async getConversationMessages(
     @Path() conversationId: string,
     @Request() req: ExRequest
   ): Promise<{ messages: unknown[] } | { error: string }> {
-    const userId = req.session.userId;
+    const userId = this.getUserIdOrUnauthorized(req);
     if (!userId) {
-      this.setStatus(401);
       return { error: "Unauthorized" };
     }
 
