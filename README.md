@@ -34,9 +34,15 @@ pnpm install
 ```
 
 ### 환경변수 설정 (.env)
+각 실행 환경(개발, 테스트, 프로덕션)에 맞게 분리된 환경 변수 체계를 사용합니다. 루트 디렉토리에 다음 파일들을 생성 및 셋업해 주세요.
+- **`.env.development`**: `pnpm dev` 실행 시 로드되는 로컬 개발용 (개발/테스트 클러스터 URI 권장)
+- **`.env.test`**: `pnpm test` 실행 시 로드되는 단위 테스트용 (인터넷 연결이 필요 없는 로컬/인메모리 DB 권장)
+- **`.env.production`**: 배포 서버 운영용
+
+#### 환경 변수 구조 템플릿
 ```bash
 APP_PORT=8000
-NODE_ENV=development
+NODE_ENV=development # 또는 test, production
 JWT_SECRET=""
 MONGO_URI=""
 OPENROUTER_API_KEY=""
