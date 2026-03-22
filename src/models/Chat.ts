@@ -11,6 +11,7 @@ export interface IChatSource {
 export interface IChatRetrievalMeta {
   topK: number;
   usedChunks: number;
+  retrievalMode: 'bound' | 'corpus-fallback' | 'corpus-only';
 }
 
 export interface IChatResult { 
@@ -47,6 +48,7 @@ const ChatRetrievalMetaSchema = new Schema<IChatRetrievalMeta>(
   {
     topK: { type: Number, required: true },
     usedChunks: { type: Number, required: true },
+    retrievalMode: { type: String, enum: ['bound', 'corpus-fallback', 'global-only'] },
   },
   { _id: false }
 );

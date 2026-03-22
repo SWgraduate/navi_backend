@@ -163,7 +163,7 @@ export class ChatService {
         updateData.result = {
           answer: payload.answer ?? "",
           sources: payload.sources ?? [],
-          retrievalMeta: payload.retrievalMeta ?? { topK: 0, usedChunks: 0},
+          retrievalMeta: payload.retrievalMeta ?? { topK: 0, usedChunks: 0, retrievalMode: 'corpus-only'},
         };
       }
 
@@ -200,6 +200,8 @@ export class ChatService {
         retrievalMeta: {
           topK: retrieval.topK,
           usedChunks: retrieval.usedChunks,
+          // 잠깐 'corpus-only'로 지정함. 기능 추가해서 바꿀 것. 
+          retrievalMode: 'corpus-only',
         },
       });
       

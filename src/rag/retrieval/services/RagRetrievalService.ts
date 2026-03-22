@@ -60,6 +60,8 @@ export class RagRetrievalService {
                 topK,
                 usedChunks: filtered.length,
                 chunks: filtered,
+                // 잠깐 'corpus-only'로 지정함. 기능 추가해서 바꿀 것. 
+                retrievalMode: 'corpus-only',
             };
         }
         catch (error) {
