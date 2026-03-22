@@ -35,7 +35,7 @@ export class RagIngestionController extends Controller {
             throw new Error("No PDF file uploaded");
         }
 
-        const result = await this.ragIngestionService.ingestPdf({
+        const result = await this.ragIngestionService.ingestDocument({
             fileBuffer: file.buffer,
             originalFileName: file.originalname,
             mimeType: file.mimetype,
