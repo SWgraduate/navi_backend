@@ -54,10 +54,11 @@ web_modules/
 
 # 환경변수 파일 (중요)
 .env
+.env.production
+.env.development
+.env.test
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 
 # 번들러/툴 캐시
 .cache
