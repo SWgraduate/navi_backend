@@ -102,6 +102,8 @@ export interface StudentResponse {
 
 
 export interface EarnedCredits {
+  /** 취득 총 평점 (GPA) */
+  gpa?: number;
   /** 모든 이수학점의 총합 (졸업학점 기준과 비교) */
   total: number;
   /** 전공핵심 이수 학점 */
@@ -336,6 +338,7 @@ export class StudentService {
     }
 
     const {
+      gpa,
       totalCredits, majorTotal, majorCore, majorAdvanced, generalElective, socialService, industry,
       secondMajorTotal, secondMajorCore,
       hasPrerequisite, hasMandatoryCourse, hasThesis,
@@ -343,6 +346,7 @@ export class StudentService {
     } = visionResult.academicRecord;
 
     const earnedPartial: Partial<EarnedCredits> = {};
+    if (gpa != null) earnedPartial.gpa = gpa;
     if (totalCredits != null) earnedPartial.total = totalCredits;
     if (majorTotal != null) earnedPartial.majorTotal = majorTotal;
     if (majorCore != null) earnedPartial.majorCore = majorCore;
