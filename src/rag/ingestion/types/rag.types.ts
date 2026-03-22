@@ -26,7 +26,7 @@ export interface IngestionActor {
     role: "user" | "admin";
 } 
 
-export interface IngestPdfCommand {
+export interface IngestDocumentInput {
     fileBuffer: Buffer;
     originalFileName: string;
     mimeType: string;
@@ -34,7 +34,7 @@ export interface IngestPdfCommand {
     actor: IngestionActor;
 }
 
-export interface IngestPdfResult {
+export interface IngestDocumentResult {
     documentId: string;
     status: IngestionStatus;
     message: string;

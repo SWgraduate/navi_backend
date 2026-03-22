@@ -7,7 +7,7 @@ import {
     UploadedFile,
 } from "tsoa";  
 
-import { IngestPdfResult } from "../../rag/ingestion/types/rag.types";
+import { IngestDocumentResult } from "../../rag/ingestion/types/rag.types";
 import { RagIngestionService } from "../../rag/ingestion/services/RagIngestionService";
 
 @Route("rag/documents")
@@ -29,7 +29,7 @@ export class RagIngestionController extends Controller {
         @UploadedFile() file: Express.Multer.File,
         @FormField() userId: string,
         @FormField() role: "user" | "admin" = "user"
-    ): Promise<IngestPdfResult> {
+    ): Promise<IngestDocumentResult> {
         if (!file) {
             this.setStatus(400);
             throw new Error("No PDF file uploaded");

@@ -1,7 +1,7 @@
 import { INGESTION_STATUS } from "../../shared/constants/IngestionStatus";
 import { RagDocumentRepository } from "../repositories/RagDocumentRepository";
 import { RagDocumentCreateInput } from "../types/rag.types";
-import { IngestPdfCommand, IngestPdfResult } from "../types/rag.types";
+import { IngestDocumentInput, IngestDocumentResult} from "../types/rag.types";
 import { ContentHashService } from "./ContentHashService";
 import { EmbeddingService } from "./EmbeddingService";
 import { PdfExtractionService } from "./PdfExtractionService";
@@ -21,7 +21,7 @@ export class RagIngestionService {
         private readonly pineconeIndexService = new PineconeIndexService()
     ) {}
 
-    async ingestPdf(command: IngestPdfCommand): Promise<IngestPdfResult> {
+    async ingestPdf(command: IngestDocumentInput): Promise<IngestDocumentResult> {
         try {
             logger.i(`Starting PDF ingestion for file: ${command.originalFileName}`);
 

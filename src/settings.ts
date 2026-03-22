@@ -51,6 +51,8 @@ export const GLOBAL_CONFIG = {
 
 const isProd = NODE_ENV === 'production';
 
+export const ENABLE_FILE_AWARE_CHAT = requireEnv('ENABLE_FILE_AWARE_CHAT', isProd ? 'false' : 'true') === 'true';
+
 /**
  * Express-session 쿠키 정책.
  * - 로컬(HTTP): sameSite=lax, secure=false
