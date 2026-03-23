@@ -31,6 +31,7 @@ export const OPENROUTER_API_KEY = requireEnv('OPENROUTER_API_KEY');
 export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
+export const ELEVENLABS_API_KEY = requireEnv('ELEVENLABS_API_KEY');
 
 export const GLOBAL_CONFIG = {
   jwtExpiresIn: '30d',
