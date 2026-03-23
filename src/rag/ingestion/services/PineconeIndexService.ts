@@ -16,6 +16,7 @@ interface QueryTopKParams {
     vector: number[];
     topK: number;
     namespace?: string;
+    filter?: Record<string, unknown>;
 }
 
 export class PineconeIndexService {
@@ -98,6 +99,7 @@ export class PineconeIndexService {
                 topK: params.topK,
                 includeMetadata: true,
                 includeValues: false,
+                ...(params.filter ? { filter: params.filter } : {}),
             });
 
             const retrievedChunks = (result.matches ?? []).map((match) => {

@@ -4,12 +4,13 @@ import { ConversationService } from "./ConversationService";
 import mongoose from "mongoose";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
+import { GLOBAL_CONFIG, OPENROUTER_API_KEY, ENABLE_FILE_AWARE_CHAT } from 'src/settings';
 import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { EmbeddingService } from "src/rag/ingestion/services/EmbeddingService";
 import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexService";
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
+import { AttachmentContextService } from "./AttachmentContextService";
 
 type ChatStatus = "queued" | "processing" | "completed" | "failed";
 
@@ -40,6 +41,7 @@ export class ChatService {
   private static instance: ChatService;
 
   private conversationService = ConversationService.getInstance();
+  private attachmentContextService = AttachmentContextService.getInstance();
   private ragRetrievalService = new RagRetrievalService(
     new EmbeddingService(),
     new PineconeIndexService()
@@ -174,10 +176,17 @@ export class ChatService {
       await update("embedding_query", "Embedding user query...");
       await update("retrieving_chunks", "Retrieving relevant chunks...");
 
+      let boundDocumentIds: string[] = [];
+      if (ENABLE_FILE_AWARE_CHAT && userId && conversationId) {
+        boundDocumentIds = await this.attachmentContextService.resolveBoundDocumentIds(userId, conversationId);
+      }
+
       const retrieval = await this.ragRetrievalService.retrieveContext({
         query,
         topK: 5,
         minScore: 0.0,
+        boundDocumentIds,
+        namespace: boundDocumentIds.length > 0 ? GLOBAL_CONFIG.pineconeUserDocsNamespace : GLOBAL_CONFIG.pineconeCorpusNamespace,
       });
 
       await update("building_context", "Building context for answer...");
@@ -201,7 +210,7 @@ export class ChatService {
           topK: retrieval.topK,
           usedChunks: retrieval.usedChunks,
           // 잠깐 'corpus-only'로 지정함. 기능 추가해서 바꿀 것. 
-          retrievalMode: 'corpus-only',
+          retrievalMode: retrieval.retrievalMode,
         },
       });
       

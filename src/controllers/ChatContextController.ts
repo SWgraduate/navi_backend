@@ -16,7 +16,7 @@ export class ChatContextController extends Controller {
     private readonly attachmentContextService = AttachmentContextService.getInstance();
     private readonly ragIngestionService = new RagIngestionService();
     
-    @Post("/documents")
+    @Post("/uploads")
     public async uploadUserDocument(
         @Request() request: any,
         @UploadedFile() file: Express.Multer.File,
@@ -41,7 +41,7 @@ export class ChatContextController extends Controller {
     }
 
     // Bind a document to a conversation
-    @Post("/attachments")
+    @Post("/bindings")
     public async bindDocument(
         @Request() request: any,
         @Body() body: BindDocumentRequest
@@ -53,7 +53,7 @@ export class ChatContextController extends Controller {
     }
 
     // List all documents bound to a conversation
-    @Get("/attachments")
+    @Get("/bindings")
     public async listBoundDocuments(
         @Request() request: any,
         @Query() conversationId: string
@@ -64,7 +64,7 @@ export class ChatContextController extends Controller {
     }
 
     // Unbind a document from a conversation
-    @Delete("/attachments/{documentId}")
+    @Delete("/bindings/{documentId}")
     public async unbindDocument(
         @Request() request: any,
         @Path() documentId: string,
