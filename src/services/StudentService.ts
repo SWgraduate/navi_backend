@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
-import Student, { IStudent, SecondMajorType, AcademicStatus } from 'src/models/Student';
-import AcademicRecord, { IAcademicRecord } from 'src/models/AcademicRecord';
+import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
+import AcademicRecord from 'src/models/AcademicRecord';
+import Student, { AcademicStatus, IStudent, SecondMajorType } from 'src/models/Student';
 import { VisionService } from 'src/services/VisionService';
-import { ImageParsingError, StudentNotFoundError, AcademicRecordNotFoundError } from 'src/errors/StudentErrors';
 import { logger } from 'src/utils/log';
 
 // ─── Request / Response 인터페이스 ──────────────────────────────────────────
@@ -172,6 +172,19 @@ export interface AcademicRecordResponse {
   completedConditions: CompletedConditions;
   /** 수강 완료한 개별 과목 목록 */
   takenCourses: TakenCourse[];
+}
+
+export interface ParsedCourse {
+  name: string;
+  credits: number;
+}
+
+export interface ParseTimetableResponse {
+  isSuccess: boolean;
+  confidence: number;
+  reason: string;
+  totalCredits?: number;
+  courses?: ParsedCourse[];
 }
 
 // ─── StudentService ──────────────────────────────────────────────────────────
@@ -400,6 +413,33 @@ export class StudentService {
       secondMajorCredits: updated.secondMajorCredits as SecondMajorCredits,
       completedConditions: updated.completedConditions as CompletedConditions,
       takenCourses: updated.takenCourses as TakenCourse[],
+    };
+  }
+
+  /**
+   * 시간표 이미지 파싱 API
+   * 학적에는 바로 업데이트하지 않고 프론트엔드에 파싱 결과 반환.
+   */
+  public async parseTimetableFromImage(
+    userId: string,
+    imageBase64: string
+  ): Promise<ParseTimetableResponse> {
+    logger.i(`StudentService: 시간표 이미지 파싱 기반 추출 (userId=${userId})`);
+
+    await this._requireStudent(userId);
+
+    const visionResult = await this.visionService.parseTimetable(imageBase64);
+
+    if (!visionResult.isSuccess) {
+      throw new ImageParsingError(visionResult.reason || undefined);
+    }
+
+    return {
+      isSuccess: visionResult.isSuccess,
+      confidence: visionResult.confidence,
+      reason: visionResult.reason,
+      totalCredits: visionResult.totalCredits ?? undefined,
+      courses: visionResult.courses ?? undefined
     };
   }
 

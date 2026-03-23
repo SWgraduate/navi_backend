@@ -2,6 +2,7 @@ import { Request as ExRequest } from 'express';
 import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
 import {
   AcademicRecordResponse,
+  ParseTimetableResponse,
   StudentResponse,
   StudentService,
   UpdateAcademicRecordRequest,
@@ -211,6 +212,50 @@ export class StudentController extends Controller {
       } else {
         this.setStatus(500);
         return { error: '이미지 파싱 및 이수 현황 업데이트 중 서버 오류가 발생했습니다.' };
+      }
+    }
+  }
+
+  /**
+   * 시간표 이미지 파싱 후 파싱 결과만 반환
+   * Base64 인코딩된 이미지를 수신하여 VisionService로 분석하며, DB 업데이트는 수행하지 않음.
+   */
+  @Post('me/academic-record/parse-timetable')
+  @Security('jwt')
+  @SuccessResponse('200', 'OK')
+  @Response<{ error: string }>(401, 'Unauthorized')
+  @Response<{ error: string }>(400, 'Bad Request')
+  @Response<{ error: string }>(422, 'Unprocessable Content')
+  public async parseTimetable(
+    @Body() body: ParseImageRequest,
+    @Request() req: ExRequest
+  ): Promise<ParseTimetableResponse | { error: string }> {
+    const userId = req.user;
+
+    if (!userId) {
+      this.setStatus(401);
+      return { error: 'Unauthorized' };
+    }
+
+    if (!body.imageBase64) {
+      this.setStatus(400);
+      return { error: 'imageBase64 필드가 필요합니다.' };
+    }
+
+    try {
+      const result = await this.studentService.parseTimetableFromImage(userId, body.imageBase64);
+      this.setStatus(200);
+      return result;
+    } catch (error: any) {
+      if (error instanceof StudentNotFoundError) {
+        this.setStatus(404);
+        return { error: error.message };
+      } else if (error instanceof ImageParsingError) {
+        this.setStatus(422);
+        return { error: error.message };
+      } else {
+        this.setStatus(500);
+        return { error: '시간표 이미지 파싱 중 서버 오류가 발생했습니다.' };
       }
     }
   }
