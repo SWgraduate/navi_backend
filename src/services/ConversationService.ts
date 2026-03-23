@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import ChatModel from "src/models/Chat";
 import { ConversationModel } from "src/models/Conversation";
+import { ChatAttachmentBindingModel } from "src/models/ChatAttachmentBinding";
 
 export interface ConversationListItem {
   id: string;
@@ -145,6 +146,8 @@ export class ConversationService {
       userId,
       conversationId,
     });
+
+    await ChatAttachmentBindingModel.deleteMany({ userId, conversationId });
   }
 
   public async touchConversation(userId: string, conversationId: string): Promise<void> {
