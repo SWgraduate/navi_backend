@@ -37,7 +37,8 @@ export const GLOBAL_CONFIG = {
 
   // Vector DB
   pineconeIndexName: "rag-main",
-  pineconeNamespace: "default",
+  pineconeCorpusNamespace: "corpus",
+  pineconeUserDocsNamespace: "user-docs",
 
   discordAlertRoleID: {
     backend: "1482976770763395207",

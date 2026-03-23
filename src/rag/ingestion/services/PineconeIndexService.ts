@@ -32,7 +32,7 @@ export class PineconeIndexService {
 
         this.pinecone = new Pinecone({ apiKey });
         this.indexName = indexName;
-        this.defaultNamespace = GLOBAL_CONFIG.pineconeNamespace;
+        this.defaultNamespace = GLOBAL_CONFIG.pineconeCorpusNamespace;
     }
 
     public getNamespace(namespace?: string): string {

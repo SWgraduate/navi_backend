@@ -1,5 +1,8 @@
-import { Body, Controller, Delete, Get, Path, Post, Query, Request, Route, Security, Tags, } from "tsoa";
+import { Body, Controller, Delete, Get, Path, Post, Query, Request, Route, Security, Tags, UploadedFile } from "tsoa";
 import { AttachmentContextService } from "src/services/AttachmentContextService";
+import { RagIngestionService } from "src/rag/ingestion/services/RagIngestionService";
+import { IngestDocumentResult } from "src/rag/ingestion/types/rag.types";
+import { GLOBAL_CONFIG } from "src/settings";
 
 interface BindDocumentRequest {
     conversationId: string;
@@ -11,6 +14,31 @@ interface BindDocumentRequest {
 @Security("jwt")
 export class ChatContextController extends Controller {
     private readonly attachmentContextService = AttachmentContextService.getInstance();
+    private readonly ragIngestionService = new RagIngestionService();
+    
+    @Post("/documents")
+    public async uploadUserDocument(
+        @Request() request: any,
+        @UploadedFile() file: Express.Multer.File,
+    ): Promise<IngestDocumentResult> {
+        if (!file) {
+            this.setStatus(400);
+            throw new Error("No file uploaded");
+        }
+
+        const userId = request.user.userId;
+        const result = await this.ragIngestionService.ingestDocument({
+            fileBuffer: file.buffer,
+            originalFileName: file.originalname,
+            mimeType: file.mimetype,
+            fileSize: file.size,
+            namespace: GLOBAL_CONFIG.pineconeUserDocsNamespace,
+            actor: { userId, role: "user" },
+        });
+
+        this.setStatus(result.isDuplicate ? 200 : 201);
+        return result;
+    }
 
     // Bind a document to a conversation
     @Post("/attachments")

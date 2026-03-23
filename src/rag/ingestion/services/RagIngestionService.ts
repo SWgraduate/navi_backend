@@ -108,7 +108,7 @@ export class RagIngestionService {
 
                 // 9. Upload vectors
                 logger.i("Step 9: Upserting vectors to Pinecone...");
-                const vectorNamespace = this.pineconeIndexService.getNamespace();
+                const vectorNamespace = this.pineconeIndexService.getNamespace(command.namespace);
                 await this.pineconeIndexService.upsertDocumentVectors({
                     documentId,
                     contentHash,

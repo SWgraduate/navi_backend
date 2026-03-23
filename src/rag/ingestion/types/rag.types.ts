@@ -32,6 +32,7 @@ export interface IngestDocumentInput {
     mimeType: string;
     fileSize: number;
     actor: IngestionActor;
+    namespace?: string;
 }
 
 export interface IngestDocumentResult {
