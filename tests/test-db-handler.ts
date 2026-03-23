@@ -1,9 +1,14 @@
 import mongoose from 'mongoose';
 import { MONGO_URI, NODE_ENV } from 'src/settings';
-import User from 'src/models/User';
-import Student from 'src/models/Student';
-import AcademicRecord from 'src/models/AcademicRecord';
-import Verification from 'src/models/Verification';
+
+// 모든 모델을 임포트하여 Mongoose에 등록되도록 함
+import 'src/models/User';
+import 'src/models/Student';
+import 'src/models/AcademicRecord';
+import 'src/models/Verification';
+import 'src/models/Chat';
+import 'src/models/GraduationRule';
+import 'src/models/IngestionRegistry';
 
 /**
  * 테스트용 MongoDB URI의 안전성을 검증합니다.
@@ -56,12 +61,9 @@ export const connectTestDB = async (): Promise<void> => {
   await mongoose.connect(MONGO_URI);
 
   // 모든 모델의 인덱스 생성을 보장하여 테스트 안정성 확보
-  await Promise.all([
-    User.createIndexes(),
-    Student.createIndexes(),
-    AcademicRecord.createIndexes(),
-    Verification.createIndexes(),
-  ]);
+  await Promise.all(
+    mongoose.modelNames().map(modelName => mongoose.model(modelName).createIndexes())
+  );
 };
 
 /**
@@ -82,10 +84,7 @@ export const closeAndDropTestDB = async (): Promise<void> => {
  * 모든 컬렉션의 데이터를 초기화합니다. (beforeEach/afterEach 용)
  */
 export const clearTestData = async (): Promise<void> => {
-  await Promise.all([
-    User.deleteMany({}),
-    Student.deleteMany({}),
-    AcademicRecord.deleteMany({}),
-    Verification.deleteMany({}),
-  ]);
+  await Promise.all(
+    mongoose.modelNames().map(modelName => mongoose.model(modelName).deleteMany({}))
+  );
 };
