@@ -1,5 +1,6 @@
 // 실행 명령어: pnpm tsx tools/test-tts.ts
 import { SpeechService } from '../src/services/SpeechService';
+import { GLOBAL_CONFIG } from '../src/settings';
 import * as fs from 'fs';
 import * as path from 'path';
 import dotenv from 'dotenv';
@@ -12,7 +13,7 @@ async function run() {
   
   // 테스트할 텍스트 및 음성 ID
   const text = "안녕하세요? 일레븐랩스 외부 API 연동 텍스트 투 스피치 테스트입니다. 잘 들리시나요?";
-  const voiceId = "cgSgspJ2msm6clMCkdW9";
+  const voiceId = GLOBAL_CONFIG.elevenlabsVoiceId;
   
   // 루트 디렉토리 아래의 out 폴더로 지정
   const outDir = path.join(__dirname, '../out');

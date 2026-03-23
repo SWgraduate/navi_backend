@@ -195,6 +195,22 @@ export class ChatService {
     return { taskId, message: "Started" };
   }
 
+  /**
+   * DB에 Task를 기록하지 않고 메모리 상에서 직접 RAG + LLM 답변을 얻어옵니다.
+   * 음성 스트리밍 등 빠른 응답이 필요한 곳에서 사용합니다.
+   * @param query 사용자의 질문
+   */
+  public async generateDirectAnswer(query: string): Promise<string> {
+    const retrieval = await this.ragRetrievalService.retrieveContext({
+      query,
+      topK: 5,
+      minScore: 0.0,
+    });
+    const contextText = this.buildContextText(retrieval.chunks, 4);
+    const answer = await this.callGroundedLLM(query, contextText);
+    return answer;
+  }
+
   public async getTaskStatus(taskId: string): Promise<ChatTask | undefined> {
     const chat = await this.getTask(taskId);
 
