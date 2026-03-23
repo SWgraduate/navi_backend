@@ -1,13 +1,11 @@
 // pnpm test -- tests/controllers/StudentController.test.ts
 import mongoose from 'mongoose';
 import { Request as ExRequest } from 'express';
-import dotenv from 'dotenv';
 import User from 'src/models/User';
 import Student from 'src/models/Student';
 import AcademicRecord from 'src/models/AcademicRecord';
 import { StudentController } from 'src/controllers/StudentController';
-
-dotenv.config({ path: '.env.test.local' });
+import { connectTestDB, closeAndDropTestDB, clearTestData } from 'tests/test-db-handler';
 
 // ─── logger 모킹 ─────────────────────────────────────────────────────────────
 jest.mock('src/utils/log', () => ({
@@ -52,27 +50,15 @@ describe('StudentController Test', () => {
   };
 
   beforeAll(async () => {
-    const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017';
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-    await mongoose.connect(mongoURI);
-
-    await Student.createIndexes();
-    await AcademicRecord.createIndexes();
+    await connectTestDB();
   });
 
   afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.dropDatabase();
-      await mongoose.connection.close();
-    }
+    await closeAndDropTestDB();
   });
 
   beforeEach(async () => {
-    await User.deleteMany({});
-    await Student.deleteMany({});
-    await AcademicRecord.deleteMany({});
+    await clearTestData();
 
     // 각 테스트마다 임시 User 생성
     const user = new User({ email: `ctrl_${Date.now()}@example.com`, password: 'password123' });
@@ -89,9 +75,7 @@ describe('StudentController Test', () => {
   });
 
   afterEach(async () => {
-    await User.deleteMany({});
-    await Student.deleteMany({});
-    await AcademicRecord.deleteMany({});
+    await clearTestData();
   });
 
   // ─── POST /student/me/profile ──────────────────────────────────────────────
