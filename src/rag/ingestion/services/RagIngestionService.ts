@@ -46,6 +46,11 @@ export class RagIngestionService {
             if (this.textNormalizationService.isEffectivelyEmpty(normalizedText)) {
                 throw new Error("Extracted text is empty after normalization!");
             }
+
+            if (normalizedText.length < 50) {
+                throw new Error("Image contrains insufficient text for ingestion. (minimum 50 characters required)");
+            }
+
             logger.i(`Normalized text: ${normalizedText.length} characters`);
 
             // 3. Hash
