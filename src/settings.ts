@@ -6,7 +6,9 @@ const envName = process.env.NODE_ENV || 'development';
 const envPath = path.resolve(process.cwd(), `.env.${envName}`);
 dotenv.config({ path: envPath });
 
-console.log(`[Config] Loaded environment variables from: .env.${envName}`);
+if (envName !== 'production') {
+  console.log(`[Config] Loaded environment variables from: .env.${envName}`);
+}
 
 function requireEnv(key: string, defaultValue?: string): string {
   const value = process.env[key];
