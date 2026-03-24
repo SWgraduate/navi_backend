@@ -29,6 +29,7 @@ export class VisionService {
 
       // 데이터 부분 (실패했을 수도 있으므로 optional 처리)
       graduationRule: z.object({
+        minGpa: z.number().nullable().optional().describe("졸업 요건(기준) 최소 평점 (예: 1.75)"),
         totalCredits: z.number().nullable().optional(),
         majorCore: z.number().nullable().optional(),
         majorAdvanced: z.number().nullable().optional(),
@@ -36,6 +37,7 @@ export class VisionService {
       }).nullable().optional().describe("추출된 졸업 요건(기준) 학점 데이터"),
 
       academicRecord: z.object({
+        gpa: z.number().nullable().optional().describe("본인의 취득 총 평점 (GPA) (예: 4.25)"),
         // 주전공 학점
         totalCredits: z.number().nullable().optional().describe("주전공 총 이수학점 (젠업학점)"),
         majorTotal: z.number().nullable().optional().describe("주전공 전공학점(합계)"),
@@ -67,6 +69,7 @@ export class VisionService {
       너는 대학교 학적 시스템의 졸업사정조회 표를 분석하는 데이터 추출 AI야.
       주어진 이미지를 분석하여 사용자의 '졸업 요건(Rule)'과 '현재 이수 내역(Record)'을 추출해.
       추출 대상 항목:
+        - 기준 최소 졸업 평점 및 본인 취득 총 평점 (GPA)
         - 주전공 주요 학점 (졸업학점, 전공학점, 전공핵심, 전공심화, 교양선택, 사회봉사, 산학협력영역)
         - 제2전공 학점 (전공합계, 전공핵심)
         - 필수 요건 O/X 항목 (선수강 이수, 미필과목 이수, 졸업논문/시험/작품)

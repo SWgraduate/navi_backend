@@ -1,13 +1,11 @@
 // pnpm test -- tests/services/StudentService.test.ts
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import Student from 'src/models/Student';
 import AcademicRecord from 'src/models/AcademicRecord';
 import User from 'src/models/User';
 import { ImageParsingError, StudentNotFoundError, AcademicRecordNotFoundError } from 'src/errors/StudentErrors';
 import { StudentService } from 'src/services/StudentService';
-
-dotenv.config({ path: '.env.test.local' });
+import { connectTestDB, closeAndDropTestDB, clearTestData } from 'tests/test-db-handler';
 
 // ─── logger 모킹 ─────────────────────────────────────────────────────────────
 jest.mock('src/utils/log', () => ({
@@ -44,29 +42,16 @@ describe('StudentService Test', () => {
   let testUserId: string;
 
   beforeAll(async () => {
-    const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017';
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.disconnect();
-    }
-    await mongoose.connect(mongoURI);
-
-    // 인덱스 보장
-    await Student.createIndexes();
-    await AcademicRecord.createIndexes();
+    await connectTestDB();
   });
 
   afterAll(async () => {
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.dropDatabase();
-      await mongoose.connection.close();
-    }
+    await closeAndDropTestDB();
   });
 
   beforeEach(async () => {
     // 각 테스트마다 임시 User 생성 후 userId 확보
-    await User.deleteMany({});
-    await Student.deleteMany({});
-    await AcademicRecord.deleteMany({});
+    await clearTestData();
 
     const user = new User({ email: `test_${Date.now()}@example.com`, password: 'password123' });
     const savedUser = await user.save();
@@ -82,9 +67,7 @@ describe('StudentService Test', () => {
   });
 
   afterEach(async () => {
-    await User.deleteMany({});
-    await Student.deleteMany({});
-    await AcademicRecord.deleteMany({});
+    await clearTestData();
   });
 
   // ─── upsertProfile ──────────────────────────────────────────────────────────
