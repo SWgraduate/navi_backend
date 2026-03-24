@@ -47,7 +47,7 @@ export class ChatService {
     new PineconeIndexService()
   );
 
-  private constructor() { }
+  private constructor() {}
 
   public static getInstance(): ChatService {
     if (!ChatService.instance) {
@@ -72,6 +72,21 @@ export class ChatService {
     return ChatModel.findById(taskId);
   }
 
+  /**
+   * Creates a new chat task record in the database with an initial "queued" state.
+   *
+   * This is the first step of the async chat pipeline. It persists the incoming
+   * query so that `processChatTask` can run fire-and-forget while the client
+   * polls `getTaskStatus` using the returned task ID.
+   *
+   * @param query - The user's raw question string.
+   * @param userId - Optional. The authenticated user's ID. If provided, the task
+   *   is associated with the user for ownership checks and conversation linking.
+   * @param conversationId - Optional. Links the task to an existing conversation
+   *   thread. Populated by `startChatTask` before this is called.
+   * @returns The MongoDB ObjectId string of the newly created chat document.
+   * @throws {Error} If the database connection is not ready.
+   */
   private async createTask(query: string, userId?: string, conversationId?: string): Promise<string> {
     const initialData = {
       query,
@@ -144,6 +159,47 @@ export class ChatService {
       : JSON.stringify(response.content);
   }
 
+  /**
+   * The core background worker for a chat task. Runs the full RAG pipeline —
+   * retrieval, context building, LLM generation — and writes each progress
+   * step back to the database so the client can poll live status updates.
+   *
+   * This method is always called fire-and-forget via `void` in `startChatTask`.
+   * It never throws externally; all errors are caught and written to the task
+   * document as a "failed" status.
+   *
+   * Pipeline stages (reflected in the `progress` field of the chat document):
+   *  1. `embedding_query`   — resolves bound document IDs for the conversation,
+   *                           then embeds the query via `RagRetrievalService`.
+   *  2. `retrieving_chunks` — queries Pinecone for top-K similar chunks.
+   *                           Uses the `user-docs` namespace when bound documents
+   *                           exist, otherwise falls back to `corpus` namespace.
+   *  3. `building_context`  — formats retrieved chunks into a context string
+   *                           for the LLM prompt.
+   *  4. `generating_answer` — calls the LLM with the system prompt + context.
+   *  5. `done`              — writes the final answer, sources, and retrieval
+   *                           metadata to the task document as "completed".
+   *                           Also updates the conversation's `updatedAt`
+   *                           timestamp via `touchConversation`.
+   *  6. `error`             — written on any uncaught exception; sets status
+   *                           to "failed" with the error message.
+   *
+   * @param taskId - The MongoDB ObjectId string of the chat document to update.
+   * @param query - The original user question string.
+   * @param userId - Optional. Used to resolve bound documents and touch the
+   *   conversation. Safe to omit for anonymous chats.
+   * @param conversationId - Optional. Required alongside `userId` to look up
+   *   bound documents and update the conversation timestamp.
+   *
+   * @remarks
+   * **Known issue — progress update order:** Steps 1 and 2 progress labels are
+   * written to the DB before the actual work begins. The client will see
+   * "Retrieving relevant chunks..." while embedding is still running.
+   *
+   * **Known issue — corpus fallback namespace:** When bound documents exist but
+   * return 0 useful chunks, the fallback corpus query incorrectly reuses the
+   * `user-docs` namespace instead of `corpus`. Fix is in `RagRetrievalService`.
+   */
   private async processChatTask(taskId: string, query: string, userId?: string, conversationId?: string) {
     // helper function
     const update = async (
@@ -174,12 +230,13 @@ export class ChatService {
 
     try {
       await update("embedding_query", "Embedding user query...");
-      await update("retrieving_chunks", "Retrieving relevant chunks...");
 
       let boundDocumentIds: string[] = [];
       if (ENABLE_FILE_AWARE_CHAT && userId && conversationId) {
         boundDocumentIds = await this.attachmentContextService.resolveBoundDocumentIds(userId, conversationId);
       }
+      
+      await update("retrieving_chunks", "Retrieving relevant chunks...");
 
       const retrieval = await this.ragRetrievalService.retrieveContext({
         query,
@@ -187,6 +244,7 @@ export class ChatService {
         minScore: 0.0,
         boundDocumentIds,
         namespace: boundDocumentIds.length > 0 ? GLOBAL_CONFIG.pineconeUserDocsNamespace : GLOBAL_CONFIG.pineconeCorpusNamespace,
+        globalNamespace: GLOBAL_CONFIG.pineconeUserDocsNamespace,
       });
 
       await update("building_context", "Building context for answer...");
@@ -228,6 +286,27 @@ export class ChatService {
     }
   }
 
+  /**
+   * Entry point for the async chat pipeline. 
+   * Flow:
+   *  1. If `conversationId` is given → verify the user owns it.
+   *  2. If no `conversationId` → auto-create a new conversation titled with the first 50 chars of the query.
+   *  3. Call `createTask` to insert the chat document in "queued" state.
+   *  4. Fire `processChatTask` (fire-and-forget via `void`).
+   *  5. Return `taskId` immediately so the client can begin polling.
+   *
+   * @param query - The user's question string.
+   * @param userId - Optional. The authenticated user's ID. When omitted the chat
+   *   runs anonymously — no conversation is created or linked.
+   * @param conversationId - Optional. The target conversation to attach this chat to. If omitted and `userId` is present, a new conversation is auto-created.
+   * @returns An object containing:
+   *   - `taskId` — poll `GET /chat/status/:taskId` to track progress.
+   *   - `message` — a static confirmation string ("Started").
+   *   - `conversationId` — the resolved or newly created conversation ID,
+   *     `undefined` for anonymous chats.
+   * @throws {Error} If `conversationId` is provided but the user does not own it
+   *   (propagated from `ensureOwnership`).
+   */
   public async startChatTask(
     query: string,
     userId?: string,

@@ -76,7 +76,7 @@ export class RagRetrievalService {
             const corpusChunks = await this.pineconeIndexService.queryTopK({
                 vector: queryVector,
                 topK,
-                namespace: params.namespace,
+                namespace: params.globalNamespace ?? params.namespace,
             });
 
             const filtered = this.filterAndSortChunks(corpusChunks, DEFAULT_MIN_SCORE);

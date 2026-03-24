@@ -12,6 +12,7 @@ export interface RetrieveContextParams {
     query: string;
     topK?: number;
     namespace?: string;
+    globalNamespace?: string;
     minScore?: number;
     boundDocumentIds?: string[];
 }
