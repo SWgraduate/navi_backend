@@ -4,9 +4,11 @@ import path from 'path';
 // 우선순위가 높은 외부/CLI 세팅(CROSS_ENV 등)이 없으면 기본적으로 development 로드
 const envName = process.env.NODE_ENV || 'development';
 const envPath = path.resolve(process.cwd(), `.env.${envName}`);
-dotenv.config({ path: envPath, override: true });
+dotenv.config({ path: envPath });
 
-console.log(`[Config] Loaded environment variables from: .env.${envName}`);
+if (envName !== 'production') {
+  console.log(`[Config] Loaded environment variables from: .env.${envName}`);
+}
 
 function requireEnv(key: string, defaultValue?: string): string {
   const value = process.env[key];
