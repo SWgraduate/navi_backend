@@ -4,38 +4,26 @@ import { Request as ExRequest } from 'express';
 import User from 'src/models/User';
 import Verification from 'src/models/Verification'; // [추가] 인증 모델 import
 import { AuthController } from 'src/controllers/AuthController';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '.env.test.local' });
+import { connectTestDB, closeAndDropTestDB, clearTestData } from 'tests/test-db-handler';
 
 describe('AuthController Test', () => {
     let authController: AuthController;
 
     beforeAll(async () => {
-        const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017';
-        if (mongoose.connection.readyState !== 0) {
-            await mongoose.disconnect();
-        }
-        await mongoose.connect(mongoURI);
-        await User.deleteMany({});
-        await Verification.deleteMany({}); // [추가] Verification 초기화
-        await User.createIndexes();
+        await connectTestDB();
     });
 
     afterAll(async () => {
-        if (mongoose.connection.readyState !== 0) {
-            await mongoose.connection.dropDatabase();
-            await mongoose.connection.close();
-        }
+        await closeAndDropTestDB();
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        await clearTestData();
         authController = new AuthController();
     });
 
     afterEach(async () => {
-        await User.deleteMany({});
-        await Verification.deleteMany({}); // [추가] 매 테스트 후 초기화
+        await clearTestData();
     });
 
     /**

@@ -6,6 +6,8 @@ export interface IAcademicRecord extends Document {
 
   // 1. 주전공(제1전공) 이수 학점 요약
   earnedCredits: {
+    /** 취득 총 평점 (GPA) */
+    gpa: number;
     /** 모든 이수학점의 총합 (졸업학점 기준과 비교) */
     total: number;
     /** 전공핵심 이수 학점 */
@@ -69,6 +71,7 @@ const AcademicRecordSchema: Schema = new Schema({
   studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true, unique: true },
 
   earnedCredits: {
+    gpa: { type: Number, default: 0 },
     total: { type: Number, default: 0 },
     majorCore: { type: Number, default: 0 },
     majorAdvanced: { type: Number, default: 0 },
