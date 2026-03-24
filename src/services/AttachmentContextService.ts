@@ -1,4 +1,3 @@
-import e from "cors";
 import mongoose from "mongoose";
 import { ChatAttachmentBindingModel } from "src/models/ChatAttachmentBinding";
 import { ConversationModel } from "src/models/Conversation";
