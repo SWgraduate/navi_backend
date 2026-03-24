@@ -40,7 +40,7 @@ export class ChatController extends Controller {
 
     if(!userId) {
         this.setStatus(401);
-        return { error: "Unauthorized" };
+        return { error: "Authentication required" };
     }
 
     const result = await this.chatService.startChatTask(query, userId, conversationId);
