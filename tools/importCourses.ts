@@ -35,30 +35,8 @@ async function run() {
     process.exit(1);
   }
 
-  // Course 스키마는 AcademicRecord 모델의 `takenCourses` 속성에 바탕하여 구성합니다.
-  interface ICourse {
-    courseCode: string;
-    courseName: string;
-    category: string;
-    credit: number;
-    department?: string;
-    isEnglish: boolean;
-    isPbl: boolean;
-    isMajorPbl: boolean;
-  }
-
-  const CourseSchema = new mongoose.Schema({
-    courseCode: { type: String, required: true, unique: true },  // 학수번호 (ex. ACC2051)
-    courseName: { type: String, required: true },                // 과목명
-    category: { type: String, required: true },                  // 이수구분 (ex. 전공핵심, 교양선택)
-    credit: { type: Number, required: true },                    // 학점
-    department: { type: String, required: false },               // 주관학과(소속) 추가 매핑
-    isEnglish: { type: Boolean, default: false },                // 영어전용강좌 여부
-    isPbl: { type: Boolean, default: false },                    // IC-PBL 강좌 여부
-    isMajorPbl: { type: Boolean, default: false },               // 전공 IC-PBL 강좌 여부
-  }, { timestamps: true });
-
-  const Course = mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
+  // Course 스키마 가져오기
+  const { default: Course } = await import('src/models/Course');
 
   try {
     const fileContent = fs.readFileSync(absolutePath, 'utf8');
@@ -96,7 +74,8 @@ async function run() {
         department: raw.gnjSosokNm || '',
         isEnglish,
         isPbl,
-        isMajorPbl
+        isMajorPbl,
+        classTimes: raw.suupTimes || ''
       };
 
       // 이미 있는 과목(학수번 기준)이면 갱신, 없으면 추가 (upsert: true)

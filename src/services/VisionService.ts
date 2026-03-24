@@ -119,10 +119,9 @@ export class VisionService {
       isSuccess: z.boolean().describe("이미지 인식 및 데이터 추출 성공 여부. 시간표 이미지가 아니거나 화질이 너무 낮을 경우 false."),
       confidence: z.number().min(0).max(100).describe("추출 결과에 대한 종합 신뢰도 (0~100)."),
       reason: z.string().describe("성공/실패에 대한 상세 이유."),
-      totalCredits: z.number().nullable().optional().describe("이번 학기 수강하는 총 학점의 합계"),
       courses: z.array(z.object({
         name: z.string().describe("수강 과목명"),
-        credits: z.number().describe("해당 과목의 학점")
+        time: z.string().describe("해당 과목의 수업 시간(목록 내 모든 시간 병합). 예: '화(09:00-11:00),목(09:00-11:00)'")
       })).nullable().optional().describe("인식된 수강 과목 목록")
     });
 
@@ -132,8 +131,8 @@ export class VisionService {
 
     const systemPrompt = `
       너는 대학교 시간표 이미지를 분석하는 데이터 추출 AI야.
-      주어진 이미지를 분석하여 이번 학기에 수강하는 '과목 목록'과 '총 학점'을 추출해.
-      만약 각 과목의 학점이 명시되어 있지 않다면 일반적인 대학 과목 학점(주로 2~3학점)을 추론하되 가능한 한 이미지 내 정보를 우선해.
+      주어진 이미지를 분석하여 이번 학기에 수강하는 '과목 목록'과 '수업 시간'을 추출해.
+      과목별로 수업 시간이 여러 개일 경우 모두 쉼표로 이어서 하나로 합쳐서 반환해줘. (예: '화(09:00-11:00),목(09:00-11:00)')
       화질이 너무 낮거나 시간표 이미지가 아니라면 isSuccess를 false로 두고 reason에 명확한 이유를 적어줘.
     `;
 

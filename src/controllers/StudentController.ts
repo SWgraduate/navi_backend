@@ -220,7 +220,7 @@ export class StudentController extends Controller {
    * 시간표 이미지 파싱 후 파싱 결과만 반환
    * Base64 인코딩된 이미지를 수신하여 VisionService로 분석하며, DB 업데이트는 수행하지 않음.
    */
-  @Post('me/academic-record/parse-timetable')
+  @Post('me/timetable/parse')
   @Security('jwt')
   @SuccessResponse('200', 'OK')
   @Response<{ error: string }>(401, 'Unauthorized')

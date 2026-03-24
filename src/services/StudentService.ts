@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
 import AcademicRecord from 'src/models/AcademicRecord';
 import Student, { AcademicStatus, IStudent, SecondMajorType } from 'src/models/Student';
+import Course, { ICourse } from 'src/models/Course';
 import { VisionService } from 'src/services/VisionService';
 import { logger } from 'src/utils/log';
 
@@ -176,15 +177,14 @@ export interface AcademicRecordResponse {
 
 export interface ParsedCourse {
   name: string;
-  credits: number;
+  time: string;
 }
 
 export interface ParseTimetableResponse {
   isSuccess: boolean;
   confidence: number;
   reason: string;
-  totalCredits?: number;
-  courses?: ParsedCourse[];
+  courses?: ICourse[]; // ICourse is from Course model
 }
 
 // ─── StudentService ──────────────────────────────────────────────────────────
@@ -418,7 +418,7 @@ export class StudentService {
 
   /**
    * 시간표 이미지 파싱 API
-   * 학적에는 바로 업데이트하지 않고 프론트엔드에 파싱 결과 반환.
+   * 인식된 과목명과 시간을 바탕으로 DB에서 매핑된 과목 목록을 찾아 반환.
    */
   public async parseTimetableFromImage(
     userId: string,
@@ -434,12 +434,52 @@ export class StudentService {
       throw new ImageParsingError(visionResult.reason || undefined);
     }
 
+    let mappedCourses: ICourse[] = [];
+
+    if (visionResult.courses && visionResult.courses.length > 0) {
+      logger.i(`StudentService: 추출된 과목 수: ${visionResult.courses.length}. DB 매핑 시작...`);
+      for (const parsed of visionResult.courses) {
+        // 과목명 정규식 메타문자 이스케이프 및 공백 무시 검색 처리
+        const cleanName = parsed.name.replace(/\s+/g, '');
+        const regexStr = cleanName
+          .split('')
+          .map((c: string) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('\\s*');
+
+        const query = {
+          $and: [
+            { courseName: { $regex: regexStr, $options: 'i' } }
+          ]
+        };
+
+        const candidates = await Course.find(query).lean();
+
+        if (candidates.length > 0) {
+          // 시간이 없거나 비교하기 복잡한 경우 우선 첫 번째 과목 선택
+          // 고도화 시 parsed.time과 candidate.classTimes 간의 유사도 등 추가 가능
+          let bestMatch = candidates[0];
+          
+          if (parsed.time && candidates.length > 1) {
+            // 시간 정보가 포함된 과목 우선순위 매핑 로직 (단순 문자열 포함 여부 체크)
+            // 예: "화(09:00" 같은 일부 패턴이라도 포함되어 있는지 확인
+            const matchedByTime = candidates.find(c => c.classTimes && c.classTimes.replace(/\s+/g,'').includes(parsed.time.substring(0, 2)));
+            if (matchedByTime) {
+              bestMatch = matchedByTime;
+            }
+          }
+
+          mappedCourses.push(bestMatch as unknown as ICourse);
+        } else {
+          logger.w(`StudentService: 매핑 실패 - ${parsed.name} (${parsed.time})`);
+        }
+      }
+    }
+
     return {
       isSuccess: visionResult.isSuccess,
       confidence: visionResult.confidence,
       reason: visionResult.reason,
-      totalCredits: visionResult.totalCredits ?? undefined,
-      courses: visionResult.courses ?? undefined
+      courses: mappedCourses
     };
   }
 
