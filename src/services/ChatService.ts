@@ -41,6 +41,7 @@ export class ChatService {
 
   private conversationService = ConversationService.getInstance();
   private attachmentContextService = AttachmentContextService.getInstance();
+  private readonly pinecodeIndexService = new PineconeIndexService();
   private ragRetrievalService = new RagRetrievalService(
     new EmbeddingService(),
     new PineconeIndexService()
