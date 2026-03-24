@@ -1,5 +1,5 @@
-// 실행 방법: npx ts-node tools/importCourses.ts <json_file_path> <development|production|test>
-// 예시: npx ts-node tools/importCourses.ts out/courses_erica_2026_10.json development
+// 실행 방법: pnpm tsx tools/importCourses.ts <json_file_path> <development|production|test>
+// 예시: pnpm tsx tools/importCourses.ts out/courses_erica_2026_10.json development
 
 import mongoose from 'mongoose';
 import * as fs from 'fs';
@@ -11,7 +11,7 @@ async function run() {
   const envMap = args[1];
 
   if (!filePath || !envMap || !['development', 'production', 'test'].includes(envMap)) {
-    console.error('사용법: npx ts-node tools/importCourses.ts <json_file_path> <development|production|test>');
+    console.error('사용법: pnpm tsx tools/importCourses.ts <json_file_path> <development|production|test>');
     process.exit(1);
   }
 
@@ -19,8 +19,8 @@ async function run() {
   process.env.NODE_ENV = envMap;
 
   // src/settings.ts, src/utils/log.ts 등의 모듈들이 강제 설정된 NODE_ENV를 참조할 수 있도록 동적 import 수행
-  const { MONGO_URI } = await import('../src/settings');
-  const { logger } = await import('../src/utils/log');
+  const { MONGO_URI } = await import('src/settings');
+  const { logger } = await import('src/utils/log');
 
   if (!MONGO_URI) {
     logger.e('MONGO_URI가 설정되어 있지 않습니다.');
