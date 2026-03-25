@@ -509,9 +509,7 @@ export class StudentService {
           .join('\\s*');
 
         const query = {
-          $and: [
-            { courseName: { $regex: `^${regexStr}$`, $options: 'i' } }
-          ]
+          courseName: { $regex: `^${regexStr}$`, $options: 'i' }
         };
 
         const candidates = await Course.find(query).lean();
