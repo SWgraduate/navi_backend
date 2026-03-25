@@ -73,7 +73,7 @@ export const connectTestDB = async (): Promise<void> => {
 export const closeAndDropTestDB = async (): Promise<void> => {
   if (mongoose.connection.readyState !== 0) {
     // 삭제 전 마지막 안전 검증
-    validateTestMongoURI(mongoose.connection.host + '/' + mongoose.connection.name);
+    validateTestMongoURI(MONGO_URI);
     
     await mongoose.connection.dropDatabase();
     await mongoose.connection.close();
