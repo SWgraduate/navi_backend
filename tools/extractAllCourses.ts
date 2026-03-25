@@ -3,17 +3,27 @@
 import { logger } from 'src/utils/log';
 import fs from 'fs/promises';
 import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+if (!process.env.PORTAL_TOKEN || !process.env.PORTAL_COOKIE) {
+  logger.c('환경 변수 PORTAL_TOKEN 또는 PORTAL_COOKIE가 설정되지 않았습니다. .env 파일을 확인하세요.');
+  process.exit(1);
+} else {
+  logger.s('환경 변수 확인 완료: PORTAL_TOKEN과 PORTAL_COOKIE가 설정되어 있습니다.');
+}
 
 // --- 설정 파라미터 ---
 const CONFIG = {
   // 토큰값 (만료 시 브라우저에서 새로 복사 필요)
-  tk: 'e9068598524e004a4af6d96d34410fa56705e76bb2f7fc2df35729471b0f3b45',
+  tk: process.env.PORTAL_TOKEN,
   strJojik: 'Y0000316', // ERICA 기초융합교육원(또는 공통교양/대학 조직) 코드
   strSuupYear: '2026',
   strSuupTerm: '10', // 10: 1학기 (20: 2학기, 11: 여름, 21: 겨울 등)
   maxRows: 500, // 한 번에 가져올 데이터 수 (시간 단축을 위해 500으로 상향 조정)
-  outputFile: 'courses_erica_2026_10.json', // 저장될 파일명
-  cookie: 'WMONID=VePR53oY1tB; HYIN_JSESSIONID=qu8bIkppvpsfhWXcYaoAZg4N2uZMhXj10nddZt7xbCML4LAQ6YZi!1026041357!1331727468; _ga=GA1.3.1848997597.1774276724; _gid=GA1.3.1201866946.1774276724; SUGANG_JSESSIONID=TTQbIk-hgfAPCCxNLeFD4YluELTopds1bBACkctpWomeyivtGigS!-1104458470!-1144967427; _ga_12JRHXXS2M=GS2.3.s1774276724$o1$g1$t1774277563$j60$l0$h0'
+  outputFile: 'courses_erica.json', // 저장될 파일명
+  cookie: process.env.PORTAL_COOKIE
 };
 
 // 1~2초 랜덤 딜레이 함수

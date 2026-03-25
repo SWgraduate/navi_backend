@@ -510,7 +510,7 @@ export class StudentService {
 
         const query = {
           $and: [
-            { courseName: { $regex: regexStr, $options: 'i' } }
+            { courseName: { $regex: `^${regexStr}$`, $options: 'i' } }
           ]
         };
 
