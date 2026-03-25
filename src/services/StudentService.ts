@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
-import Student, { IStudent, SecondMajorType, AcademicStatus } from 'src/models/Student';
-import AcademicRecord, { IAcademicRecord } from 'src/models/AcademicRecord';
+import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
+import AcademicRecord from 'src/models/AcademicRecord';
+import Student, { AcademicStatus, IStudent, SecondMajorType } from 'src/models/Student';
+import Course, { ICourse } from 'src/models/Course';
 import { VisionService } from 'src/services/VisionService';
-import { ImageParsingError, StudentNotFoundError, AcademicRecordNotFoundError } from 'src/errors/StudentErrors';
 import { logger } from 'src/utils/log';
 
 // ─── Request / Response 인터페이스 ──────────────────────────────────────────
@@ -174,6 +175,24 @@ export interface AcademicRecordResponse {
   takenCourses: TakenCourse[];
 }
 
+export interface ParsedCourse {
+  name: string;
+  time: string;
+}
+
+export interface ParseTimetableResponse {
+  isSuccess: boolean;
+  confidence: number;
+  reason: string;
+  courses?: ICourse[]; // ICourse is from Course model
+  updateMessages?: string[];
+}
+
+export interface ParseAndUpdateResponse extends AcademicRecordResponse {
+  updateMessages?: string[];
+}
+
+
 // ─── StudentService ──────────────────────────────────────────────────────────
 
 export class StudentService {
@@ -325,10 +344,13 @@ export class StudentService {
   public async parseAndUpdateFromImage(
     userId: string,
     imageBase64: string
-  ): Promise<AcademicRecordResponse> {
+  ): Promise<ParseAndUpdateResponse> {
     logger.i(`StudentService: 이미지 파싱 기반 이수 현황 업데이트 (userId=${userId})`);
 
     const student = await this._requireStudent(userId);
+
+    // 업데이트 전 기존 데이터 조회 (비교용)
+    const oldRecord = await AcademicRecord.findOne({ studentId: student._id }).lean();
 
     // VisionService 호출
     const visionResult = await this.visionService.parseGraduationRecord(imageBase64);
@@ -393,6 +415,36 @@ export class StudentService {
       `StudentService: 이미지 파싱 완료 및 이수 현황 업데이트 성공 (신뢰도: ${visionResult.confidence}%)`
     );
 
+    // 변경점 비교 로직
+    const updateMessages: string[] = [];
+    if (!oldRecord) {
+      updateMessages.push("이수 현황 정보가 새로 등록되었어요.");
+    } else {
+      const fieldMap: Record<string, string> = {
+        'earnedCredits.total': '졸업학점',
+        'earnedCredits.majorTotal': '전공학점',
+        'earnedCredits.majorCore': '전공핵심',
+        'earnedCredits.majorAdvanced': '전공심화',
+        'earnedCredits.generalElective': '교양선택',
+        'earnedCredits.socialService': '사회봉사',
+        'earnedCredits.industry': '산학협력영역',
+        'secondMajorCredits.majorTotal': '다중전공 전공학점',
+        'secondMajorCredits.majorCore': '다중전공 전공핵심',
+        'earnedCredits.gpa': '전체 평점', // 비교를 위해 추가 가능
+      };
+
+      for (const [dotPath, label] of Object.entries(fieldMap)) {
+        const parts = dotPath.split('.');
+        const newVal = parts.reduce((obj: any, key) => obj?.[key], updated);
+        const oldVal = parts.reduce((obj: any, key) => obj?.[key], oldRecord);
+
+        // 숫자 타입이 유효하며 서로 다를 때만 기록
+        if (typeof newVal === 'number' && typeof oldVal === 'number' && newVal !== oldVal) {
+          updateMessages.push(`${label}이(가) ${oldVal}학점에서 ${newVal}학점으로 업데이트 되었어요.`);
+        }
+      }
+    }
+
     return {
       id: updated._id.toString(),
       studentId: updated.studentId.toString(),
@@ -400,6 +452,206 @@ export class StudentService {
       secondMajorCredits: updated.secondMajorCredits as SecondMajorCredits,
       completedConditions: updated.completedConditions as CompletedConditions,
       takenCourses: updated.takenCourses as TakenCourse[],
+      updateMessages,
+    };
+  }
+
+  /**
+   * 시간표 이미지 파싱 및 학사 정보 종합 업데이트 처리 API
+   * 
+   * 1. VisionService로 Base64 이미지를 분석해 과목명/시간을 추출.
+   * 2. 인식된 과목을 Course 컬렉션과 매칭하여 실제 과목 데이터(ICourse)로 변환.
+   * 3. 기존 AcademicRecord의 takenCourses에 없는 신규 과목만 선별하여 추가.
+   * 4. 신규 추가된 과목들의 정보(credit, category, isEnglish, isPbl 등)를 바탕으로
+   *    총 졸업학점, 전공/교양별 학점, 특수 이수조건(영어, PBL 카운트) 등의 숫자 필드를 함께 증가시킴.
+   * 5. 프론트엔드가 결과를 알림으로 보여줄 수 있도록 상세한 업데이트 내용(updateMessages)을 반환함.
+   */
+  public async parseTimetableAndUpdate(
+    userId: string,
+    imageBase64: string
+  ): Promise<ParseAndUpdateResponse> {
+    logger.i(`StudentService: 시간표 이미지 파싱 기반 추출 및 업데이트 (userId=${userId})`);
+
+    const student = await this._requireStudent(userId);
+    let oldRecord = await AcademicRecord.findOne({ studentId: student._id }).lean();
+
+    // 이수 현황 레코드가 아예 없는 경우 초기화
+    if (!oldRecord) {
+      const initDoc = await AcademicRecord.create({
+        studentId: student._id,
+        earnedCredits: { total: 0, majorTotal: 0, majorCore: 0, majorAdvanced: 0, generalElective: 0, socialService: 0, industry: 0, gpa: 0 },
+        secondMajorCredits: { majorTotal: 0, majorCore: 0 },
+        completedConditions: { hasPrerequisite: false, hasMandatoryCourse: false, hasThesis: false, englishCourses: 0, pblTotal: 0, pblMajor: 0 },
+        takenCourses: []
+      });
+      oldRecord = initDoc.toObject();
+    }
+
+    let updatedRecord = oldRecord;
+
+    const visionResult = await this.visionService.parseTimetable(imageBase64);
+
+    if (!visionResult.isSuccess) {
+      throw new ImageParsingError(visionResult.reason || undefined);
+    }
+
+    let mappedCourses: ICourse[] = [];
+    const updateMessages: string[] = [];
+
+    if (visionResult.courses && visionResult.courses.length > 0) {
+      logger.i(`StudentService: 추출된 과목 수: ${visionResult.courses.length}. DB 매핑 시작...`);
+      for (const parsed of visionResult.courses) {
+        // 과목명 정규식 메타문자 이스케이프 및 공백 무시 검색 처리
+        const cleanName = parsed.name.replace(/\s+/g, '');
+        const regexStr = cleanName
+          .split('')
+          .map((c: string) => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+          .join('\\s*');
+
+        const query = {
+          courseName: { $regex: `^${regexStr}$`, $options: 'i' }
+        };
+
+        const candidates = await Course.find(query).lean();
+
+        if (candidates.length > 0) {
+          // 시간이 없거나 비교하기 복잡한 경우 우선 첫 번째 과목 선택
+          // 고도화 시 parsed.time과 candidate.classTimes 간의 유사도 등 추가 가능
+          let bestMatch = candidates[0];
+          
+          if (parsed.time && candidates.length > 1) {
+            // 시간 정보가 포함된 과목 우선순위 매핑 로직 (단순 문자열 포함 여부 체크)
+            // 예: "화(09:00" 같은 일부 패턴이라도 포함되어 있는지 확인
+            const matchedByTime = candidates.find(c => c.classTimes && c.classTimes.replace(/\s+/g,'').includes(parsed.time.substring(0, 2)));
+            if (matchedByTime) {
+              bestMatch = matchedByTime;
+            }
+          }
+
+          mappedCourses.push(bestMatch as unknown as ICourse);
+        } else {
+          logger.w(`StudentService: 매핑 실패 - ${parsed.name} (${parsed.time})`);
+        }
+      }
+
+      // DB 업데이트 로직 시작
+      if (mappedCourses.length > 0) {
+        let addedCourseNames: string[] = [];
+        const existingCodes = new Set(oldRecord?.takenCourses?.map(c => c.courseCode) || []);
+
+        const newTakenCourses = mappedCourses
+          .filter(c => {
+            if (existingCodes.has(c.courseCode)) return false;
+            existingCodes.add(c.courseCode); // 중복 추가 방지
+            addedCourseNames.push(c.courseName);
+            return true;
+          })
+          .map(c => ({
+            courseCode: c.courseCode,
+            courseName: c.courseName,
+            courseType: c.category,
+            credit: c.credit,
+            isEnglish: c.isEnglish,
+            isPbl: c.isPbl,
+            isMajorPbl: c.isMajorPbl
+          }));
+
+        if (newTakenCourses.length > 0) {
+          const incPayload: Record<string, number> = {};
+
+          for (const c of newTakenCourses) {
+            incPayload['earnedCredits.total'] = (incPayload['earnedCredits.total'] || 0) + c.credit;
+
+            const type = c.courseType || '';
+            if (type.includes('전공') || type.includes('전핵') || type.includes('전심')) {
+              incPayload['earnedCredits.majorTotal'] = (incPayload['earnedCredits.majorTotal'] || 0) + c.credit;
+              if (type.includes('핵심') || type.includes('전핵')) {
+                incPayload['earnedCredits.majorCore'] = (incPayload['earnedCredits.majorCore'] || 0) + c.credit;
+              } else if (type.includes('심화') || type.includes('전심')) {
+                incPayload['earnedCredits.majorAdvanced'] = (incPayload['earnedCredits.majorAdvanced'] || 0) + c.credit;
+              }
+            } else if (type.includes('교양') || type.includes('일교') || type.includes('핵교')) {
+              incPayload['earnedCredits.generalElective'] = (incPayload['earnedCredits.generalElective'] || 0) + c.credit;
+            } else if (type.includes('봉사')) {
+              incPayload['earnedCredits.socialService'] = (incPayload['earnedCredits.socialService'] || 0) + c.credit;
+            } else if (type.includes('산학')) {
+              incPayload['earnedCredits.industry'] = (incPayload['earnedCredits.industry'] || 0) + c.credit;
+            }
+
+            if (c.isEnglish) {
+              incPayload['completedConditions.englishCourses'] = (incPayload['completedConditions.englishCourses'] || 0) + 1;
+            }
+            if (c.isPbl || c.isMajorPbl) {
+              incPayload['completedConditions.pblTotal'] = (incPayload['completedConditions.pblTotal'] || 0) + 1;
+            }
+            if (c.isMajorPbl) {
+              incPayload['completedConditions.pblMajor'] = (incPayload['completedConditions.pblMajor'] || 0) + 1;
+            }
+          }
+
+          const updateQuery: any = {
+            $push: { takenCourses: { $each: newTakenCourses } },
+          };
+          if (Object.keys(incPayload).length > 0) {
+            updateQuery.$inc = incPayload;
+          }
+
+          const rawDoc = await AcademicRecord.findOneAndUpdate(
+            { studentId: student._id },
+            updateQuery,
+            { upsert: true, returnDocument: 'after' }
+          );
+
+          if (rawDoc) updatedRecord = rawDoc.toObject();
+
+          if (addedCourseNames.length <= 3) {
+            updateMessages.push(`수강 목록에 ${addedCourseNames.join(', ')} 과목이 추가되었어요.`);
+          } else {
+            const firstTwo = addedCourseNames.slice(0, 2).join(', ');
+            updateMessages.push(`수강 목록에 ${firstTwo} 등 총 ${addedCourseNames.length}과목이 추가되었어요.`);
+          }
+
+          // 변경된 학점 및 조건 내역 메시지 생성
+          const fieldMap: Record<string, { label: string, unit: string }> = {
+            'earnedCredits.total': { label: '졸업학점', unit: '학점' },
+            'earnedCredits.majorTotal': { label: '전공학점', unit: '학점' },
+            'earnedCredits.majorCore': { label: '전공핵심', unit: '학점' },
+            'earnedCredits.majorAdvanced': { label: '전공심화', unit: '학점' },
+            'earnedCredits.generalElective': { label: '교양학점', unit: '학점' },
+            'earnedCredits.socialService': { label: '사회봉사', unit: '학점' },
+            'earnedCredits.industry': { label: '산학협력영역', unit: '학점' },
+            'completedConditions.englishCourses': { label: '영어전용강좌', unit: '과목' },
+            'completedConditions.pblTotal': { label: 'IC-PBL강좌', unit: '과목' },
+            'completedConditions.pblMajor': { label: '전공 IC-PBL강좌', unit: '과목' },
+          };
+
+          for (const [dotPath, meta] of Object.entries(fieldMap)) {
+            const parts = dotPath.split('.');
+            const newVal = parts.reduce((obj: any, key) => obj?.[key], updatedRecord);
+            const oldVal = parts.reduce((obj: any, key) => obj?.[key], oldRecord) || 0;
+
+            if (typeof newVal === 'number' && typeof oldVal === 'number' && newVal > oldVal) {
+              updateMessages.push(`${meta.label}이(가) ${oldVal}${meta.unit}에서 ${newVal}${meta.unit}으로 올랐어요.`);
+            }
+          }
+        } else {
+          updateMessages.push('이미 수강 목록에 있는 과목들이라 새롭게 추가된 과목은 없어요.');
+        }
+      } else {
+        updateMessages.push('시간표에서 학수번호 매핑이 가능한 과목을 찾지 못했어요.');
+      }
+    } else {
+      updateMessages.push('시간표에서 인식된 과목이 없어요.');
+    }
+
+    return {
+      id: updatedRecord._id.toString(),
+      studentId: updatedRecord.studentId.toString(),
+      earnedCredits: updatedRecord.earnedCredits as EarnedCredits,
+      secondMajorCredits: updatedRecord.secondMajorCredits as SecondMajorCredits,
+      completedConditions: updatedRecord.completedConditions as CompletedConditions,
+      takenCourses: updatedRecord.takenCourses as TakenCourse[],
+      updateMessages
     };
   }
 

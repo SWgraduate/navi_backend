@@ -111,4 +111,62 @@ export class VisionService {
       throw new Error('이미지를 분석하는 과정에서 시스템 오류가 발생했습니다.');
     }
   }
+
+  public async parseTimetable(imageBase64: string) {
+    logger.i('VisionService: 시간표 이미지 파싱 요청 수신');
+
+    const outputSchema = z.object({
+      isSuccess: z.boolean().describe("이미지 인식 및 데이터 추출 성공 여부. 시간표 이미지가 아니거나 화질이 너무 낮을 경우 false."),
+      confidence: z.number().min(0).max(100).describe("추출 결과에 대한 종합 신뢰도 (0~100)."),
+      reason: z.string().describe("성공/실패에 대한 상세 이유."),
+      courses: z.array(z.object({
+        name: z.string().describe("수강 과목명"),
+        time: z.string().describe("해당 과목의 수업 시간(목록 내 모든 시간 병합). 예: '화(09:00-11:00),목(09:00-11:00)'")
+      })).nullable().optional().describe("인식된 수강 과목 목록")
+    });
+
+    const structuredLlm = this.visionModel.withStructuredOutput(outputSchema, {
+      name: "timetable_extractor"
+    });
+
+    const systemPrompt = `
+      너는 대학교 시간표 이미지를 분석하는 데이터 추출 AI야.
+      주어진 이미지를 분석하여 이번 학기에 수강하는 '과목 목록'과 '수업 시간'을 추출해.
+      과목별로 수업 시간이 여러 개일 경우 모두 쉼표로 이어서 하나로 합쳐서 반환해줘. (예: '화(09:00-11:00),목(09:00-11:00)')
+      화질이 너무 낮거나 시간표 이미지가 아니라면 isSuccess를 false로 두고 reason에 명확한 이유를 적어줘.
+    `;
+
+    const messages = [
+      new SystemMessage(systemPrompt),
+      new HumanMessage({
+        content: [
+          { type: 'text', text: '이 수강 시간표 이미지를 분석해서 명세된 스키마에 맞춰 반환해줘.' },
+          {
+            type: 'image_url',
+            image_url: {
+              url: imageBase64.startsWith('data:image')
+                ? imageBase64
+                : `data:image/jpeg;base64,${imageBase64}`,
+            },
+          },
+        ],
+      }),
+    ];
+
+    try {
+      const result = await structuredLlm.invoke(messages);
+
+      if (!result.isSuccess) {
+        logger.w(`VisionService: 시간표 인식 실패 또는 반려됨 (이유: ${result.reason})`);
+      } else {
+        logger.i(`VisionService: 시간표 파싱 성공 (신뢰도: ${result.confidence}%)`);
+      }
+
+      return result;
+
+    } catch (error) {
+      logger.e('VisionService: 시간표 통신 또는 파싱 시스템 에러', error);
+      throw new Error('시간표 이미지를 분석하는 과정에서 시스템 오류가 발생했습니다.');
+    }
+  }
 }
