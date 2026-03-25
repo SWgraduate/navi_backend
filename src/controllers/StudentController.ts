@@ -1,7 +1,10 @@
 import { Request as ExRequest } from 'express';
 import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
+import { optimizeBase64Image } from 'src/utils/imageExt';
 import {
   AcademicRecordResponse,
+  ParseAndUpdateResponse,
+  ParseTimetableResponse,
   StudentResponse,
   StudentService,
   UpdateAcademicRecordRequest,
@@ -181,7 +184,7 @@ export class StudentController extends Controller {
   public async parseAndUpdateFromImage(
     @Body() body: ParseImageRequest,
     @Request() req: ExRequest
-  ): Promise<AcademicRecordResponse | { error: string }> {
+  ): Promise<ParseAndUpdateResponse | { error: string }> {
     const userId = req.user;
 
     if (!userId) {
@@ -195,7 +198,8 @@ export class StudentController extends Controller {
     }
 
     try {
-      const result = await this.studentService.parseAndUpdateFromImage(userId, body.imageBase64);
+      const optimizedBase64 = await optimizeBase64Image(body.imageBase64);
+      const result = await this.studentService.parseAndUpdateFromImage(userId, optimizedBase64);
       this.setStatus(200);
       return result;
     } catch (error: any) {
@@ -211,6 +215,56 @@ export class StudentController extends Controller {
       } else {
         this.setStatus(500);
         return { error: '이미지 파싱 및 이수 현황 업데이트 중 서버 오류가 발생했습니다.' };
+      }
+    }
+  }
+
+  /**
+   * 시간표 이미지 파싱 후 이수 현황 및 수강 목록 자동 업데이트
+   * 
+   * Base64 형태의 시간표 이미지를 수신하여 VisionService로 각 과목과 시간을 추출합니다.
+   * 추출된 과목명과 시간을 바탕으로 시스템의 전체 과목 DB(Course 모델)와 매핑한 후, 
+   * 사용자의 수강 목록(takenCourses)에 중복을 제외하고 추가합니다.
+   * 또한 새롭게 추가된 과목의 이수 구분과 학점을 분석하여, 졸업학점, 전공학점, 
+   * 교양학점, 영어전용/IC-PBL 강좌 수 등 AcademicRecord의 세부 영역 수치도 함께 자동으로 갱신(증가)시킵니다.
+   */
+  @Post('me/academic-record/parse-timetable')
+  @Security('jwt')
+  @SuccessResponse('200', 'OK')
+  @Response<{ error: string }>(401, 'Unauthorized')
+  @Response<{ error: string }>(400, 'Bad Request')
+  @Response<{ error: string }>(422, 'Unprocessable Content')
+  public async parseTimetableAndUpdate(
+    @Body() body: ParseImageRequest,
+    @Request() req: ExRequest
+  ): Promise<ParseAndUpdateResponse | { error: string }> {
+    const userId = req.user;
+
+    if (!userId) {
+      this.setStatus(401);
+      return { error: 'Unauthorized' };
+    }
+
+    if (!body.imageBase64) {
+      this.setStatus(400);
+      return { error: 'imageBase64 필드가 필요합니다.' };
+    }
+
+    try {
+      const optimizedBase64 = await optimizeBase64Image(body.imageBase64);
+      const result = await this.studentService.parseTimetableAndUpdate(userId, optimizedBase64);
+      this.setStatus(200);
+      return result;
+    } catch (error: any) {
+      if (error instanceof StudentNotFoundError) {
+        this.setStatus(404);
+        return { error: error.message };
+      } else if (error instanceof ImageParsingError) {
+        this.setStatus(422);
+        return { error: error.message };
+      } else {
+        this.setStatus(500);
+        return { error: '시간표 이미지 파싱 중 서버 오류가 발생했습니다.' };
       }
     }
   }
