@@ -58,7 +58,45 @@ export class ConversationService {
     return rows.map((row) => this.toListItem(row));
   }
 
-  public async togglePin(userId: string, conversationId: string, pinned: boolean){
+  
+  public async searchConversations(
+    userId: string,
+    keyword: string
+  ): Promise<ConversationListItem[]> {
+    this.ensureDbReady();
+    
+    const queryWord = keyword.trim();
+    if (!queryWord) {
+      return this.listConversations(userId);
+    }
+    
+    const rows = await ConversationModel.find({
+      userId,
+      title: { $regex: queryWord, $options: "i" },
+    }).sort({ pinned: -1, lastMessageAt: -1 });
+    
+    return rows.map((row) => this.toListItem(row));
+  }
+  
+  public async renameConversation(
+    userId: string,
+    conversationId: string,
+    newTitle: string
+  ): Promise<void> {
+    this.ensureDbReady();
+    
+    const updated = await ConversationModel.findOneAndUpdate(
+      { _id: conversationId, userId },
+      { title: this.normalizeTitle(newTitle) },
+      { new: true }
+    );
+    
+    if (!updated) {
+      throw new Error("Conversation not found");
+    }
+  }
+  
+  public async togglePin(userId: string, conversationId: string, pinned: boolean): Promise<void>{
     this.ensureDbReady();
 
     const updated = await ConversationModel.findOneAndUpdate(
@@ -66,43 +104,6 @@ export class ConversationService {
       { pinned },
     );
     if (!updated) throw new Error("Conversation not found");
-  }
-
-  public async searchConversations(
-    userId: string,
-    keyword: string
-  ): Promise<ConversationListItem[]> {
-    this.ensureDbReady();
-
-    const queryWord = keyword.trim();
-    if (!queryWord) {
-      return this.listConversations(userId);
-    }
-
-    const rows = await ConversationModel.find({
-      userId,
-      title: { $regex: queryWord, $options: "i" },
-    }).sort({ pinned: -1, lastMessageAt: -1 });
-
-    return rows.map((row) => this.toListItem(row));
-  }
-
-  public async renameConversation(
-    userId: string,
-    conversationId: string,
-    newTitle: string
-  ): Promise<void> {
-    this.ensureDbReady();
-
-    const updated = await ConversationModel.findOneAndUpdate(
-      { _id: conversationId, userId },
-      { title: this.normalizeTitle(newTitle) },
-      { new: true }
-    );
-
-    if (!updated) {
-      throw new Error("Conversation not found");
-    }
   }
 
   public async deleteConversation(userId: string, conversationId: string): Promise<void> {
