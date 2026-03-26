@@ -41,7 +41,6 @@ export class ChatService {
 
   private conversationService = ConversationService.getInstance();
   private attachmentContextService = AttachmentContextService.getInstance();
-  private readonly pinecodeIndexService = new PineconeIndexService();
   private ragRetrievalService = new RagRetrievalService(
     new EmbeddingService(),
     new PineconeIndexService()
@@ -80,7 +79,8 @@ export class ChatService {
   public async startChatTask(
     query: string,
     userId?: string,
-    conversationId?: string
+    conversationId?: string,
+    hasAttachments?: boolean,
   ): Promise<{ taskId: string; message: string; conversationId?: string }> {
     let resolvedConversationId = conversationId;
 
@@ -94,7 +94,7 @@ export class ChatService {
     }
 
     const taskId = await this.createTask(query, userId, resolvedConversationId);
-    void this.processChatTask(taskId, query, userId, resolvedConversationId);
+    void this.processChatTask(taskId, query, userId, resolvedConversationId, hasAttachments);
 
     return { taskId, message: "Started", conversationId: resolvedConversationId };
   }
@@ -145,7 +145,7 @@ export class ChatService {
    * @param conversationId - Optional. Required alongside `userId` to look up
    *   bound documents and update the conversation timestamp.
    */
-  private async processChatTask(taskId: string, query: string, userId?: string, conversationId?: string) {
+  private async processChatTask(taskId: string, query: string, userId?: string, conversationId?: string, hasAttachments?: boolean) {
     const update = async (
       progress: string,
       msg: string,
@@ -174,7 +174,7 @@ export class ChatService {
 
     try {
       await update("embedding_query", "Embedding user query...");
-      const boundDocumentIds = await this.resolveBoundDocuments(userId, conversationId);
+      const boundDocumentIds = await this.resolveBoundDocuments(userId, conversationId, hasAttachments);
 
       await update("retrieving_chunks", "Retrieving relevant chunks...");
       const retrieval = await this.ragRetrievalService.retrieveContext({
@@ -215,8 +215,8 @@ export class ChatService {
     }
   }
 
-  private async resolveBoundDocuments(userId?: string, conversationId?: string): Promise<string[]> {
-    if (!ENABLE_FILE_AWARE_CHAT || !userId || !conversationId) return [];
+  private async resolveBoundDocuments(userId?: string, conversationId?: string, hasAttachments?: boolean): Promise<string[]> {
+    if (!ENABLE_FILE_AWARE_CHAT || !userId || !conversationId || !hasAttachments) return [];
     return this.attachmentContextService.resolveBoundDocumentIds(userId, conversationId);
   }
 

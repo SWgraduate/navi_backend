@@ -5,6 +5,7 @@ import { ChatService, ChatTask } from 'src/services/ChatService';
 export interface ChatRequest {
   query: string;
   conversationId?: string;
+  hasAttachments?: boolean;
 }
 
 export interface ChatTaskResponse {
@@ -35,7 +36,7 @@ export class ChatController extends Controller {
     @Body() body: ChatRequest,
     @Request() req: ExRequest
   ): Promise<ChatTaskResponse | { error: string}> {
-    const { query, conversationId } = body;
+    const { query, conversationId, hasAttachments } = body;
     const userId = req.user;
 
     if(!userId) {
@@ -43,7 +44,7 @@ export class ChatController extends Controller {
         return { error: "Authentication required" };
     }
 
-    const result = await this.chatService.startChatTask(query, userId, conversationId);
+    const result = await this.chatService.startChatTask(query, userId, conversationId, hasAttachments );
 
     this.setStatus(202); // Accepted
     return result;
