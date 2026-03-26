@@ -16,6 +16,12 @@ export class AttachmentContextService {
         return AttachmentContextService.instance;
     }
 
+    private ensureDbReady(): void {
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error("Database connection is not ready");
+        }
+    }
+
     public async ensureConversationOwnership(userId: string, conversationId: string): Promise<void> {
         const conversation = await ConversationModel.findOne({ _id: conversationId, userId});
         if (!conversation) {
@@ -24,6 +30,8 @@ export class AttachmentContextService {
     }
 
     public async bindDocument(userId: string, conversationId: string, documentId: string): Promise<void> {
+        this.ensureDbReady();
+
         await this.ensureConversationOwnership(userId, conversationId);
 
         const doc = await RagDocumentModel.findById(documentId);
@@ -44,17 +52,27 @@ export class AttachmentContextService {
     }
 
     public async listBoundDocuments(userId: string, conversationId: string) {
+        this.ensureDbReady();
+
         await this.ensureConversationOwnership(userId, conversationId);
         return ChatAttachmentBindingModel.find({ userId, conversationId }).sort({ createdAt: -1 });
     }
 
     public async unbindDocument(userId: string, conversationId: string, documentId: string): Promise<void> {
+        this.ensureDbReady();
+        
         await this.ensureConversationOwnership(userId, conversationId);
-        await ChatAttachmentBindingModel.deleteOne({ userId, conversationId, documentId});
+        
+        const result = await ChatAttachmentBindingModel.deleteOne({ userId, conversationId, documentId });
+        if (result.deletedCount === 0) {
+            throw new Error("Binding not found");
+        }
+
         logger.i(`Unbound document ${documentId} from conversation ${conversationId}`);
     }
 
     public async resolveBoundDocumentIds(userId: string, conversationId: string ): Promise<string[]> {
+        this.ensureDbReady();
         const bindings = await ChatAttachmentBindingModel.find({ userId, conversationId });
         return bindings.map(binding => binding.documentId);
     }
