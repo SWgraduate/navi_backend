@@ -145,7 +145,7 @@ export class VisionService {
       logger.i(`VisionService: extracted ${extractedText.length} characters from image`);
       return extractedText;
     } catch (error) {
-      logger.e('VissionService: image text extraction failed', error);
+      logger.e('VisionService: image text extraction failed', error);
       throw new Error(
         `Image text extraction failed: ${error instanceof Error ? error.message : String(error)}`
       );
