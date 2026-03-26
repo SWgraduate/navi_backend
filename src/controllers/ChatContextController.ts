@@ -59,8 +59,8 @@ export class ChatContextController extends Controller {
         @Query() conversationId: string
     ): Promise<{ documentId: string; createdAt: Date }[]> {
         const userId = request.user;
-        const bindigs = await this.attachmentContextService.listBoundDocuments(userId, conversationId);
-        return bindigs.map(binding => ({ documentId: binding.documentId, createdAt: binding.createdAt}));
+        const bindings = await this.attachmentContextService.listBoundDocuments(userId, conversationId);
+        return bindings.map(binding => ({ documentId: binding.documentId, createdAt: binding.createdAt}));
     }
 
     // Unbind a document from a conversation

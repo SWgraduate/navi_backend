@@ -186,7 +186,7 @@ export class ChatService {
       });
 
       await update("building_context", "Building context for answer...");
-      const contextText = this.buildContextText(retrieval.chunks, 4);
+      const contextText = this.buildContextText(retrieval.chunks, 5);
 
       await update("generating_answer", "Generating grounded answer...");
       const answer = await this.callGroundedLLM(query, contextText);
@@ -221,7 +221,7 @@ export class ChatService {
   }
 
   private buildSources(chunks: RetrievedChunk[]): IChatSource[] {
-    return chunks.slice(0, 4).map((chunk) => ({
+    return chunks.slice(0, 5).map((chunk) => ({
       documentId: chunk.documentId,
       fileName: chunk.fileName,
       chunkId: chunk.chunkId,
@@ -230,7 +230,7 @@ export class ChatService {
     }));
   }
 
-  private buildContextText(chunks: RetrievedChunk[], maxChunks = 4): string {
+  private buildContextText(chunks: RetrievedChunk[], maxChunks = 5): string {
     const selected = chunks.slice(0, maxChunks);
 
     if (selected.length === 0) {

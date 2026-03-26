@@ -47,7 +47,7 @@ export class RagIngestionController extends Controller {
             mimeType: file.mimetype,
             fileSize: file.size,
             namespace: GLOBAL_CONFIG.pineconeCorpusNamespace,
-            actor: { userId: request.user.userId, role },
+            actor: { userId: request.user, role },
         });
 
         this.setStatus(result.isDuplicate ? 200 : 201);
