@@ -48,7 +48,7 @@ export class RagIngestionService {
             }
 
             if (normalizedText.length < 50) {
-                throw new Error("Image contrains insufficient text for ingestion. (minimum 50 characters required)");
+                throw new Error("Document contrains insufficient text for ingestion. (minimum 50 characters required)");
             }
 
             logger.i(`Normalized text: ${normalizedText.length} characters`);

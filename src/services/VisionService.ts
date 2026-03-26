@@ -122,9 +122,9 @@ export class VisionService {
 
     const messages = [
       new SystemMessage(
-        'You are a document text extraction tool.' + 
-        'Extract all readable text from the image exactly as it appears' + 
-        'Return only the extracted text with no explanation, commentary, or formatting'
+        'You are a document text extraction tool. ' + 
+        'Extract all readable text from the image exactly as it appears. ' + 
+        'Return only the extracted text with no explanation, commentary, or formatting.'
       ),
       new HumanMessage({
         content: [

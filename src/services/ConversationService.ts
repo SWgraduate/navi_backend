@@ -96,7 +96,7 @@ export class ConversationService {
     }
   }
   
-  public async togglePin(userId: string, conversationId: string, pinned: boolean): Promise<void>{
+  public async togglePin(userId: string, conversationId: string, pinned: boolean): Promise<void> {
     this.ensureDbReady();
 
     const updated = await ConversationModel.findOneAndUpdate(

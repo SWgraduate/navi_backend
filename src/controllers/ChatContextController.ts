@@ -26,7 +26,7 @@ export class ChatContextController extends Controller {
             throw new Error("No file uploaded");
         }
 
-        const userId = request.user.userId;
+        const userId = request.user;
         const result = await this.ragIngestionService.ingestDocument({
             fileBuffer: file.buffer,
             originalFileName: file.originalname,
@@ -46,7 +46,7 @@ export class ChatContextController extends Controller {
         @Request() request: any,
         @Body() body: BindDocumentRequest
     ): Promise<{ message: string }> {
-        const userId = request.user.userId;
+        const userId = request.user;
         await this.attachmentContextService.bindDocument(userId, body.conversationId, body.documentId);
         this.setStatus(201);
         return { message: "Document bound successfully" };
@@ -58,7 +58,7 @@ export class ChatContextController extends Controller {
         @Request() request: any,
         @Query() conversationId: string
     ): Promise<{ documentId: string; createdAt: Date }[]> {
-        const userId = request.user.userId;
+        const userId = request.user;
         const bindigs = await this.attachmentContextService.listBoundDocuments(userId, conversationId);
         return bindigs.map(binding => ({ documentId: binding.documentId, createdAt: binding.createdAt}));
     }
@@ -70,7 +70,7 @@ export class ChatContextController extends Controller {
         @Path() documentId: string,
         @Query() conversationId: string
     ): Promise<{ message: string }> {
-        const userId = request.user.userId;
+        const userId = request.user;
         await this.attachmentContextService.unbindDocument(userId, conversationId, documentId);
         return { message: "Document unbound successfully" };
     } 
