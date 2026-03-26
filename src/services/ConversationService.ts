@@ -8,6 +8,7 @@ import { GLOBAL_CONFIG } from "src/settings";
 export interface ConversationListItem {
   id: string;
   title: string;
+  pinned: boolean;
   lastMessageAt: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -53,8 +54,18 @@ export class ConversationService {
   public async listConversations(userId: string): Promise<ConversationListItem[]> {
     this.ensureDbReady();
 
-    const rows = await ConversationModel.find({ userId }).sort({ lastMessageAt: -1 });
+    const rows = await ConversationModel.find({ userId }).sort({ pinned: -1, lastMessageAt: -1 });
     return rows.map((row) => this.toListItem(row));
+  }
+
+  public async togglePin(userId: string, conversationId: string, pinned: boolean){
+    this.ensureDbReady();
+
+    const updated = await ConversationModel.findOneAndUpdate(
+      { _id: conversationId, userId },
+      { pinned },
+    );
+    if (!updated) throw new Error("Conversation not found");
   }
 
   public async searchConversations(
@@ -71,7 +82,7 @@ export class ConversationService {
     const rows = await ConversationModel.find({
       userId,
       title: { $regex: queryWord, $options: "i" },
-    }).sort({ lastMessageAt: -1 });
+    }).sort({ pinned: -1, lastMessageAt: -1 });
 
     return rows.map((row) => this.toListItem(row));
   }
@@ -205,6 +216,7 @@ export class ConversationService {
     return {
       id: row._id.toString(),
       title: row.title,
+      pinned: row.pinned ?? false,
       lastMessageAt: row.lastMessageAt,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,

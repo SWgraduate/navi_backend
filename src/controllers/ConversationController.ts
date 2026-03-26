@@ -24,6 +24,10 @@ interface RenameConversationRequest {
   title: string;
 }
 
+interface PinConversationRequest {
+  pinned: boolean;
+}
+
 @Route("chat/conversations")
 @Tags("Chat")
 export class ConversationController extends Controller {
@@ -100,6 +104,28 @@ export class ConversationController extends Controller {
       return { message: "Conversation renamed" };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to rename conversation";
+      this.setStatus(message === "Conversation not found" ? 404 : 400);
+      return { error: message };
+    }
+  }
+
+  @Patch("/{conversationId}/pin")
+  @Security("jwt")
+  @Response<{ error: string }>(401, "Unauthorized")
+  @Response<{ error: string }>(404, "Not Found")
+  public async pinConversation(
+    @Path() conversationId: string,
+    @Body() body: PinConversationRequest,
+    @Request() req: ExRequest
+  ): Promise<{ message: string} | {error: string}> {
+    const userId = this.getUserIdOrUnauthorized(req);
+    if (!userId) return {error: "Unauthorized"};
+
+    try {
+      await this.conversationService.togglePin(userId, conversationId, body.pinned);
+      return { message: body.pinned ? "Conversation pinned" : "Conversation unpinned"};
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message: "Failed to update pin";
       this.setStatus(message === "Conversation not found" ? 404 : 400);
       return { error: message };
     }
