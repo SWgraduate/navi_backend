@@ -1,0 +1,150 @@
+digraph chatbot_flow {
+    rankdir=TB;
+    fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=12];
+    edge [fontname="Helvetica", fontsize=10];
+
+    // ─── Subgraphs ────────────────────────────────────────────────
+
+    subgraph cluster_frontend {
+        label="Frontend";
+        style=filled;
+        color="#E8F4FD";
+        fontsize=14;
+
+        FE_upload   [label="Upload File\n(PDF / Image)", shape=box, style=filled, fillcolor="#AED6F1"];
+        FE_bind     [label="Bind to Conversation", shape=box, style=filled, fillcolor="#AED6F1"];
+        FE_chat     [label="Send Message", shape=box, style=filled, fillcolor="#AED6F1"];
+        FE_poll     [label="Poll Status", shape=box, style=filled, fillcolor="#AED6F1"];
+    }
+
+    subgraph cluster_controllers {
+        label="Controllers (API Layer)";
+        style=filled;
+        color="#FEF9E7";
+        fontsize=14;
+
+        C_context   [label="ChatContextController\nPOST /chat/context/uploads\nPOST /chat/context/bindings\nGET  /chat/context/bindings\nDELETE /chat/context/bindings/:id", shape=box, style=filled, fillcolor="#F9E79F"];
+        C_chat      [label="ChatController\nPOST /chat\nGET  /chat/status/:taskId", shape=box, style=filled, fillcolor="#F9E79F"];
+        C_rag       [label="RagIngestionController\nPOST /rag/documents/upload\n(Admin only)", shape=box, style=filled, fillcolor="#FAD7A0"];
+    }
+
+    subgraph cluster_services {
+        label="Services (Business Logic)";
+        style=filled;
+        color="#EAFAF1";
+        fontsize=14;
+
+        S_attachment [label="AttachmentContextService\nbindDocument()\nlistBoundDocuments()\nunbindDocument()\nresolveBoundDocumentIds()", shape=box, style=filled, fillcolor="#A9DFBF"];
+        S_chat       [label="ChatService\nstartChatTask()\nprocessChatTask()\ngetTaskStatus()", shape=box, style=filled, fillcolor="#A9DFBF"];
+        S_vision     [label="VisionService\nextractTextFromImage()", shape=box, style=filled, fillcolor="#A9DFBF"];
+    }
+
+    subgraph cluster_rag_ingestion {
+        label="RAG Ingestion Pipeline";
+        style=filled;
+        color="#F5EEF8";
+        fontsize=14;
+
+        RI_service  [label="RagIngestionService\ningestDocument()", shape=box, style=filled, fillcolor="#D7BDE2"];
+        RI_pdf      [label="PdfExtractionService\nextractTextFromBuffer()", shape=box, style=filled, fillcolor="#D7BDE2"];
+        RI_norm     [label="TextNormalizationService\nnormalize()", shape=box, style=filled, fillcolor="#D7BDE2"];
+        RI_hash     [label="ContentHashService\ncreateHash()", shape=box, style=filled, fillcolor="#D7BDE2"];
+        RI_chunk    [label="TextChunkingService\nchunkDocument()", shape=box, style=filled, fillcolor="#D7BDE2"];
+        RI_embed    [label="EmbeddingService\nembedChunks()", shape=box, style=filled, fillcolor="#D7BDE2"];
+        RI_pine     [label="PineconeIndexService\nupsertDocumentVectors()", shape=box, style=filled, fillcolor="#D7BDE2"];
+    }
+
+    subgraph cluster_rag_retrieval {
+        label="RAG Retrieval Pipeline";
+        style=filled;
+        color="#FDF2F8";
+        fontsize=14;
+
+        RR_service  [label="RagRetrievalService\nretrieveContext()", shape=box, style=filled, fillcolor="#F1948A"];
+        RR_embed    [label="EmbeddingService\nembedQuery()", shape=box, style=filled, fillcolor="#F1948A"];
+        RR_bound    [label="Pinecone Query\n(Bound docs filter)\nnamespace: user-docs\nmin_score: 0.3", shape=diamond, style=filled, fillcolor="#FADBD8"];
+        RR_corpus   [label="Pinecone Query\n(Global corpus)\nnamespace: corpus\nmin_score: 0.0", shape=diamond, style=filled, fillcolor="#FADBD8"];
+        RR_mode     [label="retrievalMode:\nbound / corpus-fallback / corpus-only", shape=box, style=filled, fillcolor="#FADBD8"];
+    }
+
+    subgraph cluster_external {
+        label="External Services";
+        style=filled;
+        color="#FDFEFE";
+        fontsize=14;
+
+        EX_openrouter [label="OpenRouter API\ngpt-5 (chat)\ntext-embedding-3-large\ngemini-3-flash (vision)", shape=cylinder, style=filled, fillcolor="#D5D8DC"];
+        EX_pinecone   [label="Pinecone Vector DB\nIndex: rag-main\nNS: corpus (admin)\nNS: user-docs (user)", shape=cylinder, style=filled, fillcolor="#D5D8DC"];
+        EX_mongo      [label="MongoDB\nRagDocument\nChatAttachmentBinding\nChat / Conversation", shape=cylinder, style=filled, fillcolor="#D5D8DC"];
+    }
+
+    // ─── Upload flow ──────────────────────────────────────────────
+
+    FE_upload -> C_context [label="POST /chat/context/uploads\nmultipart/form-data"];
+    C_context -> RI_service [label="ingestDocument()\nnamespace: user-docs"];
+
+    FE_upload -> C_rag [label="POST /rag/documents/upload\n(Admin only)", style=dashed];
+    C_rag -> RI_service [label="ingestDocument()\nnamespace: corpus", style=dashed];
+
+    RI_service -> RI_pdf   [label="mimeType=PDF"];
+    RI_service -> S_vision [label="mimeType=image/*"];
+    S_vision -> EX_openrouter [label="gemini-3-flash\nOCR extraction"];
+    S_vision -> RI_norm [label="extracted text"];
+    RI_pdf -> RI_norm [label="raw text"];
+
+    RI_norm -> RI_hash;
+    RI_hash -> EX_mongo [label="dedup check\nfindByContentHash()"];
+    RI_hash -> RI_chunk [label="new document"];
+    RI_chunk -> RI_embed;
+    RI_embed -> EX_openrouter [label="text-embedding-3-large"];
+    RI_embed -> RI_pine [label="vectors[]"];
+    RI_pine -> EX_pinecone [label="upsert vectors\n+ metadata"];
+    RI_pine -> EX_mongo [label="RagDocument\nstatus: processed"];
+
+    C_context -> FE_upload [label="{ documentId, chunkCount,\n  isDuplicate }", style=dashed, color=gray];
+
+    // ─── Bind flow ────────────────────────────────────────────────
+
+    FE_bind -> C_context [label="POST /chat/context/bindings\n{ conversationId, documentId }"];
+    C_context -> S_attachment [label="bindDocument()"];
+    S_attachment -> EX_mongo [label="ownership check\n+ upsert binding\n(idempotent)"];
+    S_attachment -> C_context [label="void", style=dashed, color=gray];
+    C_context -> FE_bind [label="{ message: 'Document bound' }", style=dashed, color=gray];
+
+    // ─── Chat flow ────────────────────────────────────────────────
+
+    FE_chat -> C_chat [label="POST /chat\n{ query, conversationId }"];
+    C_chat -> S_chat [label="startChatTask()\n→ fire and forget"];
+    C_chat -> FE_chat [label="{ taskId } 202 Accepted", style=dashed, color=gray];
+
+    S_chat -> S_attachment [label="resolveBoundDocumentIds()\nif ENABLE_FILE_AWARE_CHAT"];
+    S_attachment -> EX_mongo [label="find bindings"];
+
+    S_chat -> RR_service [label="retrieveContext()\n{ query, boundDocumentIds, namespace }"];
+    RR_service -> RR_embed;
+    RR_embed -> EX_openrouter [label="text-embedding-3-large"];
+
+    RR_service -> RR_bound [label="boundDocumentIds present"];
+    RR_bound -> EX_pinecone [label="query\nfilter: { documentId: { \$in: [...] } }"];
+    RR_bound -> RR_corpus [label="0 chunks above 0.3\n→ fallback"];
+    RR_bound -> RR_mode [label="chunks ≥ 0.3\nmode: bound"];
+
+    RR_service -> RR_corpus [label="no bound docs"];
+    RR_corpus -> EX_pinecone [label="query\nno filter"];
+    RR_corpus -> RR_mode [label="mode: corpus-only\nor corpus-fallback"];
+
+    RR_mode -> S_chat [label="{ chunks, retrievalMode }"];
+
+    S_chat -> EX_openrouter [label="gpt-5\n{ systemPrompt, context, query }"];
+    EX_openrouter -> S_chat [label="answer text"];
+    S_chat -> EX_mongo [label="Chat.update()\n{ answer, sources,\n  retrievalMode, status: completed }"];
+
+    // ─── Poll flow ────────────────────────────────────────────────
+
+    FE_poll -> C_chat [label="GET /chat/status/:taskId"];
+    C_chat -> S_chat [label="getTaskStatus()"];
+    S_chat -> EX_mongo [label="Chat.findById()"];
+    S_chat -> C_chat [label="{ status, answer,\n  sources, retrievalMode }", style=dashed, color=gray];
+    C_chat -> FE_poll [label="{ status, answer,\n  sources, retrievalMeta }", style=dashed, color=gray];
+}

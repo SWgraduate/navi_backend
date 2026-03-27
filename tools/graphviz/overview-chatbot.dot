@@ -1,0 +1,186 @@
+digraph ChatBot {
+    rankdir=LR;
+    splines=ortho;
+    compound=true;
+    nodesep=0.45;
+    ranksep=0.75;
+    fontname="Helvetica";
+
+    node [
+        shape=box
+        style="rounded,filled"
+        fillcolor="white"
+        color="#555555"
+        fontname="Helvetica"
+        fontsize=10
+        margin="0.10,0.06"
+    ];
+
+    edge [
+        color="#666666"
+        fontname="Helvetica"
+        fontsize=9
+        arrowsize=0.7
+    ];
+
+    subgraph cluster_admin {
+        label="Admin Corpus Lane";
+        color="#BBBBBB";
+        style="rounded";
+
+        subgraph cluster_admin_input {
+            label="1. Upload";
+            color="#DDDDDD";
+            style="rounded";
+
+            AdminPortal [label="Admin Portal"];
+            RagIngestionController [label="RagIngestionController\nPOST /rag/documents/upload"];
+            AdminPortal -> RagIngestionController [label="upload PDF"];
+        }
+
+        subgraph cluster_admin_ingest {
+            label="2. Ingestion";
+            color="#DDDDDD";
+            style="rounded";
+
+            RagIngestionService [label="RagIngestionService"];
+            TextExtractionService [label="Text Extraction"];
+            TextNormalizationService [label="Text Normalization"];
+            ContentHashService [label="Content Hash"];
+            DedupCheck [label="Dedup Check\n(by contentHash)"];
+            MarkPending [label="create PENDING\ndocument"];
+            MarkProcessing [label="mark PROCESSING"];
+            ChunkingService [label="Chunking"];
+            EmbeddingService [label="Embedding"];
+            MarkProcessed [label="mark PROCESSED"];
+            MarkFailed [label="mark FAILED"];
+
+            RagIngestionController -> RagIngestionService;
+            RagIngestionService -> TextExtractionService;
+            TextExtractionService -> TextNormalizationService;
+            TextNormalizationService -> ContentHashService;
+            ContentHashService -> DedupCheck;
+            DedupCheck -> MarkPending [label="new doc"];
+            DedupCheck -> RagIngestionController [label="duplicate -> 200", style=dashed];
+            MarkPending -> MarkProcessing;
+            MarkProcessing -> ChunkingService;
+            ChunkingService -> EmbeddingService;
+            EmbeddingService -> MarkProcessed;
+            EmbeddingService -> MarkFailed [label="error", style=dashed];
+        }
+    }
+
+    subgraph cluster_user {
+        label="User Session Lane";
+        color="#BBBBBB";
+        style="rounded";
+
+        subgraph cluster_user_entry {
+            label="1. Entry";
+            color="#DDDDDD";
+            style="rounded";
+
+            UserChatUI [label="User Chat UI"];
+            ChatAPI [label="ChatController\nPOST /chat"];
+            QueryOrchestrator [label="ChatService /\nQuery Orchestrator"];
+
+            UserChatUI -> ChatAPI [label="prompt (+ optional file)"];
+            ChatAPI -> QueryOrchestrator;
+        }
+
+        subgraph cluster_user_file {
+            label="2. File Handling";
+            color="#DDDDDD";
+            style="rounded";
+
+            FileValidationService [label="File Validation\n(planned)"];
+            OCRService [label="OCR Service\n(planned)"];
+            PDFExtractionService [label="PDF Extraction\n(planned)"];
+            TaskRouter [label="Task Decision\n(planned)", shape=diamond, style="filled", fillcolor="white"];
+
+            QueryOrchestrator -> FileValidationService [label="if file attached"];
+            FileValidationService -> OCRService [label="image"];
+            FileValidationService -> PDFExtractionService [label="pdf"];
+            OCRService -> TaskRouter [label="extracted text"];
+            PDFExtractionService -> TaskRouter [label="extracted text"];
+        }
+
+        subgraph cluster_user_session_ingest {
+            label="3A. Session Retrieval Path";
+            color="#DDDDDD";
+            style="rounded";
+
+            SessionDocumentIngestionService [label="Session Document\nIngestion (planned)"];
+            SessionChunkingService [label="Session Chunking\n(planned)"];
+            SessionEmbeddingService [label="Session Embedding\n(planned)"];
+
+            TaskRouter -> SessionDocumentIngestionService [label="file Q&A / retrieval"];
+            SessionDocumentIngestionService -> SessionChunkingService;
+            SessionChunkingService -> SessionEmbeddingService;
+        }
+
+        subgraph cluster_user_direct_analysis {
+            label="3B. Direct Analysis Path";
+            color="#DDDDDD";
+            style="rounded";
+
+            DocumentAnalysisService [label="Document Analysis\n(summary / translate / extract)\n(planned)"];
+            TaskRouter -> DocumentAnalysisService [label="one-time analysis"];
+        }
+
+        subgraph cluster_user_retrieval {
+            label="4. Retrieval";
+            color="#DDDDDD";
+            style="rounded";
+
+            ConversationStore [label="Conversation Store"];
+            PromptEmbeddingService [label="Prompt Embedding"];
+            RetrievalFilter [label="Namespace + Metadata\nFilter"];
+            RetrievalService [label="Retrieval Service"];
+
+            QueryOrchestrator -> ConversationStore [label="save user message"];
+            QueryOrchestrator -> PromptEmbeddingService [label="no file (text-only)"];
+            TaskRouter -> PromptEmbeddingService [label="file Q&A query (planned)"];
+            PromptEmbeddingService -> RetrievalFilter [label="query vector"];
+            RetrievalFilter -> RetrievalService [label="topK + minScore"];
+        }
+
+        subgraph cluster_user_generation {
+            label="5. Response Generation";
+            color="#DDDDDD";
+            style="rounded";
+
+            ContextBuilder [label="Context Builder"];
+            LLM [label="LLM"];
+            ResponseFormatter [label="Response Formatter"];
+
+            RetrievalService -> ContextBuilder [label="retrieved chunks"];
+            ConversationStore -> ContextBuilder [label="chat memory"];
+            DocumentAnalysisService -> ContextBuilder [label="analysis result (planned)", style=dashed];
+
+            ContextBuilder -> LLM;
+            LLM -> ResponseFormatter;
+            ResponseFormatter -> ConversationStore [label="save assistant response"];
+            ResponseFormatter -> ChatAPI [label="final response"];
+            ChatAPI -> UserChatUI;
+        }
+    }
+
+    subgraph cluster_storage {
+        label="Storage Layer";
+        color="#BBBBBB";
+        style="rounded";
+
+        MongoDBAtlas [label="MongoDB Atlas\n\n- rag_documents\n- chats\n- session docs (planned)"];
+        PineconeVectorDB [label="Pinecone Vector DB\n\n- admin namespace\n- session namespace (planned)"];
+    }
+
+    RagIngestionService -> MongoDBAtlas [label="create/update doc + status"];
+    EmbeddingService -> PineconeVectorDB [label="upsert admin vectors"];
+
+    SessionDocumentIngestionService -> MongoDBAtlas [label="save session file + text", style=dashed];
+    SessionEmbeddingService -> PineconeVectorDB [label="upsert session vectors", style=dashed];
+
+    QueryOrchestrator -> MongoDBAtlas [label="read/write chat state"];
+    RetrievalFilter -> PineconeVectorDB [label="search vectors by namespace + metadata"];
+}

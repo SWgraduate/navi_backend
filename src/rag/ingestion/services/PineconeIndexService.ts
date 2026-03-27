@@ -16,6 +16,7 @@ interface QueryTopKParams {
     vector: number[];
     topK: number;
     namespace?: string;
+    filter?: Record<string, unknown>;
 }
 
 export class PineconeIndexService {
@@ -32,7 +33,7 @@ export class PineconeIndexService {
 
         this.pinecone = new Pinecone({ apiKey });
         this.indexName = indexName;
-        this.defaultNamespace = GLOBAL_CONFIG.pineconeNamespace;
+        this.defaultNamespace = GLOBAL_CONFIG.pineconeCorpusNamespace;
     }
 
     public getNamespace(namespace?: string): string {
@@ -98,6 +99,7 @@ export class PineconeIndexService {
                 topK: params.topK,
                 includeMetadata: true,
                 includeValues: false,
+                ...(params.filter ? { filter: params.filter } : {}),
             });
 
             const retrievedChunks = (result.matches ?? []).map((match) => {

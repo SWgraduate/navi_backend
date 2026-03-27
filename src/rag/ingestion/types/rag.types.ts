@@ -26,15 +26,16 @@ export interface IngestionActor {
     role: "user" | "admin";
 } 
 
-export interface IngestPdfCommand {
+export interface IngestDocumentInput {
     fileBuffer: Buffer;
     originalFileName: string;
     mimeType: string;
     fileSize: number;
     actor: IngestionActor;
+    namespace?: string;
 }
 
-export interface IngestPdfResult {
+export interface IngestDocumentResult {
     documentId: string;
     status: IngestionStatus;
     message: string;
