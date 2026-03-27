@@ -169,4 +169,44 @@ export class VisionService {
       throw new Error('시간표 이미지를 분석하는 과정에서 시스템 오류가 발생했습니다.');
     }
   }
+
+  // -----------------------------------------------------------------------
+  // 챗봇에 사진 업로드 할 때 쓸 목적으로 다음 함수를 작성합니다
+  public async extractTextFromImage(imageBase64: string, mimeType: string): Promise<string> {
+    logger.i('VisionService: image text extraction request received');
+
+    const isAlreadyDataUrl = imageBase64.startsWith('data:image');
+    const imageUrl = isAlreadyDataUrl ? imageBase64 : `data:${mimeType};base64,${imageBase64}`;
+
+    const messages = [
+      new SystemMessage(
+        'You are a document text extraction tool. ' + 
+        'Extract all readable text from the image exactly as it appears. ' + 
+        'Return only the extracted text with no explanation, commentary, or formatting.'
+      ),
+      new HumanMessage({
+        content: [
+          { type: 'text', text: 'Extract all text from this page.' },
+          { type: 'image_url', image_url: { url: imageUrl } },
+        ],
+      }),
+    ];
+
+    try {
+      const response = await this.visionModel.invoke(messages);
+      const extractedText = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+
+      if (!extractedText?.trim()) {
+        throw new Error('No text could be extracted from the image');
+      }
+
+      logger.i(`VisionService: extracted ${extractedText.length} characters from image`);
+      return extractedText;
+    } catch (error) {
+      logger.e('VisionService: image text extraction failed', error);
+      throw new Error(
+        `Image text extraction failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
 }

@@ -45,7 +45,8 @@ export const GLOBAL_CONFIG = {
 
   // Vector DB
   pineconeIndexName: "rag-main",
-  pineconeNamespace: "default",
+  pineconeCorpusNamespace: "corpus",
+  pineconeUserDocsNamespace: "user-docs",
 
   discordAlertRoleID: {
     backend: "1482976770763395207",
@@ -58,6 +59,8 @@ export const GLOBAL_CONFIG = {
 // 비밀값이 아닌 '환경 유형에서 파생되는 정책'은 여기서 코드로 정의하여 관리 부담을 줄임.
 
 const isProd = NODE_ENV === 'production';
+
+export const ENABLE_FILE_AWARE_CHAT = requireEnv('ENABLE_FILE_AWARE_CHAT', isProd ? 'false' : 'true') === 'true';
 
 /**
  * Express-session 쿠키 정책.

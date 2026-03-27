@@ -1,0 +1,169 @@
+digraph ChatArchitectureV2 {
+  rankdir=LR;
+  splines=ortho;
+  compound=true;
+  nodesep=0.45;
+  ranksep=0.85;
+  fontname="Helvetica";
+  labelloc="t";
+  label="Chat Architecture v2 (Stable API + File-Aware RAG)";
+
+  node [
+    shape=box
+    style="rounded,filled"
+    fillcolor="white"
+    color="#555555"
+    fontname="Helvetica"
+    fontsize=10
+    margin="0.10,0.06"
+  ];
+
+  edge [
+    color="#666666"
+    fontname="Helvetica"
+    fontsize=9
+    arrowsize=0.7
+  ];
+
+  // ===== Legend =====
+  subgraph cluster_legend {
+    label="Legend";
+    color="#BBBBBB";
+    style="rounded";
+
+    L1 [label="Implemented", fillcolor="#E8F5E9", color="#2E7D32"];
+    L2 [label="Planned", fillcolor="#FFF8E1", color="#F9A825"];
+    L3 [label="Feature-flagged path", fillcolor="#E3F2FD", color="#1565C0"];
+    L4 [label="Fallback / error path", fillcolor="#FDECEA", color="#C62828"];
+  }
+
+  // ===== Client =====
+  subgraph cluster_client {
+    label="Client Layer";
+    color="#BBBBBB";
+    style="rounded";
+
+    Frontend [label="Frontend App", fillcolor="#E8F5E9", color="#2E7D32"];
+  }
+
+  // ===== API =====
+  subgraph cluster_api {
+    label="Stable API Layer";
+    color="#BBBBBB";
+    style="rounded";
+
+    ChatSubmit [label="POST /chat\n{ query }", fillcolor="#E8F5E9", color="#2E7D32"];
+    ChatStatus [label="GET /chat/status/{taskId}", fillcolor="#E8F5E9", color="#2E7D32"];
+    UploadPdf [label="POST /rag/documents/upload", fillcolor="#E8F5E9", color="#2E7D32"];
+
+    BindCtx [label="POST /chat/context/attachments", fillcolor="#FFF8E1", color="#F9A825"];
+    ListCtx [label="GET /chat/context/attachments", fillcolor="#FFF8E1", color="#F9A825"];
+    UnbindCtx [label="DELETE /chat/context/attachments/{documentId}", fillcolor="#FFF8E1", color="#F9A825"];
+
+    Frontend -> UploadPdf [label="upload file"];
+    Frontend -> BindCtx [label="bind documentId"];
+    Frontend -> ListCtx [label="list bound files"];
+    Frontend -> UnbindCtx [label="unbind file"];
+    Frontend -> ChatSubmit [label="send prompt"];
+    Frontend -> ChatStatus [label="poll result"];
+  }
+
+  // ===== Orchestration =====
+  subgraph cluster_orch {
+    label="Chat Orchestration";
+    color="#BBBBBB";
+    style="rounded";
+
+    ChatController [label="ChatController", fillcolor="#E8F5E9", color="#2E7D32"];
+    ChatContextController [label="ChatContextController", fillcolor="#FFF8E1", color="#F9A825"];
+    ChatService [label="ChatService", fillcolor="#E8F5E9", color="#2E7D32"];
+
+    ResolveCtx [label="AttachmentContextService\nresolve(user/session)", fillcolor="#FFF8E1", color="#F9A825"];
+    IntentRouter [label="ChatIntentRouter", fillcolor="#FFF8E1", color="#F9A825"];
+
+    FlagGate [label="ENABLE_FILE_AWARE_CHAT", shape=diamond, style="filled", fillcolor="#E3F2FD", color="#1565C0"];
+    HasAttachment [label="Has bound attachment?", shape=diamond, style="filled", fillcolor="#E3F2FD", color="#1565C0"];
+
+    ContextBuilder [label="Context Builder", fillcolor="#E8F5E9", color="#2E7D32"];
+    LLM [label="LLM", fillcolor="#E8F5E9", color="#2E7D32"];
+    TaskStore [label="Task State Update\nqueued/processing/completed/failed", fillcolor="#E8F5E9", color="#2E7D32"];
+
+    NoContextFallback [label="Fallback: no attachment context\ncontinue prompt-only", fillcolor="#FDECEA", color="#C62828"];
+    RetrievalFallback [label="Fallback: no relevant chunks\nsafe answer + guidance", fillcolor="#FDECEA", color="#C62828"];
+
+    ChatSubmit -> ChatController;
+    ChatStatus -> ChatController [label="status query"];
+
+    BindCtx -> ChatContextController;
+    ListCtx -> ChatContextController;
+    UnbindCtx -> ChatContextController;
+
+    ChatController -> ChatService [label="create task"];
+    ChatContextController -> ResolveCtx [label="bind/list/unbind"];
+
+    ChatService -> ResolveCtx [label="load bound docs"];
+    ChatService -> IntentRouter [label="analyze query"];
+    IntentRouter -> FlagGate;
+
+    FlagGate -> HasAttachment [label="ON", color="#1565C0", fontcolor="#1565C0"];
+    FlagGate -> ContextBuilder [label="OFF -> prompt-only", color="#1565C0", fontcolor="#1565C0"];
+
+    HasAttachment -> NoContextFallback [label="No", color="#1565C0", fontcolor="#1565C0"];
+    NoContextFallback -> ContextBuilder [label="prompt-only path", color="#C62828", fontcolor="#C62828"];
+  }
+
+  // ===== RAG =====
+  subgraph cluster_rag {
+    label="RAG Layer";
+    color="#BBBBBB";
+    style="rounded";
+
+    PromptEmbed [label="EmbeddingService\n(embed query)", fillcolor="#E8F5E9", color="#2E7D32"];
+    RetrievalFilter [label="Namespace + Metadata Filter", fillcolor="#FFF8E1", color="#F9A825"];
+
+    GlobalRetrieval [label="Global Corpus Retrieval\n(admin knowledge)", fillcolor="#E8F5E9", color="#2E7D32"];
+    BoundRetrieval [label="Bound Attachment Retrieval\n(filterByDocumentIds)", fillcolor="#FFF8E1", color="#F9A825"];
+
+    MergeContext [label="Merge Context", fillcolor="#FFF8E1", color="#F9A825"];
+
+    HasAttachment -> PromptEmbed [label="Yes", color="#1565C0", fontcolor="#1565C0"];
+    ContextBuilder -> LLM;
+    LLM -> TaskStore [label="answer"];
+
+    PromptEmbed -> RetrievalFilter;
+
+    RetrievalFilter -> GlobalRetrieval [label="global scope"];
+    RetrievalFilter -> BoundRetrieval [label="bound docs scope"];
+
+    GlobalRetrieval -> MergeContext;
+    BoundRetrieval -> MergeContext;
+
+    MergeContext -> ContextBuilder [label="retrieved chunks"];
+    MergeContext -> RetrievalFallback [label="0 chunks", color="#C62828", fontcolor="#C62828"];
+    RetrievalFallback -> ContextBuilder [label="fallback context", color="#C62828", fontcolor="#C62828"];
+  }
+
+  // ===== Storage =====
+  subgraph cluster_storage {
+    label="Storage";
+    color="#BBBBBB";
+    style="rounded";
+
+    MongoChat [label="MongoDB\nchats", fillcolor="#E8F5E9", color="#2E7D32"];
+    MongoBindings [label="MongoDB\nchat_attachment_bindings", fillcolor="#FFF8E1", color="#F9A825"];
+    MongoDocs [label="MongoDB\nrag_documents", fillcolor="#E8F5E9", color="#2E7D32"];
+    Pinecone [label="Pinecone\nvectors", fillcolor="#E8F5E9", color="#2E7D32"];
+  }
+
+  UploadPdf -> MongoDocs [label="save metadata/text/status"];
+  UploadPdf -> Pinecone [label="upsert vectors"];
+
+  ResolveCtx -> MongoBindings [label="bind/list/unbind docs"];
+  ChatService -> MongoChat [label="task + result persist"];
+
+  GlobalRetrieval -> Pinecone [label="vector search (global)"];
+  BoundRetrieval -> Pinecone [label="vector search (doc-scoped)"];
+
+  BoundRetrieval -> MongoDocs [label="doc metadata resolve"];
+  TaskStore -> MongoChat [label="save final result"];
+}

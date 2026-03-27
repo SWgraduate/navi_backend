@@ -1,13 +1,17 @@
-import { Body, Controller, Get, Path, Post, Route, Tags, Response } from 'tsoa';
+import { Body, Controller, Get, Path, Post, Route, Tags, Response, Request, Security } from 'tsoa';
+import { Request as ExRequest } from 'express';
 import { ChatService, ChatTask } from 'src/services/ChatService';
 
 export interface ChatRequest {
   query: string;
+  conversationId?: string;
+  hasAttachments?: boolean;
 }
 
 export interface ChatTaskResponse {
   taskId: string;
   message: string;
+  conversationId?: string;
 }
 
 // ChatService의 ChatTask 인터페이스를 사용하거나, 여기서 정의한 것을 사용하고 매핑해야 함.
@@ -23,12 +27,25 @@ export class ChatController extends Controller {
    * 사용자의 질문을 전송하고 비동기 처리용 `taskId`를 발급받습니다.
    * 질문은 즉시 처리되지 않고 비동기 작업으로 등록되며, 반환된 `taskId`를 통해
    * `/chat/status/{taskId}` 엔드포인트에서 처리 상태와 결과를 조회할 수 있습니다.
-   * @param body 사용자가 입력한 질문 내용 (`query` 필드)
+   * @param body 사용자가 입력한 질문 내용 (`query`, optional `conversationId`)
+   * @param req JWT 인증 미들웨어 통과한 Express 요청 객체 (req.user에 userId 포함)
    */
   @Post('/')
-  public async createChatTask(@Body() body: ChatRequest): Promise<ChatTaskResponse> {
-    const { query } = body;
-    const result = await this.chatService.startChatTask(query);
+  @Security("jwt")
+  public async createChatTask(
+    @Body() body: ChatRequest,
+    @Request() req: ExRequest
+  ): Promise<ChatTaskResponse | { error: string}> {
+    const { query, conversationId, hasAttachments } = body;
+    const userId = req.user;
+
+    if(!userId) {
+        this.setStatus(401);
+        return { error: "Authentication required" };
+    }
+
+    const result = await this.chatService.startChatTask(query, userId, conversationId, hasAttachments );
+
     this.setStatus(202); // Accepted
     return result;
   }

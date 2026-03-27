@@ -12,7 +12,9 @@ export interface RetrieveContextParams {
     query: string;
     topK?: number;
     namespace?: string;
+    globalNamespace?: string;
     minScore?: number;
+    boundDocumentIds?: string[];
 }
 
 export interface RetrieveContextResult {
@@ -20,4 +22,5 @@ export interface RetrieveContextResult {
     topK: number;
     usedChunks: number;
     chunks: RetrievedChunk[];
+    retrievalMode: 'bound' | 'corpus-fallback' | 'corpus-only';
 }
