@@ -3,7 +3,7 @@ import { ConversationService } from "./ConversationService";
 import mongoose from "mongoose";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { GLOBAL_CONFIG, OPENROUTER_API_KEY, ENABLE_FILE_AWARE_CHAT } from 'src/settings';
+import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
 import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { EmbeddingService } from "src/rag/ingestion/services/EmbeddingService";
 import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexService";
@@ -216,7 +216,7 @@ export class ChatService {
   }
 
   private async resolveBoundDocuments(userId?: string, conversationId?: string, hasAttachments?: boolean): Promise<string[]> {
-    if (!ENABLE_FILE_AWARE_CHAT || !userId || !conversationId || !hasAttachments) return [];
+    if (!GLOBAL_CONFIG.enableFileAwareChat || !userId || !conversationId || !hasAttachments) return [];
     return this.attachmentContextService.resolveBoundDocumentIds(userId, conversationId);
   }
 
