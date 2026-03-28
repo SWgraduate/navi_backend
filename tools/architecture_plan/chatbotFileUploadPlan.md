@@ -7,8 +7,8 @@ Implement a single unified document ingestion path for PDF and images (camera/ga
 **Steps**
 
 1. Phase 1 — Normalize contracts and feature flag foundation.
-   1.1 ~~Add feature flag/config for file-aware retrieval mode (`ENABLE_FILE_AWARE_CHAT`).~~
-       **ALREADY DONE** — `src/settings.ts` line 54 already exports `ENABLE_FILE_AWARE_CHAT` with correct defaults:
+   1.1 ~~Add feature flag/config for file-aware retrieval mode (`GLOBAL_CONFIG.enableFileAwareChat`).~~
+       **ALREADY DONE** — `src/settings.ts` defines `GLOBAL_CONFIG.enableFileAwareChat` which is automatically derived from `isProd`:
        `false` in production, `true` in development. No action needed.
 
    1.2 Rename PDF-specific contracts to document-oriented names.
@@ -123,7 +123,7 @@ Implement a single unified document ingestion path for PDF and images (camera/ga
        Update `RetrieveContextResult` to include `retrievalMode: 'bound' | 'global-fallback' | 'global-only'`.
 
    4.3 In `ChatService.processChatTask()`:
-       - If `ENABLE_FILE_AWARE_CHAT` is true AND `conversationId` is present:
+       - If `GLOBAL_CONFIG.enableFileAwareChat` is true AND `conversationId` is present:
          call `attachmentContextService.resolveBoundDocumentIds(userId, conversationId)`.
        - Pass resolved `boundDocumentIds` to `ragRetrievalService.retrieveContext()`.
 
@@ -218,7 +218,7 @@ Implement a single unified document ingestion path for PDF and images (camera/ga
 - `src/rag/retrieval/types/retrieval.types.ts` — add `boundDocumentIds?: string[]` to `RetrieveContextParams`; add `retrievalMode` to `RetrieveContextResult`.
 - `src/rag/retrieval/services/RagRetrievalService.ts` — implement scoped filter and return `retrievalMode`.
 - `src/models/Chat.ts` — add `retrievalMode: 'bound' | 'global-fallback' | 'global-only'` to `IChatRetrievalMeta` interface and `ChatRetrievalMetaSchema`.
-- `src/services/ChatService.ts` — integrate `ENABLE_FILE_AWARE_CHAT` flag, `AttachmentContextService.resolveBoundDocumentIds()`, hybrid retrieval policy, and persist `retrievalMode`.
+- `src/services/ChatService.ts` — integrate `GLOBAL_CONFIG.enableFileAwareChat` flag, `AttachmentContextService.resolveBoundDocumentIds()`, hybrid retrieval policy, and persist `retrievalMode`.
 - `src/services/ConversationService.ts` — add cascade delete of `ChatAttachmentBinding` records on conversation delete.
 
 **New files:**
@@ -275,7 +275,7 @@ Implement a single unified document ingestion path for PDF and images (camera/ga
 - API shape: single upload endpoint for all document sources to avoid duplicate backend paths and simplify clients.
 - Security: binding operations and attachment resolution are scoped by authenticated `userId` and `conversationId` ownership checks.
 - Unbind behavior: removing a binding does NOT delete the underlying document or vectors. Documents exist independently in the global corpus. Unbinding only removes the conversation-scoped pointer.
-- Feature flag: `ENABLE_FILE_AWARE_CHAT` defaults to `false` in production for safe rollout. Flip to `true` after integration tests pass.
+- Feature flag: `GLOBAL_CONFIG.enableFileAwareChat` defaults to `false` in production for safe rollout. Flip to `true` after integration tests pass.
 - Fallback threshold: use `MIN_BOUND_SCORE = 0.3` (not the existing default 0.0) for bound retrieval. Chunks scoring below this are noise and should trigger global fallback.
 
 ---
