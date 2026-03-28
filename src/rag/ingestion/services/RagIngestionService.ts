@@ -1,19 +1,20 @@
 import { INGESTION_STATUS } from "../../shared/constants/IngestionStatus";
 import { RagDocumentRepository } from "../repositories/RagDocumentRepository";
-import { RagDocumentCreateInput } from "../types/rag.types";
-import { IngestPdfCommand, IngestPdfResult } from "../types/rag.types";
+import { IngestDocumentInput, IngestDocumentResult} from "../types/rag.types";
 import { ContentHashService } from "./ContentHashService";
 import { EmbeddingService } from "./EmbeddingService";
 import { PdfExtractionService } from "./PdfExtractionService";
 import { PineconeIndexService } from "./PineconeIndexService";
 import { TextChunkingService } from "./TextChunkingService";
 import { TextNormalizationService } from "./TextNormalizationService";
+import { VisionService } from "src/services/VisionService";
 import { logger } from "src/utils/log";
 
 export class RagIngestionService {
     constructor(
         private readonly ragDocumentRepository = new RagDocumentRepository(),
         private readonly pdfExtractionService = new PdfExtractionService(),
+        private readonly visionService = new VisionService(),
         private readonly textNormalizationService = new TextNormalizationService(),
         private readonly contentHashService = new ContentHashService(),
         private readonly textChunkingService = new TextChunkingService(),
@@ -21,16 +22,23 @@ export class RagIngestionService {
         private readonly pineconeIndexService = new PineconeIndexService()
     ) {}
 
-    async ingestPdf(command: IngestPdfCommand): Promise<IngestPdfResult> {
+    async ingestDocument(command: IngestDocumentInput): Promise<IngestDocumentResult> {
         try {
-            logger.i(`Starting PDF ingestion for file: ${command.originalFileName}`);
+            logger.i(`Starting document ingestion for file: ${command.originalFileName}`);
 
             // 1. Extract
-            logger.i("Step 1: Extracting text from PDF...");
-            const rawText = await this.pdfExtractionService.extractTextFromBuffer(
-                command.fileBuffer
-            );
-            logger.i(`Extracted ${rawText.length} characters from PDF`);
+            logger.i("Step 1: Extracting text from Document...");
+            let rawText: string;
+            if(command.mimeType === 'application/pdf') {
+                rawText = await this.pdfExtractionService.extractTextFromBuffer(command.fileBuffer);
+            } else if (['image/jpeg', 'image/png', 'image/webp'].includes(command.mimeType)) {
+                const base64 = command.fileBuffer.toString('base64');
+                rawText = await this.visionService.extractTextFromImage(base64, command.mimeType);
+            } else {
+                throw new Error(`Unsupported file type: ${command.mimeType}`);
+            }
+
+            logger.i(`Extracted ${rawText.length} characters from Document`);
 
             // 2. Normalize
             logger.i("Step 2: Normalizing text...");
@@ -38,6 +46,11 @@ export class RagIngestionService {
             if (this.textNormalizationService.isEffectivelyEmpty(normalizedText)) {
                 throw new Error("Extracted text is empty after normalization!");
             }
+
+            if (normalizedText.length < 50) {
+                throw new Error("Document contains insufficient text for ingestion. (minimum 50 characters required)");
+            }
+
             logger.i(`Normalized text: ${normalizedText.length} characters`);
 
             // 3. Hash
@@ -95,7 +108,7 @@ export class RagIngestionService {
 
                 // 9. Upload vectors
                 logger.i("Step 9: Upserting vectors to Pinecone...");
-                const vectorNamespace = this.pineconeIndexService.getNamespace();
+                const vectorNamespace = this.pineconeIndexService.getNamespace(command.namespace);
                 await this.pineconeIndexService.upsertDocumentVectors({
                     documentId,
                     contentHash,
@@ -114,7 +127,7 @@ export class RagIngestionService {
                     processedAt: new Date(),
                 });
 
-                logger.i(`PDF ingestion completed successfully for: ${command.originalFileName}`);
+                logger.i(`Document ingestion completed successfully for: ${command.originalFileName}`);
 
                 return {
                     documentId,
@@ -130,9 +143,9 @@ export class RagIngestionService {
                 throw error;
             }
         } catch (error) {
-            logger.e(`PDF ingestion failed for file: ${command.originalFileName}`, error);
+            logger.e(`Document ingestion failed for file: ${command.originalFileName}`, error);
             throw new Error(
-                `PDF ingestion failed: ${error instanceof Error ? error.message : String(error)}`
+                `Document ingestion failed: ${error instanceof Error ? error.message : String(error)}`
             );
         }
     }

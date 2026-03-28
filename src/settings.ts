@@ -33,6 +33,9 @@ export const OPENROUTER_API_KEY = requireEnv('OPENROUTER_API_KEY');
 export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
+export const ELEVENLABS_API_KEY = requireEnv('ELEVENLABS_API_KEY');
+
+const isProd = NODE_ENV === 'production';
 
 export const GLOBAL_CONFIG = {
   jwtExpiresIn: '30d',
@@ -45,19 +48,18 @@ export const GLOBAL_CONFIG = {
 
   // Vector DB
   pineconeIndexName: "rag-main",
-  pineconeNamespace: "default",
+  pineconeCorpusNamespace: "corpus",
+  pineconeUserDocsNamespace: "user-docs",
+
+  elevenlabsVoiceId: "cgSgspJ2msm6clMCkdW9",
 
   discordAlertRoleID: {
     backend: "1482976770763395207",
     ai: "1482986345507848213"
   },
+
+  enableFileAwareChat: !isProd, // 보안상 env에 포함할 필요 없다 판단되어 글로벌 설정 객체로 편입 (26. 3. 8. 태영)
 };
-
-// ─── 환경별 분기 설정 ────────────────────────────────────────────────────────
-// NODE_ENV=production 일 때만 배포 환경으로 간주.
-// 비밀값이 아닌 '환경 유형에서 파생되는 정책'은 여기서 코드로 정의하여 관리 부담을 줄임.
-
-const isProd = NODE_ENV === 'production';
 
 /**
  * Express-session 쿠키 정책.
