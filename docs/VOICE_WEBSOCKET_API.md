@@ -9,7 +9,7 @@
 3. **웹소켓 연결**: 획득한 `wsUrl` 기반으로 WebSocket 연결 수립 (예: `ws://.../ws/chats/voice?token={token}`)
 4. **만료 정책**: 토큰 발급 후 60초 이내 연결 필수. 시간 초과 시 자동 만료.
 
-## 2. 프미티브 송수신 규격 (Data Protocol)
+## 2. 프리미티브 송수신 규격 (Data Protocol)
 
 ### 2.1. Client → Server (Upstream)
 * **타입**: 바이너리 (Binary)
