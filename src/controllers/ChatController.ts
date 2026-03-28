@@ -34,15 +34,20 @@ export class ChatController extends Controller {
    * 실시간 음성 통화를 위한 WebSocket 세션 토큰을 발급받습니다.
    * 발급받은 wsUrl로 WebSocket을 연결하여 오디오 스트리밍을 시작할 수 있습니다.
    * @param chatId 통화를 시작할 채팅방 ID
+   * @param req JWT 인증 미들웨어 통과한 Express 요청 객체 (req.user에 userId 포함)
    */
   @Post('/{chatId}/voice-session')
-  public async createVoiceSession(@Path() chatId: string): Promise<VoiceSessionResponse> {
-    const userId = 'TODO_USER_ID'; // 원래는 인증 미들웨어(req.user) 등에서 가져옵니다
+  @Security('jwt')
+  public async createVoiceSession(
+    @Path() chatId: string,
+    @Request() req: ExRequest
+  ): Promise<VoiceSessionResponse> {
+    const userId = req.user as string;
     const token = this.voiceSessionManager.createSession(chatId, userId);
 
     return {
       token,
-      wsUrl: `/ws/chats/voice?token=${token}` 
+      wsUrl: `/ws/chats/voice?token=${token}`,
     };
   }
 

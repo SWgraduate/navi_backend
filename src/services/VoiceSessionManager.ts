@@ -68,7 +68,10 @@ export class VoiceSessionManager {
 
     // ElevenLabs STT 연결 초기화
     session.sttInstance = this.speechService.recognizeSpeechStream((text, isFinal) => {
-      // ✅ 1. 부분 인식(isFinal=false)은 여기서 프론트로 text 통째로 던져서 UI에 띄워도 됩니다.
+      // ✅ 부분 인식 / 최종 인식 텍스트 프론트로 전송
+      if (session.ws && session.ws.readyState === WebSocket.OPEN) {
+        session.ws.send(JSON.stringify({ type: 'stt', transcript: text, isFinal }));
+      }
 
       if (isFinal) {
         logger.i(`[VoiceSession] STT Final Identified: ${text}`);
@@ -111,6 +114,11 @@ export class VoiceSessionManager {
         logger.i(`[VoiceSession] Querying LLM for: ${text}`);
         const replyText = await chatService.generateDirectAnswer(text);
         logger.i(`[VoiceSession] LLM Response: ${replyText}`);
+
+        // UI에서 TTS 텍스트 결과를 눈으로 볼 수 있게 프론트로 전달
+        if (session.ws && session.ws.readyState === WebSocket.OPEN) {
+            session.ws.send(JSON.stringify({ type: 'tts', text: replyText }));
+        }
 
         // 생성된 답변을 다시 TTS 음성으로 변환하여 스트리밍 전송
         await this.speechService.generateSpeechStream(
