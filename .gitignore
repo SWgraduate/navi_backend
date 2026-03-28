@@ -73,7 +73,7 @@ web_modules/
 .dynamodb/
 
 # 에디터/IDE 설정
-.agents/
+.agents/outputs/
 .vscode/
 .idea/
 *.swp
