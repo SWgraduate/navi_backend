@@ -33,6 +33,7 @@ export const OPENROUTER_API_KEY = requireEnv('OPENROUTER_API_KEY');
 export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
+export const ELEVENLABS_API_KEY = requireEnv('ELEVENLABS_API_KEY');
 
 export const GLOBAL_CONFIG = {
   jwtExpiresIn: '30d',
@@ -47,6 +48,8 @@ export const GLOBAL_CONFIG = {
   pineconeIndexName: "rag-main",
   pineconeCorpusNamespace: "corpus",
   pineconeUserDocsNamespace: "user-docs",
+
+  elevenlabsVoiceId: "cgSgspJ2msm6clMCkdW9", 
 
   discordAlertRoleID: {
     backend: "1482976770763395207",

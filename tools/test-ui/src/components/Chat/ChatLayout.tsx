@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ConversationSummary } from '../../api/chatApi';
 
-export type AppScreen = 'chat' | 'upload';
+export type AppScreen = 'chat' | 'upload' | 'voice';
 
 interface ChatLayoutProps {
     children: React.ReactNode;
@@ -87,6 +87,13 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({
                     style={navButtonStyle('upload')}
                 >
                     Upload
+                </button>
+
+                <button
+                    onClick={() => onScreenChange('voice')}
+                    style={navButtonStyle('voice')}
+                >
+                    🎙️ Voice Test
                 </button>
 
                 <div style={{ flex: 1, overflowY: 'auto' }}>

@@ -3,6 +3,7 @@ import { ChatLayout, type AppScreen } from './components/Chat/ChatLayout'
 import { MessageList } from './components/Chat/MessageList'
 import { MessageInput } from './components/Chat/MessageInput'
 import { UploadPanel } from './components/Upload/UploadPanel'
+import { VoicePanel } from './components/Voice/VoicePanel'
 import type { Message } from './types/chat'
 import {
   createConversation,
@@ -199,6 +200,8 @@ function App() {
     >
       {activeScreen === 'upload' ? (
         <UploadPanel />
+      ) : activeScreen === 'voice' ? (
+        <VoicePanel />
       ) : (
         <>
           <MessageList messages={messages} />
