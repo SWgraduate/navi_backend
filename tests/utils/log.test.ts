@@ -1,6 +1,7 @@
 // pnpm test -- tests/utils/log.test.ts
 import { logger } from 'src/utils/log';
 import { discordAlert } from "../../src/utils/log";
+import axios from 'axios';
 
 describe('Logger Display Test', () => {
   it('should visually output logs properly to terminal', () => {
@@ -23,12 +24,51 @@ describe('Logger Display Test', () => {
 });
 
 describe('Discord Alert Test', () => {
-  it('should send a test alert to Discord webhook', async () => {
-    // 이 테스트는 실제로 디스코드 웹훅에 메시지를 보내는 테스트입니다.
-    // 웹훅 URL이 설정되어 있지 않으면 경고 메시지가 출력되고 테스트는 패스됩니다.
-    await discordAlert("테스트 메시지입니다.", true, false);
+  let axiosPostSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    // 실제 네트워크 요청을 차단하고, 성공 응답을 모방하도록 axios.post 모킹
+    axiosPostSpy = jest.spyOn(axios, 'post').mockResolvedValue({
+      status: 200,
+      data: 'Mocked Success'
+    });
   });
-  it('should send important discord alert', async () => {
+
+  afterEach(() => {
+    // 테스트 종료 후 모킹 초기화
+    axiosPostSpy.mockRestore();
+  });
+
+  it('should format and send a test alert to Discord webhook', async () => {
+    await discordAlert("테스트 메시지입니다.", false, false);
+
+    // axios.post가 올바른 인자로 호출되었는지 검증
+    // (웹훅 URL이 환경변수에 세팅된 경우만 발송되므로 호출 여부 체크)
+    if (axiosPostSpy.mock.calls.length > 0) {
+      expect(axiosPostSpy).toHaveBeenCalledTimes(1);
+      expect(axiosPostSpy).toHaveBeenCalledWith(
+        expect.any(String), // 디스코드 웹훅 URL
+        expect.objectContaining({
+          content: expect.stringContaining("테스트 메시지입니다.")
+        })
+      );
+    } else {
+      console.warn("DISCORD_WEBHOOK_URL is not set. Webhook alert skipped.");
+    }
+  });
+
+  it('should format and send an important discord alert', async () => {
     await discordAlert("중요 테스트 메시지입니다.", true, false);
+
+    if (axiosPostSpy.mock.calls.length > 0) {
+      expect(axiosPostSpy).toHaveBeenCalledTimes(1);
+      expect(axiosPostSpy).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          // important=true인 경우 멘션이 포함될 수 있으므로 stringContaining 사용
+          content: expect.stringContaining("중요 테스트 메시지입니다.")
+        })
+      );
+    }
   });
 });

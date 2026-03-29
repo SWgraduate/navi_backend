@@ -53,7 +53,7 @@ export const GLOBAL_CONFIG = {
 
   elevenlabsVoiceId: "cgSgspJ2msm6clMCkdW9",
 
-  discordAlertRoleID: {
+  discordAlertRoleIds: {
     backend: "1482976770763395207",
     ai: "1482986345507848213"
   },
