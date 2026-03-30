@@ -34,6 +34,8 @@ export class RagIngestionService {
             } else if (['image/jpeg', 'image/png', 'image/webp'].includes(command.mimeType)) {
                 const base64 = command.fileBuffer.toString('base64');
                 rawText = await this.visionService.extractTextFromImage(base64, command.mimeType);
+            } else if (['text/markdown', 'text/plain'].includes(command.mimeType)) {
+                rawText = command.fileBuffer.toString('utf-8');
             } else {
                 throw new Error(`Unsupported file type: ${command.mimeType}`);
             }
@@ -98,6 +100,7 @@ export class RagIngestionService {
                     documentId,
                     contentHash,
                     normalizedText,
+                    mimeType: command.mimeType,
                 });
                 logger.i(`Created ${chunks.length} chunks`);
 
