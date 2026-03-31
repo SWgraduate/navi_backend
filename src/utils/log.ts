@@ -108,16 +108,20 @@ export async function discordAlert(
     });
     logger.s("Discord webhook sent successfully.");
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
     if (axios.isAxiosError(error)) {
       if (error.response) {
-        logger.e("Discord webhook API failed:", error.response.status, error.response.data);
-      } //서버는 응답했으나 에러
+        logger.e(`Discord webhook API failed [${error.response.status}]:`, errorMessage);
+      } // 서버는 응답했으나 에러
       else if (error.request) {
-        logger.e("Discord Webhook No Response (Network Timeout/Disconnect):", error.message);
+        logger.e("Discord Webhook No Response (Network Timeout/Disconnect):", errorMessage);
       } // 응답 없는 네트워크/타임아웃 에러
       else {
-        logger.e("Discord webhook request setup error:", error.message);
+        logger.e("Discord webhook request setup error:", errorMessage);
       } // 요청 설정 자체의 에러
+    } else {
+      logger.e("Discord webhook unknown error:", errorMessage);
     }
   }
 }
