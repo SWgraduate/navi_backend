@@ -8,7 +8,8 @@
     "tsoa": "tsoa spec-and-routes",
     "dev": "cross-env NODE_ENV=development pnpm tsoa && cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/index.ts",
     "build": "cross-env NODE_ENV=production pnpm tsoa && cross-env NODE_ENV=production tsc -p tsconfig.build.json && cross-env NODE_ENV=production tsc-alias -p tsconfig.build.json",
-    "start": "cross-env NODE_ENV=production node dist/index.js"
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "ingest": "ts-node -r tsconfig-paths/register scripts/ingest.ts"
   },
   "repository": {
     "type": "git",
