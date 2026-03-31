@@ -1,4 +1,4 @@
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { MarkdownTextSplitter, RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { ChunkPayload } from "../types/rag.types";
 import { logger } from "src/utils/log";
 
@@ -23,6 +23,7 @@ export class TextChunkingService {
             documentId: string;
             contentHash: string;
             normalizedText: string;
+            mimeType?: string;
         }
     ): Promise<ChunkPayload[]> {
         try {
@@ -30,15 +31,17 @@ export class TextChunkingService {
                 throw new Error("Cannot chunk empty text");
             }
 
+            const isMarkdown = params.mimeType === 'text/markdown';
+
             logger.i(
                 `Chunking document ${params.documentId} (size: ${params.normalizedText.length} chars, ` +
-                `chunkSize: ${this.chunkSize}, overlap: ${this.chunkOverlap})`
+                `chunkSize: ${this.chunkSize}, overlap: ${this.chunkOverlap}, ` +
+                `splitter: ${isMarkdown ? 'markdown' : 'recursive'})`
             );
 
-            const splitter = new RecursiveCharacterTextSplitter({
-                chunkSize: this.chunkSize,
-                chunkOverlap: this.chunkOverlap,
-            });
+            const splitter = isMarkdown
+                ? new MarkdownTextSplitter({ chunkSize: this.chunkSize, chunkOverlap: this.chunkOverlap })
+                : new RecursiveCharacterTextSplitter({ chunkSize: this.chunkSize, chunkOverlap: this.chunkOverlap });
 
             const rawChunks = await splitter.splitText(params.normalizedText);
 
