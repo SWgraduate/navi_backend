@@ -31,7 +31,7 @@ const PROFILE_BODY = {
   studentNumber: '2021111111',
   name: '김테스트',
   major: '컴퓨터공학부',
-  secondMajorType: '없음' as const,
+  secondMajorInfo: null,
   academicStatus: '재학생' as const,
   completedSemesters: 4,
 };

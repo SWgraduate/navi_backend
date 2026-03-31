@@ -32,7 +32,7 @@ const PROFILE_DATA = {
   studentNumber: '2020123456',
   name: '홍길동',
   major: '컴퓨터공학부',
-  secondMajorType: '없음' as const,
+  secondMajorInfo: null,
   academicStatus: '재학생' as const,
   completedSemesters: 6,
 };
