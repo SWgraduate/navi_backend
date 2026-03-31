@@ -7,6 +7,8 @@ const ALLOWED_MIME_TYPES = new Set([
     "image/jpeg",
     "image/png",
     "image/webp",
+    "text/markdown",
+    "text/plain",
 ]);
 
 const ALLOWED_EXTENSIONS = new Set([
@@ -15,6 +17,7 @@ const ALLOWED_EXTENSIONS = new Set([
     ".jpeg",
     ".png",
     ".webp",
+    ".md",
 ]);
 
 const ALLOWED_EXTENSIONS_DISPLAY = [...ALLOWED_EXTENSIONS]

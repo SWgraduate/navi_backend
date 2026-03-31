@@ -41,7 +41,7 @@ export const GLOBAL_CONFIG = {
   jwtExpiresIn: '30d',
 
   llmBaseUrl: "https://openrouter.ai/api/v1",
-  chatModel: "openai/gpt-5",
+  chatModel: "openai/gpt-4o",
   embeddingModel: "openai/text-embedding-3-large",
   embeddingDimensions: 1024,
   visionModel: "google/gemini-3-flash-preview",
@@ -53,7 +53,7 @@ export const GLOBAL_CONFIG = {
 
   elevenlabsVoiceId: "cgSgspJ2msm6clMCkdW9",
 
-  discordAlertRoleID: {
+  discordAlertRoleIds: {
     backend: "1482976770763395207",
     ai: "1482986345507848213"
   },

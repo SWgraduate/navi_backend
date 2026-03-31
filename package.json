@@ -8,7 +8,8 @@
     "tsoa": "tsoa spec-and-routes",
     "dev": "cross-env NODE_ENV=development pnpm tsoa && cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/index.ts",
     "build": "cross-env NODE_ENV=production pnpm tsoa && cross-env NODE_ENV=production tsc -p tsconfig.build.json && cross-env NODE_ENV=production tsc-alias -p tsconfig.build.json",
-    "start": "cross-env NODE_ENV=production node dist/index.js"
+    "start": "cross-env NODE_ENV=production node dist/index.js",
+    "ingest": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/scripts/ingest.ts"
   },
   "repository": {
     "type": "git",
@@ -67,6 +68,7 @@
     "@types/node": "^24.10.1",
     "@types/nodemailer": "^7.0.11",
     "@types/pdf-parse": "^1.1.5",
+    "@types/sharp": "^0.32.0",
     "@types/supertest": "^6.0.3",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
