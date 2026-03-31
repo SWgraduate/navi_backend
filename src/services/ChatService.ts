@@ -10,6 +10,7 @@ import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexSe
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
 import { AttachmentContextService } from "./AttachmentContextService";
+import { logger } from "src/utils/log";
 
 type ChatStatus = "queued" | "processing" | "completed" | "failed";
 
@@ -94,6 +95,7 @@ export class ChatService {
     }
 
     const taskId = await this.createTask(query, userId, resolvedConversationId);
+    logger.i(`[Chat:${taskId.slice(-6)}] Task queued | taskId=${taskId} conversationId=${resolvedConversationId ?? 'none'}`);
     void this.processChatTask(taskId, query, userId, resolvedConversationId, hasAttachments);
 
     return { taskId, message: "Started", conversationId: resolvedConversationId };
@@ -146,6 +148,8 @@ export class ChatService {
    *   bound documents and update the conversation timestamp.
    */
   private async processChatTask(taskId: string, query: string, userId?: string, conversationId?: string, hasAttachments?: boolean) {
+    const tag = `[Chat:${taskId.slice(-6)}]`;
+
     const update = async (
       progress: string,
       msg: string,
@@ -173,24 +177,44 @@ export class ChatService {
     }
 
     try {
-      await update("embedding_query", "Embedding user query...");
-      const boundDocumentIds = await this.resolveBoundDocuments(userId, conversationId, hasAttachments);
+      logger.i(`${tag} Pipeline started | query="${query.slice(0, 80)}${query.length > 80 ? '...' : ''}" userId=${userId ?? 'anon'} conversationId=${conversationId ?? 'none'}`);
 
+      // Step 1: Resolve bound documents
+      await update("embedding_query", "Embedding user query...");
+      logger.i(`${tag} [1/5] Resolving bound documents... hasAttachments=${hasAttachments ?? false}`);
+      const boundDocumentIds = await this.resolveBoundDocuments(userId, conversationId, hasAttachments);
+      logger.i(`${tag} [1/5] Bound documents resolved: [${boundDocumentIds.join(', ') || 'none'}]`);
+
+      // Step 2: Retrieve chunks
+      const namespace = boundDocumentIds.length > 0 ? GLOBAL_CONFIG.pineconeUserDocsNamespace : GLOBAL_CONFIG.pineconeCorpusNamespace;
       await update("retrieving_chunks", "Retrieving relevant chunks...");
+      logger.i(`${tag} [2/5] Querying Pinecone | namespace="${namespace}" topK=5`);
       const retrieval = await this.ragRetrievalService.retrieveContext({
         query,
         topK: 5,
         boundDocumentIds,
-        namespace: boundDocumentIds.length > 0 ? GLOBAL_CONFIG.pineconeUserDocsNamespace : GLOBAL_CONFIG.pineconeCorpusNamespace,
+        namespace,
         globalNamespace: GLOBAL_CONFIG.pineconeCorpusNamespace,
       });
+      logger.i(`${tag} [2/5] Retrieval done | mode=${retrieval.retrievalMode} usedChunks=${retrieval.usedChunks}/${retrieval.topK}`);
+      retrieval.chunks.forEach((c, i) =>
+        logger.d(`${tag}   chunk[${i}] score=${c.score.toFixed(4)} file="${c.fileName ?? 'unknown'}" chunkId=${c.chunkId}`)
+      );
 
+      // Step 3: Build context
       await update("building_context", "Building context for answer...");
+      logger.i(`${tag} [3/5] Building context from ${retrieval.chunks.length} chunks`);
       const contextText = this.buildContextText(retrieval.chunks, 5);
+      logger.d(`${tag} [3/5] Context length: ${contextText.length} chars`);
 
+      // Step 4: Call LLM
       await update("generating_answer", "Generating grounded answer...");
+      logger.i(`${tag} [4/5] Calling LLM | model=${GLOBAL_CONFIG.chatModel}`);
       const answer = await this.callGroundedLLM(query, contextText);
+      logger.s(`${tag} [4/5] LLM responded | answer length=${answer.length} chars`);
 
+      // Step 5: Save result
+      logger.i(`${tag} [5/5] Saving result to DB...`);
       await update("done", "Completed", {
         answer,
         sources: this.buildSources(retrieval.chunks),
@@ -200,12 +224,15 @@ export class ChatService {
           retrievalMode: retrieval.retrievalMode,
         },
       });
+      logger.s(`${tag} Pipeline completed successfully`);
 
       if (userId && conversationId) {
         await this.conversationService.touchConversation(userId, conversationId);
+        logger.d(`${tag} Conversation timestamp updated`);
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
+      logger.e(`${tag} Pipeline failed:`, message);
       await this.updateTask(taskId, {
         status: "failed",
         progress: "error",
