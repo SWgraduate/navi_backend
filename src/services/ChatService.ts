@@ -3,7 +3,7 @@ import { ConversationService } from "./ConversationService";
 import mongoose from "mongoose";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { GLOBAL_CONFIG, OPENROUTER_API_KEY, ENABLE_FILE_AWARE_CHAT } from 'src/settings';
+import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
 import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { EmbeddingService } from "src/rag/ingestion/services/EmbeddingService";
 import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexService";
@@ -46,7 +46,7 @@ export class ChatService {
     new PineconeIndexService()
   );
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): ChatService {
     if (!ChatService.instance) {
@@ -157,7 +157,7 @@ export class ChatService {
         displayMessage: msg,
       };
 
-      if (payload?.answer !== undefined ) {
+      if (payload?.answer !== undefined) {
         updateData.answer = payload.answer;
       }
 
@@ -165,7 +165,7 @@ export class ChatService {
         updateData.result = {
           answer: payload.answer ?? "",
           sources: payload.sources ?? [],
-          retrievalMeta: payload.retrievalMeta ?? { topK: 0, usedChunks: 0, retrievalMode: 'corpus-only'},
+          retrievalMeta: payload.retrievalMeta ?? { topK: 0, usedChunks: 0, retrievalMode: 'corpus-only' },
         };
       }
 
@@ -216,7 +216,7 @@ export class ChatService {
   }
 
   private async resolveBoundDocuments(userId?: string, conversationId?: string, hasAttachments?: boolean): Promise<string[]> {
-    if (!ENABLE_FILE_AWARE_CHAT || !userId || !conversationId || !hasAttachments) return [];
+    if (!GLOBAL_CONFIG.enableFileAwareChat || !userId || !conversationId || !hasAttachments) return [];
     return this.attachmentContextService.resolveBoundDocumentIds(userId, conversationId);
   }
 
@@ -284,6 +284,27 @@ export class ChatService {
     return typeof response.content === "string"
       ? response.content
       : JSON.stringify(response.content);
+  }
+
+  /**
+   * 음성 파이프라인 전용: RAG 검색 후 LLM 답변 텍스트를 즉시 반환합니다.
+   * DB Task를 생성하거나 상태를 업데이트하지 않으며, 오직 답변 문자열만 반환합니다.
+   * (VoiceSessionManager의 STT -> LLM -> TTS 파이프라인에서 사용)
+   *
+   * @param query - 사용자의 음성 입력이 STT로 변환된 질문 텍스트
+   * @returns LLM이 생성한 답변 텍스트 문자열
+   */
+  public async generateDirectAnswer(query: string): Promise<string> {
+    const retrieval = await this.ragRetrievalService.retrieveContext({
+      query,
+      topK: 5,
+      boundDocumentIds: [],
+      namespace: GLOBAL_CONFIG.pineconeCorpusNamespace,
+      globalNamespace: GLOBAL_CONFIG.pineconeCorpusNamespace,
+    });
+
+    const contextText = this.buildContextText(retrieval.chunks, 5);
+    return this.callGroundedLLM(query, contextText);
   }
 
   /**

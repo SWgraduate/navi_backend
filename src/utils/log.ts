@@ -88,26 +88,38 @@ export async function discordAlert(
   let content = message;
 
   if (important) {
-    const roleId = GLOBAL_CONFIG.discordAlertRoleID['backend'];
+    const roleId = GLOBAL_CONFIG.discordAlertRoleIds.backend;
     if (roleId) {
       content = `<@&${roleId}>\n${message}`;
     }
   }
 
   if (with_ai) {
-    const roleId_AI = GLOBAL_CONFIG.discordAlertRoleID['ai'];
-    const roleId_backend = GLOBAL_CONFIG.discordAlertRoleID['backend'];
+    const roleId_AI = GLOBAL_CONFIG.discordAlertRoleIds.ai;
+    const roleId_backend = GLOBAL_CONFIG.discordAlertRoleIds.backend;
     if (roleId_AI && roleId_backend) {
       content = `<@&${roleId_AI}><@&${roleId_backend}>\n${message}`;
     }
   }
 
   try {
-    await
-      axios.post(DISCORD_WEBHOOK_URL, {
-        content
-      });
+    const response = await axios.post(DISCORD_WEBHOOK_URL, {
+      content
+    });
+    logger.s("Discord webhook sent successfully.");
   } catch (error) {
-    logger.e("discord webhook failed:", error);
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        logger.e(`Discord webhook API failed [${error.response.status}]`);
+      } // 서버는 응답했으나 에러
+      else if (error.request) {
+        logger.e("Discord Webhook No Response (Network Timeout/Disconnect)");
+      } // 응답 없는 네트워크/타임아웃 에러
+      else {
+        logger.e("Discord webhook request setup error");
+      } // 요청 설정 자체의 에러
+    } else {
+      logger.e("Discord webhook unknown error");
+    }
   }
 }
