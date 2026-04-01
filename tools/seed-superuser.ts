@@ -3,43 +3,36 @@ import mongoose from 'mongoose';
 import { connectDB } from '../src/config/database';
 import { logger } from '../src/utils/log';
 import User from '../src/models/User';
-import dotenv from 'dotenv';
-import path from 'path';
-
-// 주로 로컬 환경(.env.development)을 바라보게 함
-dotenv.config({ path: path.join(__dirname, '../.env.development') });
+import { MASTER_EMAIL, MASTER_PASSWORD } from '../src/settings';
 
 const seedAdmin = async () => {
-  // 프로덕션 환경에서는 실행 상면 방지
-  if (process.env.NODE_ENV === 'production') {
-    logger.e('운영(Production) 환경에서는 슈퍼유저 시드 스크립트를 실행할 수 없습니다.');
-    process.exit(1);
-  }
-
   try {
+    // 환경변수 체크
+    if (!MASTER_EMAIL || !MASTER_PASSWORD) {
+      logger.e('MASTER_EMAIL 또는 MASTER_PASSWORD 환경변수가 설정되어 있지 않습니다.');
+      process.exit(1);
+    }
+
     // DB 연결
     await connectDB();
 
-    const adminEmail = 'admin@test.com';
-    const adminPassword = 'Test000000**';
-
     // 중복 생성 검사
-    const existingAdmin = await User.findOne({ email: adminEmail });
+    const existingAdmin = await User.findOne({ email: MASTER_EMAIL });
     if (existingAdmin) {
-      logger.i(`이미 관리자 계정이 존재합니다. (Email: ${adminEmail})`);
+      logger.i(`이미 관리자 계정이 존재합니다. (Email: ${MASTER_EMAIL})`);
       process.exit(0);
     }
 
     // 관리자 계정 생성 (비밀번호는 User 모델 pre-save 훅이 자동 해싱)
     await User.create({
-      email: adminEmail,
-      password: adminPassword,
+      email: MASTER_EMAIL,
+      password: MASTER_PASSWORD,
       role: 'admin',
     });
 
     logger.s(`성공적으로 관리자(admin) 계정이 생성되었습니다.`);
-    logger.i(`- Email: ${adminEmail}`);
-    logger.i(`- Password: ${adminPassword}`);
+    logger.i(`- Email: ${MASTER_EMAIL}`);
+    logger.i(`- Password: ${MASTER_PASSWORD}`);
     
     process.exit(0);
   } catch (error) {

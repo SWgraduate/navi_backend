@@ -35,6 +35,9 @@ export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
 export const ELEVENLABS_API_KEY = requireEnv('ELEVENLABS_API_KEY');
 
+export const MASTER_EMAIL = requireEnv('MASTER_EMAIL', '');
+export const MASTER_PASSWORD = requireEnv('MASTER_PASSWORD', '');
+
 const isProd = NODE_ENV === 'production';
 
 export const GLOBAL_CONFIG = {
