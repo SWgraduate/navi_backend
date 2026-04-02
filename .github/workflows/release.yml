@@ -25,6 +25,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           default_bump: patch # 일반 커밋일 경우 기본적으로 patch(끝자리)를 올림
           release_branches: main
+          custom_release_rules: "chore:patch:Other Changes,refactor:patch:Other Changes,docs:patch:Other Changes,style:patch:Other Changes,test:patch:Other Changes,ci:patch:Other Changes,build:patch:Other Changes"
 
       # 2. 생성된 태그를 바탕으로 GitHub Releases 페이지에 릴리즈 노트를 작성하는 액션
       - name: Create a GitHub release
