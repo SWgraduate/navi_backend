@@ -1,12 +1,12 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-export type UserRole = 'student' | 'staff' | 'admin';
+export const USER_ROLES = ['student', 'staff', 'admin'] as const;
+export type UserRole = typeof USER_ROLES[number];
 
 export interface IUser extends Document {
   email: string;
   password?: string;
-  name: string;
   role: UserRole;
   createdAt: Date;
   updatedAt: Date;
@@ -18,7 +18,7 @@ const UserSchema: Schema = new Schema(
   {
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['student', 'staff', 'admin'], default: 'student' },
+    role: { type: String, enum: USER_ROLES, default: USER_ROLES[0] },
     activeToken: { type: String, default: null },
   },
   {
