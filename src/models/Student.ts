@@ -1,8 +1,11 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { IUser } from './User';
 
-export type SecondMajorType = '다중전공' | '융합전공' | '부전공' | '복수전공' | '연계전공' | '마이크로전공';
-export type AcademicStatus = '재학생' | '휴학생';
+export const SECOND_MAJOR_TYPES = ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공'] as const;
+export type SecondMajorType = typeof SECOND_MAJOR_TYPES[number];
+
+export const ACADEMIC_STATUSES = ['재학생', '휴학생'] as const;
+export type AcademicStatus = typeof ACADEMIC_STATUSES[number];
 
 export interface ISecondMajorInfo {
   type: SecondMajorType;
@@ -24,7 +27,7 @@ const SecondMajorSchema = new Schema(
   {
     type: {
       type: String,
-      enum: ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공'],
+      enum: SECOND_MAJOR_TYPES,
       required: true,
     },
     name: { type: String, required: true },
@@ -45,7 +48,7 @@ const StudentSchema: Schema = new Schema(
     },
     academicStatus: {
       type: String,
-      enum: ['재학생', '휴학생'],
+      enum: ACADEMIC_STATUSES,
       required: true,
     },
     completedSemesters: {
