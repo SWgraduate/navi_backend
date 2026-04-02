@@ -1,6 +1,6 @@
 // pnpm test -- tests/services/StudentService.test.ts
 import mongoose from 'mongoose';
-import Student from 'src/models/Student';
+import Student, { ACADEMIC_STATUSES } from 'src/models/Student';
 import AcademicRecord from 'src/models/AcademicRecord';
 import User from 'src/models/User';
 import { ImageParsingError, StudentNotFoundError, AcademicRecordNotFoundError } from 'src/errors/StudentErrors';
@@ -32,8 +32,8 @@ const PROFILE_DATA = {
   studentNumber: '2020123456',
   name: '홍길동',
   major: '컴퓨터공학부',
-  secondMajorType: '없음' as const,
-  academicStatus: '재학생' as const,
+  secondMajorInfo: null,
+  academicStatus: ACADEMIC_STATUSES[0],
   completedSemesters: 6,
 };
 

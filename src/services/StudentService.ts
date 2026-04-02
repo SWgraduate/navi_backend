@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
 import AcademicRecord from 'src/models/AcademicRecord';
-import Student, { AcademicStatus, IStudent, SecondMajorType } from 'src/models/Student';
+import Student, { AcademicStatus, IStudent, SecondMajorType, ISecondMajorInfo } from 'src/models/Student';
 import Course, { ICourse } from 'src/models/Course';
 import { VisionService } from 'src/services/VisionService';
 import { logger } from 'src/utils/log';
@@ -30,15 +30,9 @@ export interface UpsertProfileRequest {
    */
   major: string;
   /**
-   * 제2전공 이수 유형 (없을 경우 '없음')
-   * @example "없음"
+   * 제2전공 정보 (없을 경우 null)
    */
-  secondMajorType: SecondMajorType;
-  /**
-   * 제2전공명 (다중전공 등 선택 상태가 아닐 때 한함)
-   * @example "인공지능학과"
-   */
-  secondMajor?: string;
+  secondMajorInfo?: ISecondMajorInfo | null;
   /**
    * 현재 학적 상태
    * @example "재학생"
@@ -81,14 +75,9 @@ export interface StudentResponse {
    */
   major: string;
   /**
-   * 제2전공 이수 유형 (없을 경우 '없음')
-   * @example "없음"
+   * 제2전공 정보 (없을 경우 null)
    */
-  secondMajorType: SecondMajorType;
-  /**
-   * 제2전공명 (해당할 경우)
-   */
-  secondMajor?: string;
+  secondMajorInfo?: ISecondMajorInfo | null;
   /**
    * 현재 학적 상태
    * @example "재학생"
@@ -225,8 +214,7 @@ export class StudentService {
       studentNumber: updated.studentNumber,
       name: updated.name,
       major: updated.major,
-      secondMajorType: updated.secondMajorType,
-      secondMajor: updated.secondMajor,
+      secondMajorInfo: updated.secondMajorInfo,
       academicStatus: updated.academicStatus,
       completedSemesters: updated.completedSemesters,
     };
@@ -253,8 +241,7 @@ export class StudentService {
       studentNumber: student.studentNumber,
       name: student.name,
       major: student.major,
-      secondMajorType: student.secondMajorType,
-      secondMajor: student.secondMajor,
+      secondMajorInfo: student.secondMajorInfo,
       academicStatus: student.academicStatus,
       completedSemesters: student.completedSemesters,
     };

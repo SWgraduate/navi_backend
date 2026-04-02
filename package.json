@@ -9,7 +9,8 @@
     "dev": "cross-env NODE_ENV=development pnpm tsoa && cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/index.ts",
     "build": "cross-env NODE_ENV=production pnpm tsoa && cross-env NODE_ENV=production tsc -p tsconfig.build.json && cross-env NODE_ENV=production tsc-alias -p tsconfig.build.json",
     "start": "cross-env NODE_ENV=production node dist/index.js",
-    "ingest": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/scripts/ingest.ts"
+    "ingest": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/scripts/ingest.ts",
+    "seed:admin": "pnpm tsx tools/seed-superuser.ts"
   },
   "repository": {
     "type": "git",

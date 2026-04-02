@@ -1,8 +1,16 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { IUser } from './User';
 
-export type SecondMajorType = '다중전공' | '융합전공' | '부전공' | '복수전공' | '연계전공' | '마이크로전공' | '없음';
-export type AcademicStatus = '재학생' | '휴학생';
+export const SECOND_MAJOR_TYPES = ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공'] as const;
+export type SecondMajorType = typeof SECOND_MAJOR_TYPES[number];
+
+export const ACADEMIC_STATUSES = ['재학생', '휴학생'] as const;
+export type AcademicStatus = typeof ACADEMIC_STATUSES[number];
+
+export interface ISecondMajorInfo {
+  type: SecondMajorType;
+  name: string;
+}
 
 export interface IStudent extends Document {
   userId: mongoose.Types.ObjectId | IUser;
@@ -10,11 +18,22 @@ export interface IStudent extends Document {
   studentNumber: string;
   name: string;
   major: string;
-  secondMajorType: SecondMajorType;
-  secondMajor?: string;
+  secondMajorInfo?: ISecondMajorInfo | null;
   academicStatus: AcademicStatus;
   completedSemesters: number;
 }
+
+const SecondMajorSchema = new Schema(
+  {
+    type: {
+      type: String,
+      enum: SECOND_MAJOR_TYPES,
+      required: true,
+    },
+    name: { type: String, required: true },
+  },
+  { _id: false }
+);
 
 const StudentSchema: Schema = new Schema(
   {
@@ -23,15 +42,13 @@ const StudentSchema: Schema = new Schema(
     studentNumber: { type: String, required: true },
     name: { type: String, required: true },
     major: { type: String, required: true },
-    secondMajorType: {
-      type: String,
-      enum: ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공', '없음'], // TODO: '없음'으로 명확화. 추후 '해당 없음' 등 더 나은 표현 논의 필요 (26. 3. 14. 태영)
-      required: true,
+    secondMajorInfo: {
+      type: SecondMajorSchema,
+      default: null,
     },
-    secondMajor: { type: String },
     academicStatus: {
       type: String,
-      enum: ['재학생', '휴학생'],
+      enum: ACADEMIC_STATUSES,
       required: true,
     },
     completedSemesters: {
