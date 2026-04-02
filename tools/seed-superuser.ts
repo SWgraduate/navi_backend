@@ -32,7 +32,7 @@ const seedAdmin = async () => {
 
     logger.s(`성공적으로 관리자(admin) 계정이 생성되었습니다.`);
     logger.i(`- Email: ${MASTER_EMAIL}`);
-    logger.i(`- Password: ${MASTER_PASSWORD}`);
+    logger.i('- Password: (환경변수에 설정된 비밀번호)');
     
     process.exit(0);
   } catch (error) {
