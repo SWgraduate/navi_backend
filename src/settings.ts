@@ -25,6 +25,8 @@ function requireEnv(key: string, defaultValue?: string): string {
 export const NODE_ENV = requireEnv('NODE_ENV', 'development');
 export const APP_PORT = parseInt(requireEnv('APP_PORT', '8000'), 10);
 export const JWT_SECRET = requireEnv('JWT_SECRET');
+export const MASTER_EMAIL = requireEnv('MASTER_EMAIL', '');
+export const MASTER_PASSWORD = requireEnv('MASTER_PASSWORD', '');
 
 export const RESEND_KEY = requireEnv('RESEND_KEY');
 
@@ -35,8 +37,6 @@ export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
 export const ELEVENLABS_API_KEY = requireEnv('ELEVENLABS_API_KEY');
 
-export const MASTER_EMAIL = requireEnv('MASTER_EMAIL', '');
-export const MASTER_PASSWORD = requireEnv('MASTER_PASSWORD', '');
 
 const isProd = NODE_ENV === 'production';
 

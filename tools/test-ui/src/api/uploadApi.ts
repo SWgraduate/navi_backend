@@ -1,3 +1,5 @@
+import { authStore } from './authStore';
+
 export interface UploadPdfResponse {
   documentId: string;
   status: string;
@@ -18,6 +20,7 @@ export const uploadPdf = async (params: {
 
   const response = await fetch("/api/rag/documents/upload", {
     method: "POST",
+    headers: { ...authStore.authHeaders() },
     body: formData,
   });
 
