@@ -62,6 +62,11 @@ export const GLOBAL_CONFIG = {
   },
 
   enableFileAwareChat: !isProd, // 보안상 env에 포함할 필요 없다 판단되어 글로벌 설정 객체로 편입 (26. 3. 8. 태영)
+
+  emailSendRateLimit: {
+    windowMs: isProd ? 60 * 60 * 1000 : 5 * 60 * 1000, // prod: 1시간 | dev: 5분
+    max: isProd ? 10 : 20, // prod: 10회 | dev: 20회
+  },
 };
 
 /**
