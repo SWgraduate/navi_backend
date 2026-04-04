@@ -108,30 +108,34 @@ export class SpeechService {
     });
 
     ws.on('message', (data: Buffer) => {
-      const response = JSON.parse(data.toString());
+      try {
+        const response = JSON.parse(data.toString());
 
-      switch (response.message_type) {
-        case 'session_started':
-          logger.i(`STT Session started | session_id=${response.session_id}`);
-          break;
-        case 'partial_transcript':
-          onTranscript(response.text, false);
-          break;
-        case 'committed_transcript':
-        case 'committed_transcript_with_timestamps':
-          logger.i(`STT committed: "${response.text}"`);
-          onTranscript(response.text, true);
-          break;
-        case 'error':
-        case 'auth_error':
-        case 'quota_exceeded':
-        case 'rate_limited':
-        case 'resource_exhausted':
-          logger.e(`ElevenLabs STT [${response.message_type}]:`, response.error);
-          ws.close();
-          break;
-        default:
-          logger.d(`ElevenLabs STT unknown message_type: ${response.message_type}`);
+        switch (response.message_type) {
+          case 'session_started':
+            logger.i(`STT Session started | session_id=${response.session_id}`);
+            break;
+          case 'partial_transcript':
+            onTranscript(response.text, false);
+            break;
+          case 'committed_transcript':
+          case 'committed_transcript_with_timestamps':
+            logger.i(`STT committed: "${response.text}"`);
+            onTranscript(response.text, true);
+            break;
+          case 'error':
+          case 'auth_error':
+          case 'quota_exceeded':
+          case 'rate_limited':
+          case 'resource_exhausted':
+            logger.e(`ElevenLabs STT [${response.message_type}]:`, response.error);
+            ws.close();
+            break;
+          default:
+            logger.d(`ElevenLabs STT unknown message_type: ${response.message_type}`);
+        }
+      } catch (e) {
+        logger.e("Failed to parse ElevenLabs STT JSON message", e);
       }
     });
 

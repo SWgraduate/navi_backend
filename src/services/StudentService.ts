@@ -536,7 +536,7 @@ export class StudentService {
           .map(c => ({
             courseCode: c.courseCode,
             courseName: c.courseName,
-            courseType: c.category,
+            category: c.category,
             credit: c.credit,
             isEnglish: c.isEnglish,
             isPbl: c.isPbl,
@@ -549,7 +549,7 @@ export class StudentService {
           for (const c of newTakenCourses) {
             incPayload['earnedCredits.total'] = (incPayload['earnedCredits.total'] || 0) + c.credit;
 
-            const type = c.courseType || '';
+            const type = c.category || '';
             if (type.includes('전공') || type.includes('전핵') || type.includes('전심')) {
               incPayload['earnedCredits.majorTotal'] = (incPayload['earnedCredits.majorTotal'] || 0) + c.credit;
               if (type.includes('핵심') || type.includes('전핵')) {

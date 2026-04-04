@@ -1,6 +1,17 @@
-import { Body, Controller, Post, Route, Tags, Response, Security, SuccessResponse, Delete, Request } from 'tsoa';
 import { Request as ExRequest } from 'express';
-import { AuthService, RegisterRequest, AuthResponse } from 'src/services/AuthService';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import { AuthResponse, AuthService, RegisterRequest } from 'src/services/AuthService';
+import { GLOBAL_CONFIG } from 'src/settings';
+import { Body, Controller, Delete, Middlewares, Post, Request, Response, Route, Security, SuccessResponse, Tags } from 'tsoa';
+
+const emailSendLimiter = rateLimit({
+  windowMs: GLOBAL_CONFIG.emailSendRateLimit.windowMs,
+  max: GLOBAL_CONFIG.emailSendRateLimit.max,
+  message: { error: '이메일 발송 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+  keyGenerator: (req: ExRequest) => req.body?.email || ipKeyGenerator(req as any, undefined as any),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 export interface LoginRequest {
   email: string;
@@ -142,7 +153,9 @@ export class AuthController extends Controller {
    * @param body 인증 코드를 수신할 이메일 주소
    */
   @Post('email/send')
+  @Middlewares(emailSendLimiter)
   @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(429, "Too Many Requests")
   @Response<{ error: string }>(500, "Internal Server Error")
   public async sendEmailVerification(
     @Body() body: SendEmailRequest
