@@ -5,6 +5,7 @@ import { MessageInput } from './components/Chat/MessageInput'
 import { UploadPanel } from './components/Upload/UploadPanel'
 import { VoicePanel } from './components/Voice/VoicePanel'
 import type { Message } from './types/chat'
+import { autoLoginWithMaster } from './api/authApi'
 import {
   createConversation,
   getChatStatus,
@@ -67,7 +68,8 @@ function App() {
   };
 
   useEffect(() => {
-    refreshConversations();
+    // 앱 시작 시 마스터 계정으로 자동 로그인 후 대화 목록 불러오기
+    autoLoginWithMaster().then(() => refreshConversations());
   }, []);
 
   useEffect(() => {

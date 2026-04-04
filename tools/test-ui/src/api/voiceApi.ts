@@ -1,3 +1,5 @@
+import { authStore } from './authStore';
+
 export interface VoiceSessionResponse {
   token: string;
   wsUrl: string;
@@ -5,17 +7,14 @@ export interface VoiceSessionResponse {
 
 /**
  * 백엔드에 음성 세션 토큰을 요청합니다.
+ * authStore에서 JWT를 자동으로 가져와 Authorization 헤더에 주입합니다.
+ *
  * @param chatId - 음성 통화를 할 채팅방 ID (임시로 'test' 사용 가능)
  */
-export const createVoiceSession = async (chatId: string, jwtToken: string): Promise<VoiceSessionResponse> => {
-  const headers: Record<string, string> = {};
-  if (jwtToken) {
-    headers['Authorization'] = `Bearer ${jwtToken}`;
-  }
-
+export const createVoiceSession = async (chatId: string): Promise<VoiceSessionResponse> => {
   const response = await fetch(`/api/chat/${encodeURIComponent(chatId)}/voice-session`, {
     method: 'POST',
-    headers,
+    headers: { ...authStore.authHeaders() },
   });
   if (!response.ok) {
     const err = await response.text();

@@ -1,9 +1,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export const GRADUATION_TRACK_TYPES = ['SINGLE', 'MULTI_MAIN', 'MINOR_MAIN'] as const;
+export type GraduationTrackType = typeof GRADUATION_TRACK_TYPES[number];
+
 export interface IGraduationRule extends Document {
   // 1. 기준 식별 키 (Composite Keys)
   department: string; // 학과명 (예: "컴퓨터학부")
-  track: 'SINGLE' | 'MULTI_MAIN' | 'MINOR_MAIN'; // 이수 트랙 (단일전공, 다중전공시 주전공, 부전공시 주전공)
+  track: GraduationTrackType; // 이수 트랙 (단일전공, 다중전공시 주전공, 부전공시 주전공)
   admissionYearStart: number; // 적용 시작 학번 (예: 2024)
   admissionYearEnd: number;   // 적용 종료 학번 (예: 9999 - 현재까지 적용됨을 의미)
 
@@ -30,7 +33,7 @@ export interface IGraduationRule extends Document {
 
 const GraduationRuleSchema: Schema = new Schema({
   department: { type: String, required: true },
-  track: { type: String, required: true, enum: ['SINGLE', 'MULTI_MAIN', 'MINOR_MAIN'] },
+  track: { type: String, required: true, enum: GRADUATION_TRACK_TYPES },
   admissionYearStart: { type: Number, required: true },
   admissionYearEnd: { type: Number, required: true, default: 9999 },
 

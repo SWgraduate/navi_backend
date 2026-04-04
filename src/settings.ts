@@ -25,6 +25,8 @@ function requireEnv(key: string, defaultValue?: string): string {
 export const NODE_ENV = requireEnv('NODE_ENV', 'development');
 export const APP_PORT = parseInt(requireEnv('APP_PORT', '8000'), 10);
 export const JWT_SECRET = requireEnv('JWT_SECRET');
+export const MASTER_EMAIL = requireEnv('MASTER_EMAIL', '');
+export const MASTER_PASSWORD = requireEnv('MASTER_PASSWORD', '');
 
 export const RESEND_KEY = requireEnv('RESEND_KEY');
 
@@ -34,6 +36,7 @@ export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
 export const ELEVENLABS_API_KEY = requireEnv('ELEVENLABS_API_KEY');
+
 
 const isProd = NODE_ENV === 'production';
 
@@ -59,6 +62,11 @@ export const GLOBAL_CONFIG = {
   },
 
   enableFileAwareChat: !isProd, // 보안상 env에 포함할 필요 없다 판단되어 글로벌 설정 객체로 편입 (26. 3. 8. 태영)
+
+  emailSendRateLimit: {
+    windowMs: isProd ? 60 * 60 * 1000 : 5 * 60 * 1000, // prod: 1시간 | dev: 5분
+    max: isProd ? 10 : 20, // prod: 10회 | dev: 20회
+  },
 };
 
 /**
