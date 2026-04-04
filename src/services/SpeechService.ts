@@ -128,6 +128,7 @@ export class SpeechService {
         case 'rate_limited':
         case 'resource_exhausted':
           logger.e(`ElevenLabs STT [${response.message_type}]:`, response.error);
+          ws.close();
           break;
         default:
           logger.d(`ElevenLabs STT unknown message_type: ${response.message_type}`);
