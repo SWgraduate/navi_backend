@@ -144,4 +144,73 @@ export class AuthService {
     await record.save();
     return true;
   }
+
+  /**
+   * 비밀번호 재설정 1단계: 등록된 이메일로 인증 코드 발송.
+   * 보안상 존재하지 않는 이메일도 성공 응답으로 처리하여 계정 존재 여부를 노출하지 않음.
+   */
+  public async forgotPassword(email: string): Promise<void> {
+    const user = await User.findOne({ email });
+    if (!user) {
+      // 계정 존재 여부 노출 방지: 실제로는 아무 동작도 하지 않고 조용히 종료
+      return;
+    }
+
+    const code = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
+
+    await Verification.findOneAndUpdate(
+      { email },
+      { code, createdAt: new Date(), isVerified: false, resetToken: null },
+      { upsert: true, returnDocument: 'after' }
+    );
+
+    await sendVerificationEmail(email, code);
+  }
+
+  /**
+   * 비밀번호 재설정 2단계: 인증 코드 검증 후 비밀번호 재설정용 임시 토큰 발급.
+   * 발급된 resetToken은 3단계 API 호출 시 사용되며, TTL 만료와 함께 자동 삭제됨.
+   */
+  public async verifyPasswordResetCode(email: string, code: string): Promise<string> {
+    const record = await Verification.findOne({ email });
+
+    if (!record) {
+      throw new Error('인증번호가 만료되었거나 존재하지 않습니다.');
+    }
+
+    if (record.code !== code) {
+      throw new Error('인증번호가 일치하지 않습니다.');
+    }
+
+    // 임시 토큰 생성 (32바이트 hex = 64자)
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    record.isVerified = true;
+    record.resetToken = resetToken;
+    await record.save();
+
+    return resetToken;
+  }
+
+  /**
+   * 비밀번호 재설정 3단계: resetToken 검증 후 새 비밀번호로 갱신.
+   * user.save() 호출로 기존 pre-save 해싱 hook을 통해 안전하게 저장됨.
+   */
+  public async resetPassword(email: string, resetToken: string, newPassword: string): Promise<void> {
+    const record = await Verification.findOne({ email, isVerified: true, resetToken });
+
+    if (!record) {
+      throw new Error('유효하지 않거나 만료된 재설정 토큰입니다.');
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      throw new Error('사용자를 찾을 수 없습니다.');
+    }
+
+    user.password = newPassword;
+    await user.save(); // pre-save hook에서 자동 해싱
+
+    await Verification.deleteOne({ email }); // 재사용 방지
+  }
 }

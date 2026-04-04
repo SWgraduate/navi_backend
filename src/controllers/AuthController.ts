@@ -16,6 +16,21 @@ export interface VerifyEmailRequest {
   code: string;
 }
 
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface VerifyPasswordResetRequest {
+  email: string;
+  code: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  resetToken: string;
+  newPassword: string;
+}
+
 @Route('auth')
 @Tags('Auth')
 export class AuthController extends Controller {
@@ -157,6 +172,66 @@ export class AuthController extends Controller {
     } catch (error: any) {
       this.setStatus(400);
       return { error: error.message || "인증에 실패했습니다." };
+    }
+  }
+
+  /**
+   * 비밀번호 재설정 1단계: 가입된 이메일로 인증 코드를 발송합니다.
+   * 보안상 존재하지 않는 이메일에도 동일한 성공 응답을 반환합니다.
+   * @param body 인증 코드를 받을 이메일 주소
+   */
+  @Post('password/forgot')
+  @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(500, "Internal Server Error")
+  public async forgotPassword(
+    @Body() body: ForgotPasswordRequest
+  ): Promise<{ message: string } | { error: string }> {
+    try {
+      await this.authService.forgotPassword(body.email);
+      return { message: "입력하신 이메일로 인증 코드가 발송되었습니다." };
+    } catch (error: any) {
+      this.setStatus(500);
+      return { error: error.message || "메일 발송에 실패했습니다." };
+    }
+  }
+
+  /**
+   * 비밀번호 재설정 2단계: 인증 코드를 검증하고 비밀번호 재설정용 임시 토큰을 발급합니다.
+   * 발급된 `resetToken`은 5분 내에 3단계 API에서 사용해야 합니다.
+   * @param body 이메일 주소 및 수신된 6자리 인증 코드
+   */
+  @Post('password/verify')
+  @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(400, "Bad Request")
+  public async verifyPasswordResetCode(
+    @Body() body: VerifyPasswordResetRequest
+  ): Promise<{ resetToken: string } | { error: string }> {
+    try {
+      const resetToken = await this.authService.verifyPasswordResetCode(body.email, body.code);
+      return { resetToken };
+    } catch (error: any) {
+      this.setStatus(400);
+      return { error: error.message || "인증에 실패했습니다." };
+    }
+  }
+
+  /**
+   * 비밀번호 재설정 3단계: 발급된 임시 토큰을 사용하여 새 비밀번호로 갱신합니다.
+   * 성공 시 해당 임시 토큰은 즉시 만료되어 재사용이 불가합니다.
+   * @param body 이메일, 2단계에서 발급받은 resetToken, 새 비밀번호
+   */
+  @Post('password/reset')
+  @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(400, "Bad Request")
+  public async resetPassword(
+    @Body() body: ResetPasswordRequest
+  ): Promise<{ message: string } | { error: string }> {
+    try {
+      await this.authService.resetPassword(body.email, body.resetToken, body.newPassword);
+      return { message: "비밀번호가 성공적으로 변경되었습니다." };
+    } catch (error: any) {
+      this.setStatus(400);
+      return { error: error.message || "비밀번호 재설정에 실패했습니다." };
     }
   }
 }
