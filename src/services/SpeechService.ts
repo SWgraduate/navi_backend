@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { logger } from 'src/utils/log';
+import { logger, discordAlert } from 'src/utils/log';
 
 export class SpeechService {
   private readonly ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || '';
@@ -47,6 +47,7 @@ export class SpeechService {
           // 오류 발생시 (API Key 오류, 할당량 초과 등)
           if (response.error) {
               logger.e('ElevenLabs API Error in stream:', response.error);
+              void discordAlert(`🚨 **[ElevenLabs TTS Error]** API Error in stream: ${JSON.stringify(response.error)}`);
               ws.close();
               resolve();
               return;
@@ -69,6 +70,7 @@ export class SpeechService {
 
       ws.on('error', (error) => {
         logger.e('ElevenLabs TTS Error:', error);
+        void discordAlert(`🚨 **[ElevenLabs TTS Error]** WebSocket Error: ${error.message}`);
         reject(error);
       });
 
@@ -128,6 +130,7 @@ export class SpeechService {
           case 'quota_exceeded':
           case 'rate_limited':
           case 'resource_exhausted':
+            void discordAlert(`🚨 **[ElevenLabs STT Error]** [${response.message_type}]: ${JSON.stringify(response.error)}`);
             logger.e(`ElevenLabs STT [${response.message_type}]:`, response.error);
             ws.close();
             break;
@@ -140,6 +143,7 @@ export class SpeechService {
     });
 
     ws.on('error', (error) => {
+      void discordAlert(`🚨 **[ElevenLabs STT Error]** WebSocket Error: ${error.message}`);
       logger.e('ElevenLabs STT WebSocket Error:', error);
     });
 
