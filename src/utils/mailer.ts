@@ -4,20 +4,32 @@ import { logger } from 'src/utils/log';
 
 const resend = new Resend(RESEND_KEY);
 
-export const sendVerificationEmail = async (to: string, code: string) => {
+export type VerificationType = 'registration' | 'password_reset';
+
+export const sendVerificationEmail = async (to: string, code: string, type: VerificationType = 'registration') => {
+  const isPasswordReset = type === 'password_reset';
+  const subject = isPasswordReset 
+    ? '[Navi] 비밀번호 재설정을 위한 인증 번호입니다.' 
+    : '[Navi] 회원가입 이메일 인증 번호입니다.';
+  
+  const title = isPasswordReset ? '비밀번호 재설정 인증 번호' : '이메일 인증 번호';
+  const description = isPasswordReset 
+    ? '비밀번호를 재설정하려면 아래의 6자리 인증 번호를 입력해 주세요.' 
+    : '회원가입을 계속하려면 아래의 6자리 인증 번호를 입력해 주세요.';
+
   try {
     const { data, error } = await resend.emails.send({
       from: 'Navi 서비스 <navi_noreply@navimailer.kro.kr>',
       to,
-      subject: '[Navi] 회원가입 이메일 인증 번호입니다.',
+      subject,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
-          <h2>이메일 인증 번호</h2>
-          <p>회원가입을 계속하려면 아래의 6자리 인증 번호를 입력해 주세요.</p>
+          <h2>${title}</h2>
+          <p>${description}</p>
           <div style="background-color: #f4f4f4; padding: 15px; font-size: 24px; font-weight: bold; letter-spacing: 5px; text-align: center;">
             ${code}
           </div>
-          <p style="color: #888; font-size: 12px; margin-top: 20px;">이 인증 번호는 3분 동안만 유효합니다.</p>
+          <p style="color: #888; font-size: 12px; margin-top: 20px;">이 인증 번호는 5분 동안만 유효합니다.</p>
         </div>
       `,
     });

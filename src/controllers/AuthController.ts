@@ -194,7 +194,9 @@ export class AuthController extends Controller {
    * @param body 인증 코드를 받을 이메일 주소
    */
   @Post('password/forgot')
+  @Middlewares(emailSendLimiter)
   @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(429, "Too Many Requests")
   @Response<{ error: string }>(500, "Internal Server Error")
   public async forgotPassword(
     @Body() body: ForgotPasswordRequest

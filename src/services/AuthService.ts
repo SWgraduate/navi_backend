@@ -126,7 +126,7 @@ export class AuthService {
     );
 
     // 메일 발송 유틸리티 호출
-    await sendVerificationEmail(email, code);
+    await sendVerificationEmail(email, code, 'registration');
   }
 
   public async verifyEmailCode(email: string, code: string): Promise<boolean> {
@@ -164,7 +164,7 @@ export class AuthService {
       { upsert: true, returnDocument: 'after' }
     );
 
-    await sendVerificationEmail(email, code);
+    await sendVerificationEmail(email, code, 'password_reset');
   }
 
   /**
