@@ -688,7 +688,7 @@ export class StudentService {
         `학적 상태: ${student.academicStatus} (이수 학기: ${student.completedSemesters}학기)`,
         ``,
         `[이수 학점 현황]`,
-        `- GPA: ${ec.gpa ?? '미입력'}`,
+        `- GPA: ${ec.gpa}`,
         `- 총 이수 학점: ${ec.total}학점`,
         `- 전공 계: ${ec.majorTotal}학점 (핵심 ${ec.majorCore} / 심화 ${ec.majorAdvanced})`,
         `- 교양선택: ${ec.generalElective}학점`,
