@@ -7,16 +7,33 @@ import Verification from 'src/models/Verification';
 import { sendVerificationEmail } from 'src/utils/mailer';
 
 export interface RegisterRequest {
+  /**
+   * 가입할 사용자의 이메일 주소
+   * @example "newuser@example.com"
+   */
   email: string;
+  /**
+   * 사용할 비밀번호 (최소 8자 이상 권장)
+   * @example "securePassword123!"
+   */
   password: string;
 }
 
 export interface AuthResponse {
+  /**
+   * 사용자 기본 정보
+   */
   user: {
+    /** 사용자 고유 ID (MongoDB ObjectId) */
     id: string;
+    /** 사용자 이메일 */
     email: string;
+    /** 사용자 역할 (예: user, admin) */
     role: string;
   };
+  /**
+   * 인증 시 사용되는 JWT 액세스 토큰
+   */
   accessToken: string;
 }
 
@@ -146,8 +163,12 @@ export class AuthService {
   }
 
   /**
-   * 비밀번호 재설정 1단계: 등록된 이메일로 인증 코드 발송.
-   * 보안상 존재하지 않는 이메일도 성공 응답으로 처리하여 계정 존재 여부를 노출하지 않음.
+   * [비밀번호 재설정 - 1단계] 등록된 이메일로 인증 코드 발송.
+   * 
+   * 보안 정책: 존재하지 않는 이메일이 입력되어도 사용자에게 에러를 반환하지 않고 
+   * 조용히 성공 처리하여 계정의 존재 여부를 노출하지 않습니다 (Early Return).
+   * 
+   * @param email 코드 발송 대상 이메일
    */
   public async forgotPassword(email: string): Promise<void> {
     const user = await User.findOne({ email });
@@ -168,8 +189,14 @@ export class AuthService {
   }
 
   /**
-   * 비밀번호 재설정 2단계: 인증 코드 검증 후 비밀번호 재설정용 임시 토큰 발급.
-   * 발급된 resetToken은 3단계 API 호출 시 사용되며, TTL 만료와 함께 자동 삭제됨.
+   * [비밀번호 재설정 - 2단계] 인증 코드 검증 후 비밀번호 재설정용 임시 토큰 발급.
+   * 
+   * 발급된 `resetToken`은 3단계(resetPassword) API 호출 시 본인 인증 수단으로 사용됩니다.
+   * Verification 모델의 TTL(5분)에 따라 만료 시 자동 삭제됩니다.
+   * 
+   * @param email 검증 대상 이메일
+   * @param code 사용자로부터 입력받은 6자리 인증 코드
+   * @returns 발급된 64자 길이의 임시 resetToken
    */
   public async verifyPasswordResetCode(email: string, code: string): Promise<string> {
     const record = await Verification.findOne({ email });
@@ -193,8 +220,14 @@ export class AuthService {
   }
 
   /**
-   * 비밀번호 재설정 3단계: resetToken 검증 후 새 비밀번호로 갱신.
-   * user.save() 호출로 기존 pre-save 해싱 hook을 통해 안전하게 저장됨.
+   * [비밀번호 재설정 - 3단계] resetToken 검증 후 새 비밀번호로 갱신.
+   * 
+   * User 모델의 save() 메서드를 직접 호출하여 스키마에 정의된 pre-save 해싱 훅이 
+   * 정상적으로 작동하도록 합니다. 성공 시 해당 이메일의 모든 Verification 레코드를 삭제합니다.
+   * 
+   * @param email 초기화 대상 이메일
+   * @param resetToken 2단계에서 발급받은 임시 토큰
+   * @param newPassword 새로 설정할 비밀번호 (평문전달 시 모델에서 해싱됨)
    */
   public async resetPassword(email: string, resetToken: string, newPassword: string): Promise<void> {
     const record = await Verification.findOne({ email, isVerified: true, resetToken });
