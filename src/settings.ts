@@ -44,7 +44,7 @@ export const GLOBAL_CONFIG = {
   jwtExpiresIn: '30d',
 
   llmBaseUrl: "https://openrouter.ai/api/v1",
-  chatModel: "openai/gpt-4o",
+  chatModel: "google/gemini-3-flash-preview",
   embeddingModel: "openai/text-embedding-3-large",
   embeddingDimensions: 1024,
   visionModel: "google/gemini-3-flash-preview",
