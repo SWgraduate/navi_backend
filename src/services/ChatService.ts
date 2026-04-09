@@ -1,16 +1,17 @@
-import ChatModel, { IChat, IChatResult, IChatSource } from "src/models/Chat";
-import { ConversationService } from "./ConversationService";
-import mongoose from "mongoose";
-import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
-import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
+import { ChatOpenAI } from "@langchain/openai";
+import mongoose from "mongoose";
+import ChatModel, { IChat, IChatResult, IChatSource } from "src/models/Chat";
 import { EmbeddingService } from "src/rag/ingestion/services/EmbeddingService";
 import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexService";
+import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
-import { AttachmentContextService } from "./AttachmentContextService";
+import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
 import { logger } from "src/utils/log";
+import { AttachmentContextService } from "./AttachmentContextService";
+import { ConversationService } from "./ConversationService";
+import { StudentService } from "./StudentService";
 
 type ChatStatus = "queued" | "processing" | "completed" | "failed";
 
@@ -42,6 +43,7 @@ export class ChatService {
 
   private conversationService = ConversationService.getInstance();
   private attachmentContextService = AttachmentContextService.getInstance();
+  private studentService = new StudentService();
   private ragRetrievalService = new RagRetrievalService(
     new EmbeddingService(),
     new PineconeIndexService()
@@ -207,10 +209,14 @@ export class ChatService {
       const contextText = this.buildContextText(retrieval.chunks, 5);
       logger.d(`${tag} [3/5] Context length: ${contextText.length} chars`);
 
-      // Step 4: Call LLM
+      // Step 4: Call LLM (개인 학적 컨텍스트 주입)
       await update("generating_answer", "Generating grounded answer...");
       logger.i(`${tag} [4/5] Calling LLM | model=${GLOBAL_CONFIG.chatModel}`);
-      const answer = await this.callGroundedLLM(query, contextText);
+      const personalContext = userId ? await this.studentService.getAcademicContextString(userId) : null;
+      if (personalContext) {
+        logger.i(`${tag} [4/5] Personal academic context injected (userId=${userId})`);
+      }
+      const answer = await this.callGroundedLLM(query, contextText, personalContext ?? undefined);
       logger.s(`${tag} [4/5] LLM responded | answer length=${answer.length} chars`);
 
       // Step 5: Save result
@@ -281,7 +287,7 @@ export class ChatService {
       .join("\n\n");
   }
 
-  private async callGroundedLLM(query: string, contextText: string): Promise<string> {
+  private async callGroundedLLM(query: string, contextText: string, personalContext?: string): Promise<string> {
     const apiKey = OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("Missing LLM API key");
@@ -296,6 +302,21 @@ export class ChatService {
       },
     });
 
+    const systemPrompt = personalContext
+      ? [
+        ERICA_SYSTEM_PROMPT,
+        "",
+        "-------------------------",
+        "PERSONAL ACADEMIC DATA",
+        "-------------------------",
+        "The following is the authenticated user's personal academic information retrieved from the database.",
+        "Use this data to answer questions about their credits, graduation requirements, and academic status.",
+        "Do NOT fabricate or modify any values in this section.",
+        "",
+        personalContext,
+      ].join("\n")
+      : ERICA_SYSTEM_PROMPT;
+
     const userPrompt = [
       `Question: ${query}`,
       "",
@@ -304,7 +325,7 @@ export class ChatService {
     ].join("\n");
 
     const response = await chat.invoke([
-      new SystemMessage(ERICA_SYSTEM_PROMPT),
+      new SystemMessage(systemPrompt),
       new HumanMessage(userPrompt),
     ]);
 
