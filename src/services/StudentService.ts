@@ -656,4 +656,64 @@ export class StudentService {
 
     return student;
   }
+
+  /**
+   * 주어진 userId의 학적 정보를 LLM 시스템 프롬프트 주입용 텍스트로 직렬화하여 반환합니다.
+   * 학적 정보가 없거나 userId가 없는 경우 null을 반환하여 graceful fallback을 지원합니다.
+   *
+   * @param userId - 학적 정보를 조회할 사용자의 ID
+   * @returns 시스템 프롬프트에 삽입할 개인 학사 컨텍스트 문자열, 또는 null
+   */
+  public async getAcademicContextString(userId: string): Promise<string | null> {
+    try {
+      const student = await Student.findOne({
+        userId: new mongoose.Types.ObjectId(userId),
+      }).lean();
+
+      if (!student) return null;
+
+      const record = await AcademicRecord.findOne({ studentId: student._id }).lean();
+
+      if (!record) return null;
+
+      const { earnedCredits: ec, secondMajorCredits: sm, completedConditions: cc } = record;
+
+      const lines: string[] = [
+        `이름: ${student.name}`,
+        `학번: ${student.studentNumber} (${student.admissionYear}학번)`,
+        `주전공: ${student.major}`,
+        student.secondMajorInfo
+          ? `제2전공: ${student.secondMajorInfo.type} - ${student.secondMajorInfo.name}`
+          : `제2전공: 없음`,
+        `학적 상태: ${student.academicStatus} (이수 학기: ${student.completedSemesters}학기)`,
+        ``,
+        `[이수 학점 현황]`,
+        `- GPA: ${ec.gpa}`,
+        `- 총 이수 학점: ${ec.total}학점`,
+        `- 전공 계: ${ec.majorTotal}학점 (핵심 ${ec.majorCore} / 심화 ${ec.majorAdvanced})`,
+        `- 교양선택: ${ec.generalElective}학점`,
+        `- 사회봉사: ${ec.socialService}학점`,
+        `- 산학협력: ${ec.industry}학점`,
+      ];
+
+      if (sm.majorTotal > 0 || sm.majorCore > 0) {
+        lines.push(`- 제2전공 학점 계: ${sm.majorTotal}학점 (핵심 ${sm.majorCore})`);
+      }
+
+      lines.push(
+        ``,
+        `[특수 이수 조건]`,
+        `- 영어전용강좌 이수: ${cc.englishCourses}과목`,
+        `- IC-PBL 강좌 이수: ${cc.pblTotal}과목 (전공 PBL ${cc.pblMajor}과목)`,
+        `- 선수강 이수: ${cc.hasPrerequisite ? '완료' : '미완료'}`,
+        `- 미필과목 이수: ${cc.hasMandatoryCourse ? '완료' : '미완료'}`,
+        `- 졸업논문/시험/작품: ${cc.hasThesis ? '통과' : '미통과'}`,
+      );
+
+      return lines.join('\n');
+    } catch (err) {
+      logger.w(`StudentService.getAcademicContextString: 학적 컨텍스트 조회 실패 (userId=${userId})`, err);
+      return null;
+    }
+  }
 }

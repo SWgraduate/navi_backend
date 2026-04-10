@@ -74,10 +74,16 @@ export class VoiceSessionManager {
       }
 
       if (isFinal) {
-        logger.i(`[VoiceSession] STT Final Identified: ${text}`);
+        const trimmedText = (text || '').trim();
+        logger.i(`[VoiceSession] STT Final Identified: ${trimmedText}`);
         
+        if (trimmedText.length === 0) {
+          logger.i(`[VoiceSession] Empty transcript ignored.`);
+          return;
+        }
+
         // RAG 기반 ChatService로 질문을 넘기고 LLM의 답변을 받아옵니다.
-        this.processQueryToLLMToTTS(session, text);
+        this.processQueryToLLMToTTS(session, trimmedText);
       }
     });
 
