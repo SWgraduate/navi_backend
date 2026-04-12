@@ -1,4 +1,4 @@
-// 실행 명령어: pnpm tsx tools/test-stt-e2e.ts
+// 실행 명령어: pnpm tsx tools/testSttE2e.ts
 import { SpeechService } from '../src/services/SpeechService';
 import { GLOBAL_CONFIG } from '../src/settings';
 import dotenv from 'dotenv';
@@ -14,9 +14,9 @@ dotenv.config({ path: path.join(__dirname, '../.env.development') });
  */
 async function run() {
   const service = new SpeechService();
-  
+
   const testText = "이것은 마이크 없이 텍스트 투 스피치로 생성된 음성을 다시 스피치 투 텍스트로 인식하게 만드는 테스트입니다.";
-  const voiceId = GLOBAL_CONFIG.elevenlabsVoiceId; 
+  const voiceId = GLOBAL_CONFIG.elevenlabsVoiceId;
 
   console.log(`🔊 원본 텍스트:\n"${testText}"\n`);
   console.log('🔄 STT 웹소켓을 준비합니다...');
@@ -38,8 +38,8 @@ async function run() {
   // 2. TTS 서비스 호출 (STT 포맷에 맞춘 pcm_16000 으로 요청)
   try {
     await service.generateSpeechStream(
-      voiceId, 
-      testText, 
+      voiceId,
+      testText,
       (chunk) => {
         // TTS에서 생성된 음성 청크를 바로 STT로 밀어넣음
         stt.pushAudio(chunk);
@@ -48,7 +48,7 @@ async function run() {
     );
 
     console.log('\n\n✅ TTS 오디오 스트림 전송 완료. STT의 최종 인식을 기다립니다...');
-    
+
     // 최종 인식을 기다리기 위해 잠시 대기 후 종료
     setTimeout(() => {
       stt.close();
