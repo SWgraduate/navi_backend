@@ -1,11 +1,11 @@
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET, GLOBAL_CONFIG } from 'src/settings';
 import { LoginRequest } from 'src/controllers/AuthController';
 import User from 'src/models/User';
 import Verification from 'src/models/Verification';
-import { sendVerificationEmail, listSentEmails } from 'src/utils/mailer';
+import { GLOBAL_CONFIG, JWT_SECRET } from 'src/settings';
 import { discordAlert, logger } from 'src/utils/log';
+import { listSentEmails, sendVerificationEmail } from 'src/utils/mailer';
 
 export interface RegisterRequest {
   /**
