@@ -60,7 +60,7 @@ export class AuthService {
     }
     const domain = email.split('@')[1];
     if (!domain || !GLOBAL_CONFIG.allowedEmailDomains.includes(domain)) {
-      throw new Error(`Only ${GLOBAL_CONFIG.allowedEmailDomains.join(', ')} domains are allowed.`);
+      throw new Error("허용된 이메일 도메인(" + GLOBAL_CONFIG.allowedEmailDomains.join(', ') + ")만 사용할 수 있습니다.");
     }
   }
 
