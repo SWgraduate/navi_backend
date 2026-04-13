@@ -287,7 +287,7 @@ export class ChatService {
       .join("\n\n");
   }
 
-  private async callGroundedLLM(query: string, contextText: string, personalContext?: string): Promise<string> {
+  private async callGroundedLLM(query: string, contextText: string, personalContext?: string, voiceMode = false): Promise<string> {
     const apiKey = OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("Missing LLM API key");
@@ -302,7 +302,18 @@ export class ChatService {
       },
     });
 
-    const systemPrompt = personalContext
+    const voiceInstruction = [
+      "",
+      "-------------------------",
+      "VOICE RESPONSE RULES",
+      "-------------------------",
+      "The user is interacting via voice. Your response will be read aloud by a TTS engine.",
+      "- Keep your answer to 1 sentence maximum.",
+      "- Use natural spoken language. Do NOT use bullet points, markdown, or any formatting.",
+      "- Be direct and concise. Omit greetings and filler phrases.",
+    ].join("\n");
+
+    const basePrompt = personalContext
       ? [
         ERICA_SYSTEM_PROMPT,
         "",
@@ -316,6 +327,8 @@ export class ChatService {
         personalContext,
       ].join("\n")
       : ERICA_SYSTEM_PROMPT;
+
+    const systemPrompt = voiceMode ? basePrompt + voiceInstruction : basePrompt;
 
     const userPrompt = [
       `Question: ${query}`,
@@ -352,7 +365,7 @@ export class ChatService {
     });
 
     const contextText = this.buildContextText(retrieval.chunks, 5);
-    return this.callGroundedLLM(query, contextText);
+    return this.callGroundedLLM(query, contextText, undefined, true);
   }
 
   /**
