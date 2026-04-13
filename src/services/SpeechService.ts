@@ -41,6 +41,7 @@ export class SpeechService {
         logger.e('Typecast TTS Unexpected Error:', error);
         void discordAlert(`🚨 **[Typecast TTS Error]** Unexpected: ${String(error)}`);
       }
+      throw error;
     }
   }
 
