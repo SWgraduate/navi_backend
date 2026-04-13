@@ -54,8 +54,20 @@ export class AuthService {
     return jwt.sign({ userId }, JWT_SECRET, { expiresIn: GLOBAL_CONFIG.jwtExpiresIn as any });
   }
 
+  private validateEmailDomain(email: string): void {
+    if (!email || !email.includes('@')) {
+      throw new Error('Invalid email format');
+    }
+    const domain = email.split('@')[1];
+    if (!domain || !GLOBAL_CONFIG.allowedEmailDomains.includes(domain)) {
+      throw new Error(`Only ${GLOBAL_CONFIG.allowedEmailDomains.join(', ')} domains are allowed.`);
+    }
+  }
+
   public async register(data: RegisterRequest): Promise<AuthResponse> {
     const { email, password } = data;
+
+    this.validateEmailDomain(email);
 
     // 이메일 중복 확인
     const existingUser = await User.findOne({ email });
@@ -133,6 +145,8 @@ export class AuthService {
   }
 
   public async requestEmailVerification(email: string): Promise<void> {
+    this.validateEmailDomain(email);
+
     // 6자리 난수 생성 (예: 048291)
     const code = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
 
@@ -173,6 +187,7 @@ export class AuthService {
    * @param email 코드 발송 대상 이메일
    */
   public async forgotPassword(email: string): Promise<void> {
+    this.validateEmailDomain(email);
     const user = await User.findOne({ email });
     if (!user) {
       // 계정 존재 여부 노출 방지: 실제로는 아무 동작도 하지 않고 조용히 종료

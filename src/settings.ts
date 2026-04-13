@@ -69,6 +69,8 @@ export const GLOBAL_CONFIG = {
     windowMs: isProd ? 60 * 60 * 1000 : 5 * 60 * 1000, // prod: 1시간 | dev: 5분
     max: isProd ? 10 : 20, // prod: 10회 | dev: 20회
   },
+
+  allowedEmailDomains: ['hanyang.ac.kr', 'gmail.com', 'naver.com', 'daum.net', 'kakao.com'],
 };
 
 /**
