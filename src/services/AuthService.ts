@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { formatInTimeZone } from 'date-fns-tz';
 import jwt from 'jsonwebtoken';
 import { LoginRequest } from 'src/controllers/AuthController';
 import User from 'src/models/User';
@@ -271,9 +272,10 @@ export class AuthService {
   private async reportResendUsageToDiscord(): Promise<void> {
     try {
       const now = new Date();
+      const tz = 'Asia/Seoul';
+
       // KST(한국 시간) 기준으로 YYYY-MM-DD 추출
-      const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-      const todayStr = kst.toISOString().substring(0, 10);
+      const todayStr = formatInTimeZone(now, tz, 'yyyy-MM-dd');
       const monthStr = todayStr.substring(0, 7); // YYYY-MM
 
       let monthCount = 0;
@@ -293,8 +295,7 @@ export class AuthService {
         for (const email of response.data) {
           if (!email.created_at) continue;
 
-          const emailKst = new Date(new Date(email.created_at).getTime() + (9 * 60 * 60 * 1000));
-          const emailDateStr = emailKst.toISOString().substring(0, 10);
+          const emailDateStr = formatInTimeZone(new Date(email.created_at), tz, 'yyyy-MM-dd');
           const emailMonthStr = emailDateStr.substring(0, 7);
 
           if (emailMonthStr === monthStr) {
@@ -315,9 +316,8 @@ export class AuthService {
         }
       }
 
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const currentMonthName = monthNames[kst.getUTCMonth()];
-      const currentDay = kst.getUTCDate();
+      const currentMonthName = formatInTimeZone(now, tz, 'MMM');
+      const currentDay = formatInTimeZone(now, tz, 'd');
 
       const limitWarning = pagesFetched >= MAX_PAGES ? '+' : '';
       const message = `Resend Email Usage - ${currentMonthName} ${currentDay}: ${todayCount}, ${currentMonthName}: ${monthCount}${limitWarning}`;
