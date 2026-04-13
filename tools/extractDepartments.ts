@@ -8,13 +8,16 @@ const dirPath = path.join(currentDir, '..', 'out');
 const filePath = path.join(dirPath, 'init_valid_departments.json');
 
 //폴더 만들기
-try {
-  fs.mkdir(dirPath, { recursive: true });
-  fs.writeFile(filePath, JSON.stringify({}, null, 2), 'utf-8');
-}
-catch (error) {
-  console.log(error);
-  process.exit(1);
+const run = async () => {
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+    await fs.writeFile(filePath, JSON.stringify({}, null, 2), 'utf-8');
+  }
+  catch (error) {
+    console.log(error);
+    process.exit(1);
+  }
 }
 
+run();
 
