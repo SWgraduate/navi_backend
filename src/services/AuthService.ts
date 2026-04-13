@@ -4,7 +4,8 @@ import { JWT_SECRET, GLOBAL_CONFIG } from 'src/settings';
 import { LoginRequest } from 'src/controllers/AuthController';
 import User from 'src/models/User';
 import Verification from 'src/models/Verification';
-import { sendVerificationEmail } from 'src/utils/mailer';
+import { sendVerificationEmail, listSentEmails } from 'src/utils/mailer';
+import { discordAlert, logger } from 'src/utils/log';
 
 export interface RegisterRequest {
   /**
@@ -144,6 +145,7 @@ export class AuthService {
 
     // 메일 발송 유틸리티 호출
     await sendVerificationEmail(email, code, 'registration');
+    this.reportResendUsageToDiscord().catch(e => logger.e('Discord monitoring alert failed (Registration):', e));
   }
 
   public async verifyEmailCode(email: string, code: string): Promise<boolean> {
@@ -186,6 +188,7 @@ export class AuthService {
     );
 
     await sendVerificationEmail(email, code, 'password_reset');
+    this.reportResendUsageToDiscord().catch(e => logger.e('Discord monitoring alert failed (Password Reset):', e));
   }
 
   /**
@@ -245,5 +248,67 @@ export class AuthService {
     await user.save(); // pre-save hook에서 자동 해싱
 
     await Verification.deleteOne({ email }); // 재사용 방지
+  }
+
+  /**
+   * Resend API 이메일 발송 사용량을 디스코드로 알림
+   */
+  private async reportResendUsageToDiscord(): Promise<void> {
+    try {
+      const now = new Date();
+      // KST(한국 시간) 기준으로 YYYY-MM-DD 추출
+      const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+      const todayStr = kst.toISOString().substring(0, 10);
+      const monthStr = todayStr.substring(0, 7); // YYYY-MM
+
+      let monthCount = 0;
+      let todayCount = 0;
+
+      let hasMore = true;
+      let after: string | undefined = undefined;
+      let pagesFetched = 0;
+      const MAX_PAGES = 10; // 최대 10페이지 (1000건)
+
+      while (hasMore && pagesFetched < MAX_PAGES) {
+        pagesFetched++;
+        const response = await listSentEmails({ limit: 100, after });
+
+        if (!response || !response.data || response.data.length === 0) break;
+
+        for (const email of response.data) {
+          if (!email.created_at) continue;
+
+          const emailKst = new Date(new Date(email.created_at).getTime() + (9 * 60 * 60 * 1000));
+          const emailDateStr = emailKst.toISOString().substring(0, 10);
+          const emailMonthStr = emailDateStr.substring(0, 7);
+
+          if (emailMonthStr === monthStr) {
+            monthCount++;
+            if (emailDateStr === todayStr) {
+              todayCount++;
+            }
+          } else {
+            hasMore = false;
+            break;
+          }
+        }
+
+        if (hasMore && response.data.length > 0) {
+          after = response.data[response.data.length - 1]?.id;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const currentMonthName = monthNames[kst.getUTCMonth()];
+      const currentDay = kst.getUTCDate();
+
+      const limitWarning = pagesFetched >= MAX_PAGES ? '+' : '';
+      const message = `Resend Email Usage - ${currentMonthName} ${currentDay}: ${todayCount}, ${currentMonthName}: ${monthCount}${limitWarning}`;
+      await discordAlert(message);
+    } catch (e) {
+      logger.e('Failed to aggregate Resend usage:', e);
+    }
   }
 }
