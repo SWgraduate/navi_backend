@@ -36,6 +36,7 @@ export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
 export const ELEVENLABS_API_KEY = requireEnv('ELEVENLABS_API_KEY');
+export const TYPECAST_API_KEY = requireEnv('TYPECAST_API_KEY');
 
 
 const isProd = NODE_ENV === 'production';
@@ -55,6 +56,7 @@ export const GLOBAL_CONFIG = {
   pineconeUserDocsNamespace: "user-docs",
 
   elevenlabsVoiceId: "cgSgspJ2msm6clMCkdW9",
+  typecastVoiceId: "tc_68f9c6a72f0f04a417bb136f",
 
   discordAlertRoleIds: {
     backend: "1482976770763395207",

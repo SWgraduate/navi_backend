@@ -1,83 +1,47 @@
 import WebSocket from 'ws';
+import { TypecastClient, TypecastAPIError } from '@neosapience/typecast-js';
+import { TYPECAST_API_KEY } from 'src/settings';
 import { logger, discordAlert } from 'src/utils/log';
 
 export class SpeechService {
   private readonly ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || '';
+  private readonly typecastClient = new TypecastClient({ apiKey: TYPECAST_API_KEY });
   
   /**
-   * ElevenLabs Text-to-Speech (웹소켓 연결 예시)
-   * @param voiceId - 사용할 음성 ID
+   * Typecast Text-to-Speech (스트리밍)
+   * @param voiceId - 사용할 음성 ID (Typecast voice_id)
    * @param text - 변환할 텍스트
    * @param onAudioChunk - 오디오 청크를 받을 콜백 함수
    */
   public async generateSpeechStream(
-    voiceId: string, 
-    text: string, 
+    voiceId: string,
+    text: string,
     onAudioChunk: (chunk: Buffer) => void,
-    outputFormat: string = 'mp3_44100_128'
   ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const url = `wss://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream-input?model_id=eleven_multilingual_v2&output_format=${outputFormat}`;
-      
-      const ws = new WebSocket(url, {
-        headers: {
-          'xi-api-key': this.ELEVENLABS_API_KEY,
-        },
+    try {
+      const stream = await this.typecastClient.textToSpeechStream({
+        text,
+        model: 'ssfm-v30',
+        voice_id: voiceId,
+        output: { audio_format: 'mp3' },
       });
 
-      ws.on('open', () => {
-        logger.i('ElevenLabs TTS WebSocket Connected');
-        
-        ws.send(JSON.stringify({
-          text: ' ',
-          voice_settings: { stability: 0.5, similarity_boost: 0.8, speed: 1 },
-        }));
-
-        ws.send(JSON.stringify({ text }));
-        ws.send(JSON.stringify({ text: '' }));
-      });
-
-      ws.on('message', (data: Buffer) => {
-        const responseData = data.toString();
-        // logger.d("Received data length:", responseData.length); // 디버깅용
-        
-        try {
-          const response = JSON.parse(responseData);
-          
-          // 오류 발생시 (API Key 오류, 할당량 초과 등)
-          if (response.error) {
-              logger.e('ElevenLabs API Error in stream:', response.error);
-              void discordAlert(`🚨 **[ElevenLabs TTS Error]** API Error in stream: ${JSON.stringify(response.error)}`);
-              ws.close();
-              resolve();
-              return;
-          }
-
-          if (response.audio) {
-            const audioBuffer = Buffer.from(response.audio, 'base64');
-            onAudioChunk(audioBuffer);
-          }
-          
-          if (response.isFinal) {
-             logger.i('TTS Stream ended');
-             ws.close();
-             resolve();
-          }
-        } catch (e) {
-           logger.e("Failed to parse JSON message", e);
-        }
-      });
-
-      ws.on('error', (error) => {
-        logger.e('ElevenLabs TTS Error:', error);
-        void discordAlert(`🚨 **[ElevenLabs TTS Error]** WebSocket Error: ${error.message}`);
-        reject(error);
-      });
-
-      ws.on('close', () => {
-        resolve();
-      });
-    });
+      const reader = stream.getReader();
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        onAudioChunk(Buffer.from(value));
+      }
+      logger.i('Typecast TTS Stream finished');
+    } catch (error) {
+      if (error instanceof TypecastAPIError) {
+        logger.e(`Typecast TTS API Error [${error.statusCode}]:`, error.message);
+        void discordAlert(`🚨 **[Typecast TTS Error]** [${error.statusCode}]: ${error.message}`);
+      } else {
+        logger.e('Typecast TTS Unexpected Error:', error);
+        void discordAlert(`🚨 **[Typecast TTS Error]** Unexpected: ${String(error)}`);
+      }
+    }
   }
 
   /**
