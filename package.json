@@ -31,6 +31,7 @@
     "@langchain/openai": "^1.2.1",
     "@langchain/pinecone": "^1.0.1",
     "@langchain/textsplitters": "^1.0.1",
+    "@neosapience/typecast-js": "^0.3.0",
     "@openrouter/sdk": "^0.5.1",
     "@pinecone-database/pinecone": "^5.0.2",
     "@tsoa/runtime": "7.0.0-alpha.0",
