@@ -36,6 +36,7 @@ export const PINECONE_API_KEY = requireEnv('PINECONE_API_KEY');
 
 export const DISCORD_WEBHOOK_URL = requireEnv('DISCORD_WEBHOOK_URL');
 export const ELEVENLABS_API_KEY = requireEnv('ELEVENLABS_API_KEY');
+export const TYPECAST_API_KEY = requireEnv('TYPECAST_API_KEY');
 
 
 const isProd = NODE_ENV === 'production';
@@ -55,6 +56,7 @@ export const GLOBAL_CONFIG = {
   pineconeUserDocsNamespace: "user-docs",
 
   elevenlabsVoiceId: "cgSgspJ2msm6clMCkdW9",
+  typecastVoiceId: "tc_68f9c6a72f0f04a417bb136f",
 
   discordAlertRoleIds: {
     backend: "1482976770763395207",
@@ -63,10 +65,28 @@ export const GLOBAL_CONFIG = {
 
   enableFileAwareChat: !isProd, // 보안상 env에 포함할 필요 없다 판단되어 글로벌 설정 객체로 편입 (26. 3. 8. 태영)
 
-  emailSendRateLimit: {
-    windowMs: isProd ? 60 * 60 * 1000 : 5 * 60 * 1000, // prod: 1시간 | dev: 5분
-    max: isProd ? 10 : 20, // prod: 10회 | dev: 20회
+  rateLimits: {
+    /** 이메일 발송 (인증 코드, 비밀번호 재설정) */
+    email: {
+      windowMs: 60 * 60 * 1000, // 1h
+      max: 1000,
+      message: '이메일 발송 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+    },
+    /** 로그인 */
+    login: {
+      windowMs: 60 * 60 * 1000, // 1h
+      max: 1000,
+      message: '로그인 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.',
+    },
+    /** 회원가입 */
+    register: {
+      windowMs: 60 * 60 * 1000, // 1h
+      max: 1000,
+      message: '회원가입 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.',
+    },
   },
+
+  allowedEmailDomains: ['hanyang.ac.kr', 'gmail.com', 'naver.com', 'daum.net', 'kakao.com'],
 };
 
 /**

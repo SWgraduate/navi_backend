@@ -8,15 +8,16 @@ import path from 'path';
 dotenv.config({ path: path.join(__dirname, '../.env.development') });
 
 /**
- * 마이크(sox) 없이 STT를 테스트하기 위한 End-to-End 스크립트입니다.
- * 1. ElevenLabs TTS로 텍스트를 pcm_16000 포맷으로 변환 (STT가 요구하는 포맷)
- * 2. 받은 오디오 청크를 그대로 ElevenLabs STT로 전송하여 인식 결과를 확인
+ * STT를 테스트하기 위한 End-to-End 스크립트입니다.
+ * 1. Typecast TTS로 텍스트를 MP3 포맷으로 변환
+ * 2. 받은 오디오 청크를 ElevenLabs STT로 전송하여 인식 결과를 확인
+ * ⚠️ 참고: Typecast TTS는 PCM을 지원하지 않으므로 루프백 정확도가 저하될 수 있음
  */
 async function run() {
   const service = new SpeechService();
   
   const testText = "이것은 마이크 없이 텍스트 투 스피치로 생성된 음성을 다시 스피치 투 텍스트로 인식하게 만드는 테스트입니다.";
-  const voiceId = GLOBAL_CONFIG.elevenlabsVoiceId; 
+  const voiceId = GLOBAL_CONFIG.typecastVoiceId;
 
   console.log(`🔊 원본 텍스트:\n"${testText}"\n`);
   console.log('🔄 STT 웹소켓을 준비합니다...');
@@ -35,7 +36,7 @@ async function run() {
 
   console.log('🎤 TTS로 음성을 생성하여 실시간으로 STT로 전송합니다...\n');
 
-  // 2. TTS 서비스 호출 (STT 포맷에 맞춘 pcm_16000 으로 요청)
+  // 2. TTS 서비스 호출 (Typecast MP3 스트리밍 → STT로 전송)
   try {
     await service.generateSpeechStream(
       voiceId, 
@@ -44,7 +45,6 @@ async function run() {
         // TTS에서 생성된 음성 청크를 바로 STT로 밀어넣음
         stt.pushAudio(chunk);
       },
-      'pcm_16000' // STT에 맞는 PCM 포맷 지정
     );
 
     console.log('\n\n✅ TTS 오디오 스트림 전송 완료. STT의 최종 인식을 기다립니다...');

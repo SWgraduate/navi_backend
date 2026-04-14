@@ -1,10 +1,12 @@
 import crypto from 'crypto';
+import { formatInTimeZone } from 'date-fns-tz';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET, GLOBAL_CONFIG } from 'src/settings';
 import { LoginRequest } from 'src/controllers/AuthController';
 import User from 'src/models/User';
 import Verification from 'src/models/Verification';
-import { sendVerificationEmail } from 'src/utils/mailer';
+import { GLOBAL_CONFIG, JWT_SECRET } from 'src/settings';
+import { discordAlert, logger } from 'src/utils/log';
+import { listSentEmails, sendVerificationEmail } from 'src/utils/mailer';
 
 export interface RegisterRequest {
   /**
@@ -13,7 +15,9 @@ export interface RegisterRequest {
    */
   email: string;
   /**
-   * 사용할 비밀번호 (최소 8자 이상 권장)
+   * 사용할 비밀번호 (영어, 숫자, 특수문자 포함 8자 이상)
+   * @minLength 8
+   * @pattern ^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$
    * @example "securePassword123!"
    */
   password: string;
@@ -53,8 +57,20 @@ export class AuthService {
     return jwt.sign({ userId }, JWT_SECRET, { expiresIn: GLOBAL_CONFIG.jwtExpiresIn as any });
   }
 
+  private validateEmailDomain(email: string): void {
+    if (!email || !email.includes('@')) {
+      throw new Error('Invalid email format');
+    }
+    const domain = email.split('@')[1];
+    if (!domain || !GLOBAL_CONFIG.allowedEmailDomains.includes(domain)) {
+      throw new Error("허용된 이메일 도메인(" + GLOBAL_CONFIG.allowedEmailDomains.join(', ') + ")만 사용할 수 있습니다.");
+    }
+  }
+
   public async register(data: RegisterRequest): Promise<AuthResponse> {
     const { email, password } = data;
+
+    this.validateEmailDomain(email);
 
     // 이메일 중복 확인
     const existingUser = await User.findOne({ email });
@@ -132,6 +148,8 @@ export class AuthService {
   }
 
   public async requestEmailVerification(email: string): Promise<void> {
+    this.validateEmailDomain(email);
+
     // 6자리 난수 생성 (예: 048291)
     const code = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
 
@@ -144,6 +162,7 @@ export class AuthService {
 
     // 메일 발송 유틸리티 호출
     await sendVerificationEmail(email, code, 'registration');
+    this.reportResendUsageToDiscord().catch(e => logger.e('Discord monitoring alert failed (Registration):', e));
   }
 
   public async verifyEmailCode(email: string, code: string): Promise<boolean> {
@@ -171,6 +190,7 @@ export class AuthService {
    * @param email 코드 발송 대상 이메일
    */
   public async forgotPassword(email: string): Promise<void> {
+    this.validateEmailDomain(email);
     const user = await User.findOne({ email });
     if (!user) {
       // 계정 존재 여부 노출 방지: 실제로는 아무 동작도 하지 않고 조용히 종료
@@ -186,6 +206,7 @@ export class AuthService {
     );
 
     await sendVerificationEmail(email, code, 'password_reset');
+    this.reportResendUsageToDiscord().catch(e => logger.e('Discord monitoring alert failed (Password Reset):', e));
   }
 
   /**
@@ -245,5 +266,66 @@ export class AuthService {
     await user.save(); // pre-save hook에서 자동 해싱
 
     await Verification.deleteOne({ email }); // 재사용 방지
+  }
+
+  /**
+   * Resend API 이메일 발송 사용량을 디스코드로 알림
+   */
+  private async reportResendUsageToDiscord(): Promise<void> {
+    try {
+      const now = new Date();
+      const tz = 'Asia/Seoul';
+
+      // KST(한국 시간) 기준으로 YYYY-MM-DD 추출
+      const todayStr = formatInTimeZone(now, tz, 'yyyy-MM-dd');
+      const monthStr = todayStr.substring(0, 7); // YYYY-MM
+
+      let monthCount = 0;
+      let todayCount = 0;
+
+      let hasMore = true;
+      let after: string | undefined = undefined;
+      let pagesFetched = 0;
+      const MAX_PAGES = 10; // 최대 10페이지 (1000건)
+
+      while (hasMore && pagesFetched < MAX_PAGES) {
+        pagesFetched++;
+        const response = await listSentEmails({ limit: 100, after });
+
+        if (!response || !response.data || response.data.length === 0) break;
+
+        for (const email of response.data) {
+          if (!email.created_at) continue;
+
+          const emailDateStr = formatInTimeZone(new Date(email.created_at), tz, 'yyyy-MM-dd');
+          const emailMonthStr = emailDateStr.substring(0, 7);
+
+          if (emailMonthStr === monthStr) {
+            monthCount++;
+            if (emailDateStr === todayStr) {
+              todayCount++;
+            }
+          } else {
+            hasMore = false;
+            break;
+          }
+        }
+
+        if (hasMore && response.data.length > 0) {
+          after = response.data[response.data.length - 1]?.id;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      const currentMonthName = formatInTimeZone(now, tz, 'MMM');
+      const currentDay = formatInTimeZone(now, tz, 'd');
+
+      const limitWarning = pagesFetched >= MAX_PAGES ? '+' : '';
+      const message = `Resend Email Usage - ${currentMonthName} ${currentDay}: ${todayCount}, ${currentMonthName}: ${monthCount}${limitWarning}`;
+      await discordAlert(message);
+    } catch (e) {
+      logger.e('Failed to aggregate Resend usage:', e);
+    }
   }
 }
