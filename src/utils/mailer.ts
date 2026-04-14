@@ -1,4 +1,4 @@
-import { Resend } from 'resend';
+import { Resend, type PaginationOptions } from 'resend';
 import { RESEND_KEY } from 'src/settings';
 import { logger } from 'src/utils/log';
 
@@ -43,5 +43,25 @@ export const sendVerificationEmail = async (to: string, code: string, type: Veri
   } catch (error) {
     logger.e('인증 메일 전송 중 예기치 않은 오류 발생:', error);
     throw new Error('이메일 전송에 실패했습니다.');
+  }
+};
+
+/**
+ * 발송된 이메일 목록을 조회합니다. (Resend API)
+ * 나중에 월별 사용량 로그 등에 활용될 예정입니다.
+ */
+export const listSentEmails = async (options: PaginationOptions = {}) => {
+  try {
+    const { data, error } = await resend.emails.list(options);
+
+    if (error) {
+      logger.e('이메일 목록 조회 실패 (Resend):', error);
+      throw new Error(`이메일 목록 조회에 실패했습니다: ${error.message}`);
+    }
+
+    return data;
+  } catch (error) {
+    logger.e('이메일 목록 조회 중 예기치 않은 오류 발생:', error);
+    throw new Error('이메일 목록 조회에 실패했습니다.');
   }
 };
