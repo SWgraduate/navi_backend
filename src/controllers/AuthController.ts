@@ -55,7 +55,9 @@ export interface ResetPasswordRequest {
    */
   resetToken: string;
   /**
-   * 새로 설정할 비밀번호
+   * 새로 설정할 비밀번호 (영어, 숫자, 특수문자 포함 8자 이상)
+   * @minLength 8
+   * @pattern ^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$
    * @example "newPassword123!"
    */
   newPassword: string;

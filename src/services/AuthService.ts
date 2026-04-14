@@ -15,7 +15,9 @@ export interface RegisterRequest {
    */
   email: string;
   /**
-   * 사용할 비밀번호 (최소 8자 이상 권장)
+   * 사용할 비밀번호 (영어, 숫자, 특수문자 포함 8자 이상)
+   * @minLength 8
+   * @pattern ^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$
    * @example "securePassword123!"
    */
   password: string;

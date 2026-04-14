@@ -38,7 +38,7 @@ describe('AuthService Test', () => {
 
   describe('register', () => {
     it('should successfully register a new user', async () => {
-      const userData = { email: 'test@example.com', password: 'password123' };
+      const userData = { email: 'test@gmail.com', password: 'Testpassword123!' };
 
       // [추가] 가입 전 인증 완료 상태 생성
       await Verification.create({ email: userData.email, code: '000000', isVerified: true });
@@ -56,7 +56,7 @@ describe('AuthService Test', () => {
     });
 
     it('should throw Error if user already exists', async () => {
-      const userData = { email: 'duplicate@example.com', password: 'password123' };
+      const userData = { email: 'duplicate@gmail.com', password: 'Testpassword123!' };
 
       await Verification.create({ email: userData.email, code: '000000', isVerified: true });
       await authService.register(userData);
@@ -66,7 +66,7 @@ describe('AuthService Test', () => {
   });
 
   describe('login', () => {
-    const registerData = { email: 'login@example.com', password: 'mypassword123' };
+    const registerData = { email: 'login@gmail.com', password: 'Testpassword123!' };
 
     beforeEach(async () => {
       // [추가] 로그인 테스트를 위해 가입 전 인증 완료 상태 생성
@@ -86,7 +86,7 @@ describe('AuthService Test', () => {
     });
 
     it('should throw Error if user email does not exist', async () => {
-      await expect(authService.login({ email: 'notfound@example.com', password: 'mypassword123' }))
+      await expect(authService.login({ email: 'notfound@gmail.com', password: 'Testpassword123!' }))
         .rejects.toThrow('Invalid credentials');
     });
 
@@ -98,7 +98,7 @@ describe('AuthService Test', () => {
 
   describe('leave', () => {
     it('should successfully leave(delete) user', async () => {
-      const userData = { email: 'leave@example.com', password: 'password123' };
+      const userData = { email: 'leave@gmail.com', password: 'Testpassword123!' };
 
       // [추가] 가입 진행
       await Verification.create({ email: userData.email, code: '000000', isVerified: true });

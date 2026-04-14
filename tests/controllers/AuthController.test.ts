@@ -39,8 +39,8 @@ describe('AuthController Test', () => {
     describe('register', () => {
         it('should successfully register a new user and return accessToken', async () => {
             const userData = {
-                email: 'controller_test@example.com',
-                password: 'password123',
+                email: 'controller_test@gmail.com',
+                password: 'Testpassword123!',
             };
 
             // [추가] 가입 전, 이메일 인증이 완료되었다는 가짜 데이터 생성
@@ -64,8 +64,8 @@ describe('AuthController Test', () => {
 
         it('should return 400 error if user already exists', async () => {
             const userData = {
-                email: 'duplicate_controller@example.com',
-                password: 'password123',
+                email: 'duplicate_controller@gmail.com',
+                password: 'Testpassword123!',
             };
 
             await Verification.create({ email: userData.email, code: '000000', isVerified: true });
@@ -81,8 +81,8 @@ describe('AuthController Test', () => {
 
     describe('login', () => {
         const loginData = {
-            email: 'login_controller@example.com',
-            password: 'password123',
+            email: 'login_controller@gmail.com',
+            password: 'Testpassword123!',
         };
 
         beforeEach(async () => {
@@ -119,7 +119,7 @@ describe('AuthController Test', () => {
         let registeredUserId: string;
 
         beforeEach(async () => {
-            const loginData = { email: 'logout@example.com', password: 'pwd' };
+            const loginData = { email: 'logout@gmail.com', password: 'Testpassword123!' };
             await Verification.create({ email: loginData.email, code: '000000', isVerified: true });
             const result = await authController.register(loginData) as any;
             registeredUserId = result.user.id; // 로그아웃에 사용할 유저 ID 확보
@@ -141,8 +141,8 @@ describe('AuthController Test', () => {
 
     describe('leave', () => {
         const leaveData = {
-            email: 'leave_controller@example.com',
-            password: 'password123',
+            email: 'leave_controller@gmail.com',
+            password: 'Testpassword123!',
         };
         let registeredUserId: string;
 
