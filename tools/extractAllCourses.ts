@@ -34,7 +34,7 @@ const randomDelay = () => {
 
 async function fetchCoursesPage(skipRows: number): Promise<{ list: any[]; totalCnt: number }> {
   const url = `https://portal.hanyang.ac.kr/sugang/SgscAct/findSuupSearchSugangSiganpyo.do?pgmId=P310278&menuId=M006631&tk=${CONFIG.tk}`;
-  
+
   const payload = {
     skipRows: skipRows.toString(),
     maxRows: CONFIG.maxRows.toString(),
@@ -95,7 +95,7 @@ async function fetchCoursesPage(skipRows: number): Promise<{ list: any[]; totalC
   }
 
   const dataset = data?.DS_SUUPGS03TTM01?.[0];
-  
+
   if (!dataset || !dataset.list) {
     throw new Error('응답 데이터에 DS_SUUPGS03TTM01 또는 list가 없습니다.');
   }
@@ -117,9 +117,9 @@ async function main() {
 
   while (true) {
     logger.i(`데이터 요청 중... (skipRows: ${skipRows})`);
-    
+
     const { list, totalCnt: currentTotalCnt } = await fetchCoursesPage(skipRows);
-    
+
     if (list.length === 0) {
       logger.i('더 이상 가져올 데이터가 없습니다. 반복을 종료합니다.');
       break;
@@ -146,7 +146,7 @@ async function main() {
 
   const outputDir = path.resolve(process.cwd(), 'out');
   const outputPath = path.resolve(outputDir, CONFIG.outputFile);
-  
+
   // out 폴더가 없으면 생성
   try {
     await fs.mkdir(outputDir, { recursive: true });
@@ -155,7 +155,7 @@ async function main() {
   }
 
   await fs.writeFile(outputPath, JSON.stringify(allCourses, null, 2), 'utf-8');
-  
+
   logger.i(`완료! 총 ${allCourses.length}개의 강의를 ${outputPath} 에 저장했습니다.`);
 }
 

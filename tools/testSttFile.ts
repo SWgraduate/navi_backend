@@ -1,5 +1,5 @@
-// 실행 명령어: pnpm tsx tools/test-stt-file.ts <파일경로>
-// 예시: pnpm tsx tools/test-stt-file.ts my_voice.mp3
+// 실행 명령어: pnpm tsx tools/testSttFile.ts <파일경로>
+// 예시: pnpm tsx tools/testSttFile.ts my_voice.mp3
 
 import { SpeechService } from '../src/services/SpeechService';
 import dotenv from 'dotenv';

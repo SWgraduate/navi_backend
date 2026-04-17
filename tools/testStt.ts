@@ -1,6 +1,6 @@
-// 실행 명령어: pnpm tsx tools/test-stt.ts
+// 실행 명령어: pnpm tsx tools/testStt.ts
 import { SpeechService } from '../src/services/SpeechService';
-import record from 'node-record-lpcm16'; 
+import record from 'node-record-lpcm16';
 import dotenv from 'dotenv';
 import path from 'path';
 
