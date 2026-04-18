@@ -1,7 +1,13 @@
 import crypto from 'crypto';
 import { formatInTimeZone } from 'date-fns-tz';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { LoginRequest } from 'src/controllers/AuthController';
+import AcademicRecord from 'src/models/AcademicRecord';
+import Chat from 'src/models/Chat';
+import { ChatAttachmentBindingModel } from 'src/models/ChatAttachmentBinding';
+import { ConversationModel } from 'src/models/Conversation';
+import Student from 'src/models/Student';
 import User from 'src/models/User';
 import Verification from 'src/models/Verification';
 import { GLOBAL_CONFIG, JWT_SECRET } from 'src/settings';
@@ -141,9 +147,47 @@ export class AuthService {
   }
 
   public async leave(userId: string): Promise<void> {
-    const deletedUser = await User.findByIdAndDelete(userId);
-    if (!deletedUser) {
-      throw new Error('User not found');
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const user = await User.findById(userId).session(session);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // 1. Student 조회 (AcademicRecord 삭제에 studentId 필요)
+      const student = await Student.findOne({ userId }).session(session);
+
+      // 2. AcademicRecord 삭제 (Student보다 먼저 삭제해야 studentId 참조 가능)
+      if (student) {
+        await AcademicRecord.deleteOne({ studentId: student._id }).session(session);
+      }
+
+      // 3. Student 삭제
+      await Student.deleteOne({ userId }).session(session);
+
+      // 4. Chat 삭제
+      await Chat.deleteMany({ userId: userId.toString() }).session(session);
+
+      // 5. Conversation 삭제
+      await ConversationModel.deleteMany({ userId: userId.toString() }).session(session);
+
+      // 6. ChatAttachmentBinding 삭제
+      await ChatAttachmentBindingModel.deleteMany({ userId: userId.toString() }).session(session);
+
+      // 7. Verification 삭제 (email 기준)
+      await Verification.deleteOne({ email: user.email }).session(session);
+
+      // 8. User 삭제
+      await User.findByIdAndDelete(userId).session(session);
+
+      await session.commitTransaction();
+    } catch (e) {
+      await session.abortTransaction();
+      throw e;
+    } finally {
+      session.endSession();
     }
   }
 
