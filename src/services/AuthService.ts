@@ -151,7 +151,7 @@ export class AuthService {
     this.validateEmailDomain(email);
 
     // 6자리 난수 생성 (예: 048291)
-    const code = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
+    const code = crypto.randomInt(100000, 1000000).toString().padStart(6, '0');
 
     // 기존에 요청한 인증번호가 있다면 덮어쓰기 (upsert)
     await Verification.findOneAndUpdate(
@@ -197,7 +197,7 @@ export class AuthService {
       return;
     }
 
-    const code = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
+    const code = crypto.randomInt(100000, 1000000).toString().padStart(6, '0');
 
     await Verification.findOneAndUpdate(
       { email },
@@ -233,7 +233,6 @@ export class AuthService {
     // 임시 토큰 생성 (32바이트 hex = 64자)
     const resetToken = crypto.randomBytes(32).toString('hex');
 
-    record.isVerified = true;
     record.resetToken = resetToken;
     await record.save();
 
@@ -251,7 +250,7 @@ export class AuthService {
    * @param newPassword 새로 설정할 비밀번호 (평문전달 시 모델에서 해싱됨)
    */
   public async resetPassword(email: string, resetToken: string, newPassword: string): Promise<void> {
-    const record = await Verification.findOne({ email, isVerified: true, resetToken });
+    const record = await Verification.findOne({ email, resetToken });
 
     if (!record) {
       throw new Error('유효하지 않거나 만료된 재설정 토큰입니다.');
