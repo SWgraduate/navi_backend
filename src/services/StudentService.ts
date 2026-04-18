@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
 import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
 import AcademicRecord from 'src/models/AcademicRecord';
-import Student, { AcademicStatus, IStudent, SecondMajorType, ISecondMajorInfo } from 'src/models/Student';
 import Course, { ICourse } from 'src/models/Course';
+import Major from 'src/models/Major';
+import Student, { AcademicStatus, ISecondMajorInfo, IStudent } from 'src/models/Student';
 import { VisionService } from 'src/services/VisionService';
 import { logger } from 'src/utils/log';
 
@@ -197,6 +198,22 @@ export class StudentService {
   ): Promise<StudentResponse> {
     logger.i(`StudentService: 학적 정보 upsert 요청 (userId=${userId})`);
 
+    // Major DB가 비어있지 않은 경우에만 유효성 검사 수행 (시딩 전 환경 대비)
+    const majorCount = await Major.estimatedDocumentCount();
+    if (majorCount > 0) {
+      const majorExists = await Major.exists({ name: data.major });
+      if (!majorExists) {
+        throw Object.assign(new Error(`유효하지 않은 전공입니다: ${data.major}`), { name: 'ValidationError' });
+      }
+
+      if (data.secondMajorInfo?.name) {
+        const secondMajorExists = await Major.exists({ name: data.secondMajorInfo.name });
+        if (!secondMajorExists) {
+          throw Object.assign(new Error(`유효하지 않은 제2전공입니다: ${data.secondMajorInfo.name}`), { name: 'ValidationError' });
+        }
+      }
+    }
+
     const updated = await Student.findOneAndUpdate(
       { userId: new mongoose.Types.ObjectId(userId) },
       { ...data, userId: new mongoose.Types.ObjectId(userId) },
@@ -308,7 +325,7 @@ export class StudentService {
       { $set: updatePayload },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
-    
+
     if (!rawDoc) {
       throw new Error('이수 현황 정보를 업데이트하거나 생성하는 데 실패했습니다.');
     }
@@ -392,7 +409,7 @@ export class StudentService {
       { $set: updatePayload },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
-    
+
     if (!rawDoc) {
       throw new Error('이수 현황 정보를 업데이트하거나 생성하는 데 실패했습니다.');
     }
@@ -505,11 +522,11 @@ export class StudentService {
           // 시간이 없거나 비교하기 복잡한 경우 우선 첫 번째 과목 선택
           // 고도화 시 parsed.time과 candidate.classTimes 간의 유사도 등 추가 가능
           let bestMatch = candidates[0];
-          
+
           if (parsed.time && candidates.length > 1) {
             // 시간 정보가 포함된 과목 우선순위 매핑 로직 (단순 문자열 포함 여부 체크)
             // 예: "화(09:00" 같은 일부 패턴이라도 포함되어 있는지 확인
-            const matchedByTime = candidates.find(c => c.classTimes && c.classTimes.replace(/\s+/g,'').includes(parsed.time.substring(0, 2)));
+            const matchedByTime = candidates.find(c => c.classTimes && c.classTimes.replace(/\s+/g, '').includes(parsed.time.substring(0, 2)));
             if (matchedByTime) {
               bestMatch = matchedByTime;
             }
