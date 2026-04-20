@@ -203,13 +203,13 @@ export class StudentService {
     if (majorCount > 0) {
       const majorExists = await Major.exists({ name: data.major });
       if (!majorExists) {
-        throw Object.assign(new Error(`유효하지 않은 전공입니다: ${data.major}`), { name: 'ValidationError' });
+        throw Object.assign(new Error(`유효하지 않은 전공입니다: ${data.major}`), { name: 'ValidateError' });
       }
 
       if (data.secondMajorInfo?.name) {
         const secondMajorExists = await Major.exists({ name: data.secondMajorInfo.name });
         if (!secondMajorExists) {
-          throw Object.assign(new Error(`유효하지 않은 제2전공입니다: ${data.secondMajorInfo.name}`), { name: 'ValidationError' });
+          throw Object.assign(new Error(`유효하지 않은 제2전공입니다: ${data.secondMajorInfo.name}`), { name: 'ValidateError' });
         }
       }
     }

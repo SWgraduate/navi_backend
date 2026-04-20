@@ -6,6 +6,7 @@ import { LoginRequest } from 'src/controllers/AuthController';
 import AcademicRecord from 'src/models/AcademicRecord';
 import Chat from 'src/models/Chat';
 import { ChatAttachmentBindingModel } from 'src/models/ChatAttachmentBinding';
+import { PineconeIndexService } from 'src/rag/ingestion/services/PineconeIndexService';
 import { ConversationModel } from 'src/models/Conversation';
 import Student from 'src/models/Student';
 import User from 'src/models/User';
@@ -168,13 +169,20 @@ export class AuthService {
       await Student.deleteOne({ userId }).session(session);
 
       // 4. Chat 삭제
-      await Chat.deleteMany({ userId: userId.toString() }).session(session);
+      await Chat.deleteMany({ userId }).session(session);
 
       // 5. Conversation 삭제
-      await ConversationModel.deleteMany({ userId: userId.toString() }).session(session);
+      await ConversationModel.deleteMany({ userId }).session(session);
 
-      // 6. ChatAttachmentBinding 삭제
-      await ChatAttachmentBindingModel.deleteMany({ userId: userId.toString() }).session(session);
+      // 6. ChatAttachmentBinding 삭제 (Pinecone 벡터 먼저 정리)
+      const bindings = await ChatAttachmentBindingModel.find({ userId }).session(session);
+      if (bindings.length > 0) {
+        const pineconeService = new PineconeIndexService();
+        await Promise.all(
+          bindings.map(binding => pineconeService.deleteByDocumentId(binding.documentId))
+        );
+      }
+      await ChatAttachmentBindingModel.deleteMany({ userId }).session(session);
 
       // 7. Verification 삭제 (email 기준)
       await Verification.deleteOne({ email: user.email }).session(session);
