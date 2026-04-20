@@ -3,11 +3,23 @@ import multer from "multer";
 import { ValidateError } from "tsoa";
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  if (err instanceof ValidateError) {
-    res.status(422).json({
-      message: "Validation failed",
-      details: err?.fields ?? {},
-    });
+  if (err && err.name === "ValidateError") {
+    let errorMessage = "입력값이 올바르지 않습니다.";
+
+    const validateErr = err as any;
+    if (validateErr.fields) {
+      const fieldNames = Object.keys(validateErr.fields);
+      // 비밀번호 정규식/길이 위반 시 사용자 친화적인 메시지 매핑
+      if (fieldNames.some(f => f.toLowerCase().includes('password'))) {
+        errorMessage = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자리 이상이어야 합니다.";
+      } else if (fieldNames.length > 0) {
+        const firstField = fieldNames[0] || '';
+        const cleanField = firstField.split('.').pop() || firstField;
+        errorMessage = `${cleanField} 입력값이 올바르지 않습니다.`;
+      }
+    }
+
+    res.status(400).json({ error: errorMessage });
     return;
   }
 

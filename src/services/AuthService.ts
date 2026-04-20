@@ -1,7 +1,14 @@
 import crypto from 'crypto';
 import { formatInTimeZone } from 'date-fns-tz';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import { LoginRequest } from 'src/controllers/AuthController';
+import AcademicRecord from 'src/models/AcademicRecord';
+import Chat from 'src/models/Chat';
+import { ChatAttachmentBindingModel } from 'src/models/ChatAttachmentBinding';
+import { PineconeIndexService } from 'src/rag/ingestion/services/PineconeIndexService';
+import { ConversationModel } from 'src/models/Conversation';
+import Student from 'src/models/Student';
 import User from 'src/models/User';
 import Verification from 'src/models/Verification';
 import { GLOBAL_CONFIG, JWT_SECRET } from 'src/settings';
@@ -141,9 +148,54 @@ export class AuthService {
   }
 
   public async leave(userId: string): Promise<void> {
-    const deletedUser = await User.findByIdAndDelete(userId);
-    if (!deletedUser) {
-      throw new Error('User not found');
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const user = await User.findById(userId).session(session);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      // 1. Student 조회 (AcademicRecord 삭제에 studentId 필요)
+      const student = await Student.findOne({ userId }).session(session);
+
+      // 2. AcademicRecord 삭제 (Student보다 먼저 삭제해야 studentId 참조 가능)
+      if (student) {
+        await AcademicRecord.deleteOne({ studentId: student._id }).session(session);
+      }
+
+      // 3. Student 삭제
+      await Student.deleteOne({ userId }).session(session);
+
+      // 4. Chat 삭제
+      await Chat.deleteMany({ userId }).session(session);
+
+      // 5. Conversation 삭제
+      await ConversationModel.deleteMany({ userId }).session(session);
+
+      // 6. ChatAttachmentBinding 삭제 (Pinecone 벡터 먼저 정리)
+      const bindings = await ChatAttachmentBindingModel.find({ userId }).session(session);
+      if (bindings.length > 0) {
+        const pineconeService = new PineconeIndexService();
+        await Promise.all(
+          bindings.map(binding => pineconeService.deleteByDocumentId(binding.documentId))
+        );
+      }
+      await ChatAttachmentBindingModel.deleteMany({ userId }).session(session);
+
+      // 7. Verification 삭제 (email 기준)
+      await Verification.deleteOne({ email: user.email }).session(session);
+
+      // 8. User 삭제
+      await User.findByIdAndDelete(userId).session(session);
+
+      await session.commitTransaction();
+    } catch (e) {
+      await session.abortTransaction();
+      throw e;
+    } finally {
+      session.endSession();
     }
   }
 
@@ -151,7 +203,7 @@ export class AuthService {
     this.validateEmailDomain(email);
 
     // 6자리 난수 생성 (예: 048291)
-    const code = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
+    const code = crypto.randomInt(100000, 1000000).toString().padStart(6, '0');
 
     // 기존에 요청한 인증번호가 있다면 덮어쓰기 (upsert)
     await Verification.findOneAndUpdate(
@@ -197,7 +249,7 @@ export class AuthService {
       return;
     }
 
-    const code = crypto.randomInt(100000, 999999).toString().padStart(6, '0');
+    const code = crypto.randomInt(100000, 1000000).toString().padStart(6, '0');
 
     await Verification.findOneAndUpdate(
       { email },
@@ -233,7 +285,6 @@ export class AuthService {
     // 임시 토큰 생성 (32바이트 hex = 64자)
     const resetToken = crypto.randomBytes(32).toString('hex');
 
-    record.isVerified = true;
     record.resetToken = resetToken;
     await record.save();
 
@@ -251,7 +302,7 @@ export class AuthService {
    * @param newPassword 새로 설정할 비밀번호 (평문전달 시 모델에서 해싱됨)
    */
   public async resetPassword(email: string, resetToken: string, newPassword: string): Promise<void> {
-    const record = await Verification.findOne({ email, isVerified: true, resetToken });
+    const record = await Verification.findOne({ email, resetToken });
 
     if (!record) {
       throw new Error('유효하지 않거나 만료된 재설정 토큰입니다.');
