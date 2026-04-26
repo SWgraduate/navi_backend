@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
+import { AcademicRecordNotFoundError, ImageParsingError, InvalidMajorError, StudentNotFoundError } from 'src/errors/StudentErrors';
 import AcademicRecord from 'src/models/AcademicRecord';
 import Course, { ICourse } from 'src/models/Course';
 import Major from 'src/models/Major';
@@ -203,13 +203,13 @@ export class StudentService {
     if (majorCount > 0) {
       const majorExists = await Major.exists({ name: data.major });
       if (!majorExists) {
-        throw Object.assign(new Error(`유효하지 않은 전공입니다: ${data.major}`), { name: 'ValidateError' });
+        throw new InvalidMajorError(data.major);
       }
 
       if (data.secondMajorInfo?.name) {
         const secondMajorExists = await Major.exists({ name: data.secondMajorInfo.name });
         if (!secondMajorExists) {
-          throw Object.assign(new Error(`유효하지 않은 제2전공입니다: ${data.secondMajorInfo.name}`), { name: 'ValidateError' });
+          throw new InvalidMajorError(data.secondMajorInfo.name);
         }
       }
     }

@@ -1,5 +1,6 @@
 import Major from 'src/models/Major';
 import { Controller, Get, Query, Response, Route, Tags } from 'tsoa';
+import { logger } from 'src/utils/log';
 
 export interface MajorListResponse {
   /** 전공 목록 (단과대학 → 전공명 배열 구조) */
@@ -35,8 +36,9 @@ export class MajorController extends Controller {
 
       return grouped;
     } catch (e: any) {
+      logger.e('MajorController.listMajors: 전공 목록 조회 실패', e);
       this.setStatus(500);
-      return { error: e.message || '전공 목록을 불러오는 데 실패했습니다.' };
+      return { error: '전공 목록을 불러오는 데 실패했습니다.' };
     }
   }
 }

@@ -151,6 +151,9 @@ export class AuthService {
     const session = await mongoose.startSession();
     session.startTransaction();
 
+    // Pinecone 삭제를 위해 트랜잭션 시작 전에 바인딩 목록 미리 조회
+    let documentIdsToDelete: string[] = [];
+
     try {
       const user = await User.findById(userId).session(session);
       if (!user) {
@@ -174,14 +177,9 @@ export class AuthService {
       // 5. Conversation 삭제
       await ConversationModel.deleteMany({ userId }).session(session);
 
-      // 6. ChatAttachmentBinding 삭제 (Pinecone 벡터 먼저 정리)
+      // 6. ChatAttachmentBinding 삭제 대상 documentId 수집 (Pinecone 삭제는 커밋 후 처리)
       const bindings = await ChatAttachmentBindingModel.find({ userId }).session(session);
-      if (bindings.length > 0) {
-        const pineconeService = new PineconeIndexService();
-        await Promise.all(
-          bindings.map(binding => pineconeService.deleteByDocumentId(binding.documentId))
-        );
-      }
+      documentIdsToDelete = bindings.map(binding => binding.documentId);
       await ChatAttachmentBindingModel.deleteMany({ userId }).session(session);
 
       // 7. Verification 삭제 (email 기준)
@@ -197,7 +195,21 @@ export class AuthService {
     } finally {
       session.endSession();
     }
+
+    // DB 트랜잭션 커밋 완료 후 Pinecone 벡터 삭제 (best-effort)
+    // 외부 서비스 호출은 트랜잭션 롤백 대상이 아니므로 커밋 이후에 처리
+    if (documentIdsToDelete.length > 0) {
+      const pineconeService = new PineconeIndexService();
+      await Promise.all(
+        documentIdsToDelete.map(documentId =>
+          pineconeService.deleteByDocumentId(documentId).catch(e =>
+            logger.e(`AuthService.leave: Pinecone 벡터 삭제 실패 (documentId=${documentId})`, e)
+          )
+        )
+      );
+    }
   }
+
 
   public async requestEmailVerification(email: string): Promise<void> {
     this.validateEmailDomain(email);

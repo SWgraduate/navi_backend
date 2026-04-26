@@ -22,3 +22,10 @@ export class AcademicRecordNotFoundError extends Error {
     this.name = 'AcademicRecordNotFoundError';
   }
 }
+
+export class InvalidMajorError extends Error {
+  constructor(majorName: string) {
+    super(`유효하지 않은 전공입니다: ${majorName}`);
+    this.name = 'ValidateError';
+  }
+}
