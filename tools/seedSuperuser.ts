@@ -1,4 +1,4 @@
-// 실행 명령어: pnpm tsx tools/seed-superuser.ts
+// 실행 명령어: pnpm tsx tools/seedSuperuser.ts
 import mongoose from 'mongoose';
 import { connectDB } from '../src/config/database';
 import { logger } from '../src/utils/log';
@@ -33,7 +33,7 @@ const seedAdmin = async () => {
     logger.s(`성공적으로 관리자(admin) 계정이 생성되었습니다.`);
     logger.i(`- Email: ${MASTER_EMAIL}`);
     logger.i('- Password: (환경변수에 설정된 비밀번호)');
-    
+
     process.exit(0);
   } catch (error) {
     logger.e('관리자 계정 생성 중 오류 발생:', error);
