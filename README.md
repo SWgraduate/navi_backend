@@ -50,6 +50,8 @@ pnpm install
 APP_PORT=8000
 NODE_ENV=development # 또는 test, production
 JWT_SECRET=""
+MASTER_EMAIL=""
+MASTER_PASSWORD=""
 MONGO_URI=""
 OPENROUTER_API_KEY=""
 RESEND_KEY=""

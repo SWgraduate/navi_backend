@@ -74,10 +74,16 @@ export class VoiceSessionManager {
       }
 
       if (isFinal) {
-        logger.i(`[VoiceSession] STT Final Identified: ${text}`);
+        const trimmedText = (text || '').trim();
+        logger.i(`[VoiceSession] STT Final Identified: ${trimmedText}`);
         
+        if (trimmedText.length === 0) {
+          logger.i(`[VoiceSession] Empty transcript ignored.`);
+          return;
+        }
+
         // RAG 기반 ChatService로 질문을 넘기고 LLM의 답변을 받아옵니다.
-        this.processQueryToLLMToTTS(session, text);
+        this.processQueryToLLMToTTS(session, trimmedText);
       }
     });
 
@@ -105,7 +111,7 @@ export class VoiceSessionManager {
    * 사용자의 음성이 완성 문장으로 인식되면 LLM을 통해 답변을 가져오고 이를 TTS로 변환합니다.
    */
   private async processQueryToLLMToTTS(session: VoiceSession, text: string) {
-    const voiceId = GLOBAL_CONFIG.elevenlabsVoiceId; 
+    const voiceId = GLOBAL_CONFIG.typecastVoiceId;
     
     try {
         // 실제 ChatService를 이용해 응답을 가져옵니다. (RAG 검색 포함)
@@ -129,7 +135,6 @@ export class VoiceSessionManager {
                     session.ws.send(chunk);
                 }
             }, 
-            'mp3_44100_128' 
         );
         logger.i(`[VoiceSession] TTS Stream finished playing for LLM reply.`);
     } catch(err) {

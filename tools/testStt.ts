@@ -1,8 +1,8 @@
-// 실행 명령어: pnpm tsx tools/test-stt.ts
-import { SpeechService } from '../src/services/SpeechService';
-import record from 'node-record-lpcm16'; 
+// 실행 명령어: pnpm tsx tools/testStt.ts
 import dotenv from 'dotenv';
+import record from 'node-record-lpcm16';
 import path from 'path';
+import { SpeechService } from '../src/services/SpeechService';
 
 // .env.development 파일 로드 (ELEVENLABS_API_KEY 설정 필요)
 dotenv.config({ path: path.join(__dirname, '../.env.development') });

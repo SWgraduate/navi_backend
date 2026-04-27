@@ -14,11 +14,10 @@ const SAMPLE_RATE = 16000;
 
 export const VoicePanel: React.FC = () => {
   const [chatId, setChatId] = useState(CHAT_ID_FOR_TEST);
-  const [jwtToken, setJwtToken] = useState(() => localStorage.getItem('voice_test_jwt') || '');
   const [status, setStatus] = useState<CallStatus>('idle');
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [currentTranscript, setCurrentTranscript] = useState(''); // STT 텍스트(서버가 보내줄 경우)
-  const [currentTtsText, setCurrentTtsText] = useState(''); // TTS 텍스트 (서버가 보내줄 경우)
+  const [currentTranscript, setCurrentTranscript] = useState('');
+  const [currentTtsText, setCurrentTtsText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -53,7 +52,7 @@ export const VoicePanel: React.FC = () => {
       source.onended = () => {
         isPlayingRef.current = false;
         ctx.close();
-        playNextChunk(); // 재귀적으로 다음 청크 재생
+        playNextChunk();
       };
       source.start();
     } catch {
@@ -70,7 +69,8 @@ export const VoicePanel: React.FC = () => {
       setStatus('connecting');
       addLog('info', `[${chatId}] 음성 세션 토큰 요청 중...`);
 
-      const session = await createVoiceSession(chatId, jwtToken);
+      // authStore에서 JWT를 자동으로 가져와 헤더에 주입
+      const session = await createVoiceSession(chatId);
       addLog('info', `토큰 발급 성공: ${session.token.slice(0, 8)}...`);
 
       const wsUrl = buildWebSocketUrl(session.token);
@@ -87,12 +87,10 @@ export const VoicePanel: React.FC = () => {
 
       ws.onmessage = (event) => {
         if (event.data instanceof ArrayBuffer) {
-          // 서버가 보내준 TTS 오디오 바이너리 청크를 큐에 추가하고 재생
           addLog('recv', `오디오 청크 수신 (${event.data.byteLength} bytes)`);
           audioQueueRef.current.push(event.data);
           playNextChunk();
         } else if (typeof event.data === 'string') {
-          // 서버가 보내는 STT 또는 TTS 텍스트 이벤트 처리
           try {
             const parsed = JSON.parse(event.data);
             if (parsed.type === 'stt') {
@@ -148,7 +146,6 @@ export const VoicePanel: React.FC = () => {
         if (wsRef.current?.readyState !== WebSocket.OPEN) return;
 
         const float32 = e.inputBuffer.getChannelData(0);
-        // float32 → int16 PCM 변환
         const int16 = new Int16Array(float32.length);
         for (let i = 0; i < float32.length; i++) {
           const s = Math.max(-1, Math.min(1, float32[i]));
@@ -254,30 +251,6 @@ export const VoicePanel: React.FC = () => {
           <span style={{ color: statusColor[status], fontSize: '0.85rem', fontWeight: 600 }}>
             {statusLabel[status]}
           </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <label style={{ fontSize: '0.85rem', color: '#8e8ea0', minWidth: '60px' }}>JWT 토큰</label>
-          <input
-            value={jwtToken}
-            onChange={e => {
-              setJwtToken(e.target.value);
-              localStorage.setItem('voice_test_jwt', e.target.value);
-            }}
-            disabled={status !== 'idle' && status !== 'error'}
-            placeholder="Bearer 를 제외한 순수 JWT 입력"
-            style={{
-              flex: 1,
-              minWidth: '180px',
-              padding: '8px 12px',
-              background: 'var(--bg-color)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '6px',
-              color: '#fff',
-              outline: 'none',
-              fontSize: '0.9rem',
-            }}
-          />
         </div>
 
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

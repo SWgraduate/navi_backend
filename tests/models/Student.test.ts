@@ -42,7 +42,7 @@ describe('Student Model Test', () => {
       studentNumber: '2021000000',
       name: 'Test Student',
       major: '컴퓨터공학부',
-      secondMajorType: '없음',
+      secondMajorInfo: null,
       academicStatus: '재학생',
       completedSemesters: 6
     };
@@ -55,8 +55,7 @@ describe('Student Model Test', () => {
     expect(savedStudent.userId.toString()).toBe(savedUser._id.toString());
     expect(savedStudent.studentNumber).toBe('2021000000');
     expect(savedStudent.major).toBe('컴퓨터공학부');
-    expect(savedStudent.secondMajorType).toBe('없음');
-    expect(savedStudent.secondMajor).toBeUndefined();
+    expect(savedStudent.secondMajorInfo).toBeNull();
     expect(savedStudent.academicStatus).toBe('재학생');
     expect(savedStudent.completedSemesters).toBe(6);
   });
@@ -76,8 +75,10 @@ describe('Student Model Test', () => {
       studentNumber: '2020000000',
       name: 'Test Student 2',
       major: '기계공학부',
-      secondMajorType: '다중전공',
-      secondMajor: '인공지능학과',
+      secondMajorInfo: {
+        type: '다중전공',
+        name: '인공지능학과',
+      },
       academicStatus: '재학생',
       completedSemesters: 4
     };
@@ -86,8 +87,8 @@ describe('Student Model Test', () => {
     const validStudent = new Student(studentData);
     const savedStudent = await validStudent.save();
 
-    expect(savedStudent.secondMajorType).toBe('다중전공');
-    expect(savedStudent.secondMajor).toBe('인공지능학과');
+    expect(savedStudent.secondMajorInfo?.type).toBe('다중전공');
+    expect(savedStudent.secondMajorInfo?.name).toBe('인공지능학과');
   });
 
   it('create student with invalid completedSemesters should fail', async () => {
@@ -105,7 +106,7 @@ describe('Student Model Test', () => {
       studentNumber: '2019000000',
       name: 'Test',
       major: '물리학과',
-      secondMajorType: '없음',
+      secondMajorInfo: null,
       academicStatus: '재학생',
       completedSemesters: 13, // 1~12 범위를 초과
     };
@@ -139,7 +140,10 @@ describe('Student Model Test', () => {
       studentNumber: '2018000000',
       name: 'Test',
       major: '화학과',
-      secondMajorType: '잘못된유형', // 유효하지 않은 타입
+      secondMajorInfo: {
+        type: '잘못된유형', // 유효하지 않은 타입
+        name: '잘못된학과'
+      },
       academicStatus: '재학생',
       completedSemesters: 2,
     };
@@ -155,6 +159,6 @@ describe('Student Model Test', () => {
 
     expect(err).toBeInstanceOf(mongoose.Error.ValidationError);
     // @ts-ignore
-    expect(err.errors.secondMajorType).toBeDefined();
+    expect(err.errors['secondMajorInfo.type']).toBeDefined();
   });
 });

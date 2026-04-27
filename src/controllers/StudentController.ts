@@ -1,15 +1,14 @@
 import { Request as ExRequest } from 'express';
 import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
-import { optimizeBase64Image } from 'src/utils/imageExt';
 import {
   AcademicRecordResponse,
   ParseAndUpdateResponse,
-  ParseTimetableResponse,
   StudentResponse,
   StudentService,
   UpdateAcademicRecordRequest,
-  UpsertProfileRequest,
+  UpsertProfileRequest
 } from 'src/services/StudentService';
+import { optimizeBase64Image } from 'src/utils/imageExt';
 import {
   Body,
   Controller,

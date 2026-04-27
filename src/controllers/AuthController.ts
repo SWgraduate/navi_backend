@@ -1,6 +1,12 @@
-import { Body, Controller, Post, Route, Tags, Response, Security, SuccessResponse, Delete, Request } from 'tsoa';
 import { Request as ExRequest } from 'express';
-import { AuthService, RegisterRequest, AuthResponse } from 'src/services/AuthService';
+import { AuthResponse, AuthService, RegisterRequest } from 'src/services/AuthService';
+import { GLOBAL_CONFIG } from 'src/settings';
+import { createRateLimiter } from 'src/utils/rateLimiter';
+import { Body, Controller, Delete, Middlewares, Post, Request, Response, Route, Security, SuccessResponse, Tags } from 'tsoa';
+
+const emailSendLimiter = createRateLimiter({ ...GLOBAL_CONFIG.rateLimits.email, keyBy: 'email' });
+const loginLimiter = createRateLimiter({ ...GLOBAL_CONFIG.rateLimits.login, keyBy: 'email' });
+const registerLimiter = createRateLimiter({ ...GLOBAL_CONFIG.rateLimits.register, keyBy: 'email' });
 
 export interface LoginRequest {
   email: string;
@@ -16,6 +22,47 @@ export interface VerifyEmailRequest {
   code: string;
 }
 
+export interface ForgotPasswordRequest {
+  /**
+   * 가입된 사용자의 이메일 주소
+   * @example "user@example.com"
+   */
+  email: string;
+}
+
+export interface VerifyPasswordResetRequest {
+  /**
+   * 인증 코드를 받은 이메일 주소
+   * @example "user@example.com"
+   */
+  email: string;
+  /**
+   * 이메일로 수신한 6자리 숫자 인증 코드
+   * @example "123456"
+   */
+  code: string;
+}
+
+export interface ResetPasswordRequest {
+  /**
+   * 인증이 완료된 사용자의 이메일 주소
+   * @example "user@example.com"
+   */
+  email: string;
+  /**
+   * 2단계(verify)에서 발급받은 임시 재설정 토큰
+   * @example "a1b2c3d4..."
+   */
+  resetToken: string;
+  /**
+   * 새로 설정할 비밀번호 (영어, 숫자, 특수문자 포함 8자 이상)
+   * @minLength 8
+   * @pattern ^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+])[A-Za-z\d!@#$%^&*()_+]{8,}$
+   * @example "newPassword123!"
+   */
+  newPassword: string;
+}
+
 @Route('auth')
 @Tags('Auth')
 export class AuthController extends Controller {
@@ -28,8 +75,10 @@ export class AuthController extends Controller {
    * @param body 회원가입에 필요한 이메일과 비밀번호
    */
   @Post('register')
+  @Middlewares(registerLimiter)
   @SuccessResponse("201", "Created")
   @Response<{ error: string }>(400, "Bad Request")
+  @Response<{ error: string }>(429, "Too Many Requests")
   public async register(
     @Body() body: RegisterRequest,
   ): Promise<AuthResponse | { error: string }> {
@@ -49,7 +98,9 @@ export class AuthController extends Controller {
    * @param body 로그인에 필요한 이메일과 비밀번호
    */
   @Post('login')
+  @Middlewares(loginLimiter)
   @Response<{ error: string }>(401, "Unauthorized")
+  @Response<{ error: string }>(429, "Too Many Requests")
   public async login(
     @Body() body: LoginRequest,
   ): Promise<AuthResponse | { error: string }> {
@@ -127,7 +178,9 @@ export class AuthController extends Controller {
    * @param body 인증 코드를 수신할 이메일 주소
    */
   @Post('email/send')
+  @Middlewares(emailSendLimiter)
   @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(429, "Too Many Requests")
   @Response<{ error: string }>(500, "Internal Server Error")
   public async sendEmailVerification(
     @Body() body: SendEmailRequest
@@ -157,6 +210,77 @@ export class AuthController extends Controller {
     } catch (error: any) {
       this.setStatus(400);
       return { error: error.message || "인증에 실패했습니다." };
+    }
+  }
+
+  /**
+   * [비밀번호 재설정 - 1단계] 가입된 이메일로 인증 코드를 발송합니다.
+   * 
+   * 보안 정책에 따라 존재하지 않는 이메일 주소에 대해서도 동일한 성공 응답을 반환하여, 
+   * 공격자가 계정 존재 여부를 유추할 수 없도록 설계되었습니다.
+   * 
+   * @param body 인증 코드를 받을 사용자의 이메일 주소
+   */
+  @Post('password/forgot')
+  @Middlewares(emailSendLimiter)
+  @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(429, "Too Many Requests")
+  @Response<{ error: string }>(500, "Internal Server Error")
+  public async forgotPassword(
+    @Body() body: ForgotPasswordRequest
+  ): Promise<{ message: string } | { error: string }> {
+    try {
+      await this.authService.forgotPassword(body.email);
+      return { message: "입력하신 이메일로 인증 코드가 발송되었습니다." };
+    } catch (error: any) {
+      this.setStatus(500);
+      return { error: error.message || "메일 발송에 실패했습니다." };
+    }
+  }
+
+  /**
+   * [비밀번호 재설정 - 2단계] 이메일로 수신한 인증 코드를 검증합니다.
+   * 
+   * 인증 코드가 일치하면 3단계(비밀번호 갱신)에서 사용할 수 있는 임시 `resetToken`을 발급합니다.
+   * 발급된 토큰은 5분 동안만 유효하며, 보안을 위해 3단계 API 호출 시 1회용으로 사용됩니다.
+   * 
+   * @param body 이메일 주소 및 수신된 6자리 인증 코드
+   */
+  @Post('password/verify')
+  @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(400, "Bad Request")
+  public async verifyPasswordResetCode(
+    @Body() body: VerifyPasswordResetRequest
+  ): Promise<{ resetToken: string } | { error: string }> {
+    try {
+      const resetToken = await this.authService.verifyPasswordResetCode(body.email, body.code);
+      return { resetToken };
+    } catch (error: any) {
+      this.setStatus(400);
+      return { error: error.message || "인증에 실패했습니다." };
+    }
+  }
+
+  /**
+   * [비밀번호 재설정 - 3단계] 새 비밀번호로 업데이트를 수행합니다.
+   * 
+   * 2단계에서 검증 완료 후 발급된 `resetToken`을 사용하여 실제 비밀번호 변경을 처리합니다.
+   * 변경 성공 시 보안을 위해 해당 이메일의 모든 인증 관련 임시 데이터 및 토큰은 즉시 폐기됩니다.
+   * 
+   * @param body 이메일, 2단계에서 발급받은 resetToken, 신규 비밀번호
+   */
+  @Post('password/reset')
+  @SuccessResponse("200", "OK")
+  @Response<{ error: string }>(400, "Bad Request")
+  public async resetPassword(
+    @Body() body: ResetPasswordRequest
+  ): Promise<{ message: string } | { error: string }> {
+    try {
+      await this.authService.resetPassword(body.email, body.resetToken, body.newPassword);
+      return { message: "비밀번호가 성공적으로 변경되었습니다." };
+    } catch (error: any) {
+      this.setStatus(400);
+      return { error: error.message || "비밀번호 재설정에 실패했습니다." };
     }
   }
 }

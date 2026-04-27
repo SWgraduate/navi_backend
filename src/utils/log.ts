@@ -106,7 +106,6 @@ export async function discordAlert(
     const response = await axios.post(DISCORD_WEBHOOK_URL, {
       content
     });
-    logger.s("Discord webhook sent successfully.");
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response) {

@@ -1,8 +1,9 @@
 import mongoose from 'mongoose';
-import { AcademicRecordNotFoundError, ImageParsingError, StudentNotFoundError } from 'src/errors/StudentErrors';
+import { AcademicRecordNotFoundError, ImageParsingError, InvalidMajorError, StudentNotFoundError } from 'src/errors/StudentErrors';
 import AcademicRecord from 'src/models/AcademicRecord';
-import Student, { AcademicStatus, IStudent, SecondMajorType } from 'src/models/Student';
 import Course, { ICourse } from 'src/models/Course';
+import Major from 'src/models/Major';
+import Student, { AcademicStatus, ISecondMajorInfo, IStudent } from 'src/models/Student';
 import { VisionService } from 'src/services/VisionService';
 import { logger } from 'src/utils/log';
 
@@ -30,15 +31,9 @@ export interface UpsertProfileRequest {
    */
   major: string;
   /**
-   * 제2전공 이수 유형 (없을 경우 '없음')
-   * @example "없음"
+   * 제2전공 정보 (없을 경우 null)
    */
-  secondMajorType: SecondMajorType;
-  /**
-   * 제2전공명 (다중전공 등 선택 상태가 아닐 때 한함)
-   * @example "인공지능학과"
-   */
-  secondMajor?: string;
+  secondMajorInfo?: ISecondMajorInfo | null;
   /**
    * 현재 학적 상태
    * @example "재학생"
@@ -81,14 +76,9 @@ export interface StudentResponse {
    */
   major: string;
   /**
-   * 제2전공 이수 유형 (없을 경우 '없음')
-   * @example "없음"
+   * 제2전공 정보 (없을 경우 null)
    */
-  secondMajorType: SecondMajorType;
-  /**
-   * 제2전공명 (해당할 경우)
-   */
-  secondMajor?: string;
+  secondMajorInfo?: ISecondMajorInfo | null;
   /**
    * 현재 학적 상태
    * @example "재학생"
@@ -208,6 +198,22 @@ export class StudentService {
   ): Promise<StudentResponse> {
     logger.i(`StudentService: 학적 정보 upsert 요청 (userId=${userId})`);
 
+    // Major DB가 비어있지 않은 경우에만 유효성 검사 수행 (시딩 전 환경 대비)
+    const majorCount = await Major.estimatedDocumentCount();
+    if (majorCount > 0) {
+      const majorExists = await Major.exists({ name: data.major });
+      if (!majorExists) {
+        throw new InvalidMajorError(data.major);
+      }
+
+      if (data.secondMajorInfo?.name) {
+        const secondMajorExists = await Major.exists({ name: data.secondMajorInfo.name });
+        if (!secondMajorExists) {
+          throw new InvalidMajorError(data.secondMajorInfo.name);
+        }
+      }
+    }
+
     const updated = await Student.findOneAndUpdate(
       { userId: new mongoose.Types.ObjectId(userId) },
       { ...data, userId: new mongoose.Types.ObjectId(userId) },
@@ -225,8 +231,7 @@ export class StudentService {
       studentNumber: updated.studentNumber,
       name: updated.name,
       major: updated.major,
-      secondMajorType: updated.secondMajorType,
-      secondMajor: updated.secondMajor,
+      secondMajorInfo: updated.secondMajorInfo,
       academicStatus: updated.academicStatus,
       completedSemesters: updated.completedSemesters,
     };
@@ -253,8 +258,7 @@ export class StudentService {
       studentNumber: student.studentNumber,
       name: student.name,
       major: student.major,
-      secondMajorType: student.secondMajorType,
-      secondMajor: student.secondMajor,
+      secondMajorInfo: student.secondMajorInfo,
       academicStatus: student.academicStatus,
       completedSemesters: student.completedSemesters,
     };
@@ -321,7 +325,7 @@ export class StudentService {
       { $set: updatePayload },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
-    
+
     if (!rawDoc) {
       throw new Error('이수 현황 정보를 업데이트하거나 생성하는 데 실패했습니다.');
     }
@@ -405,7 +409,7 @@ export class StudentService {
       { $set: updatePayload },
       { upsert: true, returnDocument: 'after', runValidators: true }
     );
-    
+
     if (!rawDoc) {
       throw new Error('이수 현황 정보를 업데이트하거나 생성하는 데 실패했습니다.');
     }
@@ -518,11 +522,11 @@ export class StudentService {
           // 시간이 없거나 비교하기 복잡한 경우 우선 첫 번째 과목 선택
           // 고도화 시 parsed.time과 candidate.classTimes 간의 유사도 등 추가 가능
           let bestMatch = candidates[0];
-          
+
           if (parsed.time && candidates.length > 1) {
             // 시간 정보가 포함된 과목 우선순위 매핑 로직 (단순 문자열 포함 여부 체크)
             // 예: "화(09:00" 같은 일부 패턴이라도 포함되어 있는지 확인
-            const matchedByTime = candidates.find(c => c.classTimes && c.classTimes.replace(/\s+/g,'').includes(parsed.time.substring(0, 2)));
+            const matchedByTime = candidates.find(c => c.classTimes && c.classTimes.replace(/\s+/g, '').includes(parsed.time.substring(0, 2)));
             if (matchedByTime) {
               bestMatch = matchedByTime;
             }
@@ -549,7 +553,7 @@ export class StudentService {
           .map(c => ({
             courseCode: c.courseCode,
             courseName: c.courseName,
-            courseType: c.category,
+            category: c.category,
             credit: c.credit,
             isEnglish: c.isEnglish,
             isPbl: c.isPbl,
@@ -562,7 +566,7 @@ export class StudentService {
           for (const c of newTakenCourses) {
             incPayload['earnedCredits.total'] = (incPayload['earnedCredits.total'] || 0) + c.credit;
 
-            const type = c.courseType || '';
+            const type = c.category || '';
             if (type.includes('전공') || type.includes('전핵') || type.includes('전심')) {
               incPayload['earnedCredits.majorTotal'] = (incPayload['earnedCredits.majorTotal'] || 0) + c.credit;
               if (type.includes('핵심') || type.includes('전핵')) {
@@ -668,5 +672,65 @@ export class StudentService {
     }
 
     return student;
+  }
+
+  /**
+   * 주어진 userId의 학적 정보를 LLM 시스템 프롬프트 주입용 텍스트로 직렬화하여 반환합니다.
+   * 학적 정보가 없거나 userId가 없는 경우 null을 반환하여 graceful fallback을 지원합니다.
+   *
+   * @param userId - 학적 정보를 조회할 사용자의 ID
+   * @returns 시스템 프롬프트에 삽입할 개인 학사 컨텍스트 문자열, 또는 null
+   */
+  public async getAcademicContextString(userId: string): Promise<string | null> {
+    try {
+      const student = await Student.findOne({
+        userId: new mongoose.Types.ObjectId(userId),
+      }).lean();
+
+      if (!student) return null;
+
+      const record = await AcademicRecord.findOne({ studentId: student._id }).lean();
+
+      if (!record) return null;
+
+      const { earnedCredits: ec, secondMajorCredits: sm, completedConditions: cc } = record;
+
+      const lines: string[] = [
+        `이름: ${student.name}`,
+        `학번: ${student.studentNumber} (${student.admissionYear}학번)`,
+        `주전공: ${student.major}`,
+        student.secondMajorInfo
+          ? `제2전공: ${student.secondMajorInfo.type} - ${student.secondMajorInfo.name}`
+          : `제2전공: 없음`,
+        `학적 상태: ${student.academicStatus} (이수 학기: ${student.completedSemesters}학기)`,
+        ``,
+        `[이수 학점 현황]`,
+        `- GPA: ${ec.gpa}`,
+        `- 총 이수 학점: ${ec.total}학점`,
+        `- 전공 계: ${ec.majorTotal}학점 (핵심 ${ec.majorCore} / 심화 ${ec.majorAdvanced})`,
+        `- 교양선택: ${ec.generalElective}학점`,
+        `- 사회봉사: ${ec.socialService}학점`,
+        `- 산학협력: ${ec.industry}학점`,
+      ];
+
+      if (sm.majorTotal > 0 || sm.majorCore > 0) {
+        lines.push(`- 제2전공 학점 계: ${sm.majorTotal}학점 (핵심 ${sm.majorCore})`);
+      }
+
+      lines.push(
+        ``,
+        `[특수 이수 조건]`,
+        `- 영어전용강좌 이수: ${cc.englishCourses}과목`,
+        `- IC-PBL 강좌 이수: ${cc.pblTotal}과목 (전공 PBL ${cc.pblMajor}과목)`,
+        `- 선수강 이수: ${cc.hasPrerequisite ? '완료' : '미완료'}`,
+        `- 미필과목 이수: ${cc.hasMandatoryCourse ? '완료' : '미완료'}`,
+        `- 졸업논문/시험/작품: ${cc.hasThesis ? '통과' : '미통과'}`,
+      );
+
+      return lines.join('\n');
+    } catch (err) {
+      logger.w(`StudentService.getAcademicContextString: 학적 컨텍스트 조회 실패 (userId=${userId})`, err);
+      return null;
+    }
   }
 }

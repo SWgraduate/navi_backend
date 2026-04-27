@@ -1,3 +1,5 @@
+import { authStore } from './authStore';
+
 export interface ChatResult {
   answer: string;
   sources?: Array<{
@@ -49,7 +51,7 @@ export const startChat = async (
 ): Promise<ChatResponse> => {
   const response = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authStore.authHeaders() },
     body: JSON.stringify({ query, conversationId }),
   });
   if (!response.ok) throw new Error("Failed to start chat");
@@ -57,7 +59,9 @@ export const startChat = async (
 };
 
 export const getChatStatus = async (taskId: string): Promise<ChatStatus> => {
-  const response = await fetch(`/api/chat/status/${taskId}`);
+  const response = await fetch(`/api/chat/status/${taskId}`, {
+    headers: { ...authStore.authHeaders() },
+  });
   if (!response.ok) throw new Error("Failed to get status");
   return response.json();
 };
@@ -65,7 +69,7 @@ export const getChatStatus = async (taskId: string): Promise<ChatStatus> => {
 export const createConversation = async (title?: string): Promise<{ conversationId: string }> => {
   const response = await fetch("/api/chat/conversations", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authStore.authHeaders() },
     body: JSON.stringify({ title }),
   });
   if (!response.ok) throw new Error("Failed to create conversation");
@@ -77,7 +81,9 @@ export const listConversations = async (q?: string): Promise<ConversationSummary
     ? `/api/chat/conversations?q=${encodeURIComponent(q)}`
     : "/api/chat/conversations";
 
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: { ...authStore.authHeaders() },
+  });
   if (!response.ok) throw new Error("Failed to list conversations");
   const data = await response.json();
   return data.conversations ?? [];
@@ -86,7 +92,7 @@ export const listConversations = async (q?: string): Promise<ConversationSummary
 export const renameConversation = async (conversationId: string, title: string): Promise<void> => {
   const response = await fetch(`/api/chat/conversations/${encodeURIComponent(conversationId)}/title`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authStore.authHeaders() },
     body: JSON.stringify({ title }),
   });
   if (!response.ok) throw new Error("Failed to rename conversation");
@@ -95,6 +101,7 @@ export const renameConversation = async (conversationId: string, title: string):
 export const deleteConversation = async (conversationId: string): Promise<void> => {
   const response = await fetch(`/api/chat/conversations/${encodeURIComponent(conversationId)}`, {
     method: "DELETE",
+    headers: { ...authStore.authHeaders() },
   });
   if (!response.ok) throw new Error("Failed to delete conversation");
 };
@@ -102,7 +109,9 @@ export const deleteConversation = async (conversationId: string): Promise<void> 
 export const getConversationMessages = async (
   conversationId: string
 ): Promise<ConversationMessageItem[]> => {
-  const response = await fetch(`/api/chat/conversations/${encodeURIComponent(conversationId)}/messages`);
+  const response = await fetch(`/api/chat/conversations/${encodeURIComponent(conversationId)}/messages`, {
+    headers: { ...authStore.authHeaders() },
+  });
   if (!response.ok) throw new Error("Failed to get conversation messages");
   const data = await response.json();
   return data.messages ?? [];
