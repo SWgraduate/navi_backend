@@ -2,7 +2,7 @@ import ChatModel, { IChat, IChatResult, IChatSource } from "src/models/Chat";
 import { ConversationService } from "./ConversationService";
 import mongoose from "mongoose";
 import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
 import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { EmbeddingService } from "src/rag/ingestion/services/EmbeddingService";
@@ -210,7 +210,9 @@ export class ChatService {
       // Step 4: Call LLM
       await update("generating_answer", "Generating grounded answer...");
       logger.i(`${tag} [4/5] Calling LLM | model=${GLOBAL_CONFIG.chatModel}`);
-      const answer = await this.callGroundedLLM(query, contextText);
+      const history = conversationId ? await this.getRecentHistory(conversationId, 5) : [];
+      logger.i(`${tag} [4/5] History turns loaded: ${history.length}`);
+      const answer = await this.callGroundedLLM(query, contextText, history);
       logger.s(`${tag} [4/5] LLM responded | answer length=${answer.length} chars`);
 
       // Step 5: Save result
@@ -281,7 +283,16 @@ export class ChatService {
       .join("\n\n");
   }
 
-  private async callGroundedLLM(query: string, contextText: string): Promise<string> {
+  private async getRecentHistory(conversationId: string, limit: number): Promise<{ query: string; answer: string }[]> {
+    const rows = await ChatModel.find({ conversationId, status: "completed", answer: { $exists: true, $ne: "" } })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .select({ query: 1, answer: 1 });
+
+    return rows.reverse().map(r => ({ query: r.query, answer: r.answer! }));
+  }
+
+  private async callGroundedLLM(query: string, contextText: string, history: { query: string; answer: string }[] = []): Promise<string> {
     const apiKey = OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("Missing LLM API key");
@@ -303,8 +314,14 @@ export class ChatService {
       contextText || "(no relevant context found)",
     ].join("\n");
 
+    const historyMessages = history.flatMap(turn => [
+      new HumanMessage(turn.query),
+      new AIMessage(turn.answer),
+    ]);
+
     const response = await chat.invoke([
       new SystemMessage(ERICA_SYSTEM_PROMPT),
+      ...historyMessages,
       new HumanMessage(userPrompt),
     ]);
 
