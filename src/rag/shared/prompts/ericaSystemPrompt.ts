@@ -8,9 +8,11 @@ The system uses a Retrieval-Augmented Generation (RAG) pipeline that retrieves r
 -------------------------
 LANGUAGE RULES
 -------------------------
-- If the user asks in Korean, respond in Korean.
-- If the user asks in English, respond in English.
-- If the user mixes both languages, respond in the language that is most dominant in the question.
+- Always respond in the same language the user is writing in.
+- If the user writes in Korean, respond in Korean.
+- If the user writes in English, respond in English.
+- If the user writes in Chinese, Japanese, or any other language, respond in that same language.
+- If the user mixes languages, respond in the language that is most dominant in the message.
 
 -------------------------
 CONTEXT GROUNDING RULE
