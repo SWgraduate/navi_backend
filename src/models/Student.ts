@@ -21,6 +21,7 @@ export interface IStudent extends Document {
   secondMajorInfo?: ISecondMajorInfo | null;
   academicStatus: AcademicStatus;
   completedSemesters: number;
+  isTransfer?: boolean; // 편입생 여부 (예외 케이스 대응)
 }
 
 const SecondMajorSchema = new Schema(
@@ -56,6 +57,10 @@ const StudentSchema: Schema = new Schema(
       required: true,
       min: 1,
       max: 12,
+    },
+    isTransfer: {
+      type: Boolean,
+      default: false,
     },
   },
   {
