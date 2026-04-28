@@ -1,3 +1,5 @@
+import { SECOND_MAJOR } from 'src/models/Student';
+
 export interface GraduationRequirements {
   requiredCredits: {
     gpa: number;
@@ -62,13 +64,13 @@ export class GraduationService {
       total = isTransfer ? 81 : (isPost2024 ? 108 : 118);
     } else if (major.includes('융합시스템공학')) {
       total = isTransfer ? 51 : 81;
-    } else if (major.includes('스마트융합공학부를') || major.includes('스마트융합공학')) {
+    } else if (major.includes('스마트융합공학')) {
       total = major.includes('스마트컨스트럭션') ? 90 : 96;
     } else if (major.includes('지능형로봇') || major.includes('융합보안학')) {
       total = 60;
     } else if (major.includes('약학')) {
-      total = isTransfer ? 186 : 186; // TODO: 약대 구체적인 편입/신입학번별 전공 계 매핑 필요 (26. 4. 28., Gemini)
-      core = isTransfer ? 136 : 136;
+      total = 186; // TODO: 약대 구체적인 편입/신입학번별 전공 계 매핑 필요 (26. 4. 28., Gemini)
+      core = 136;
       advanced = 0;
     } else if (major.includes('회계세무학')) {
       total = isTransfer ? 39 : 81;
@@ -97,7 +99,7 @@ export class GraduationService {
       total = isTransfer ? 39 : 60;
     }
 
-    if (hasSecondMajor && total === 0) {
+    if (hasSecondMajor) {
       total = core + advanced;
     }
 
@@ -173,7 +175,7 @@ export class GraduationService {
   }): GraduationRequirements {
 
     // TODO: 프론트엔드에서 넘어오는 major가 정확히 단과대명인지 학과명인지, 두개가 혼재되어 넘어오는지에 대한 입력값 정제(Validation) 로직 추가 논의 요망 (26. 4. 28., Gemini)
-    const hasSecondMajor = !!secondMajorType && secondMajorType !== '부전공';
+    const hasSecondMajor = !!secondMajorType && secondMajorType !== SECOND_MAJOR.MINOR;
 
     const totalCredits = this.getTotalCredits(major);
     const majorCredits = this.getMajorCredits(major, admissionYear, isTransfer, hasSecondMajor);
