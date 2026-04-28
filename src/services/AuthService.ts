@@ -148,8 +148,9 @@ export class AuthService {
   }
 
   public async leave(userId: string): Promise<void> {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    // 로컬 단위(통합) 테스트용 MongoDB (Standalone)에서는 트랜잭션을 지원하지 않으므로 세션 생성을 우회합니다.
+    const session = process.env.NODE_ENV === 'test' ? null : await mongoose.startSession();
+    if (session) session.startTransaction();
 
     // Pinecone 삭제를 위해 트랜잭션 시작 전에 바인딩 목록 미리 조회
     let documentIdsToDelete: string[] = [];
@@ -188,12 +189,12 @@ export class AuthService {
       // 8. User 삭제
       await User.findByIdAndDelete(userId).session(session);
 
-      await session.commitTransaction();
+      if (session) await session.commitTransaction();
     } catch (e) {
-      await session.abortTransaction();
+      if (session) await session.abortTransaction();
       throw e;
     } finally {
-      session.endSession();
+      if (session) session.endSession();
     }
 
     // DB 트랜잭션 커밋 완료 후 Pinecone 벡터 삭제 (best-effort)
