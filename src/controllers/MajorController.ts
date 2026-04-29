@@ -1,7 +1,7 @@
 import Major from 'src/models/Major';
-import { Controller, Get, Query, Response, Route, Tags } from 'tsoa';
+import { GraduationRequirements, GraduationService } from 'src/services/GraduationService';
 import { logger } from 'src/utils/log';
-import { GraduationService, GraduationRequirements } from 'src/services/GraduationService';
+import { Controller, Get, Query, Response, Route, Tags } from 'tsoa';
 
 export interface MajorListResponse {
   /** 전공 목록 (단과대학 → 전공명 배열 구조) */
@@ -12,6 +12,7 @@ export interface MajorListResponse {
 @Tags('Major')
 export class MajorController extends Controller {
   /**
+   * WIP: 아직 미구현 상태입니다!!
    * 유효한 전공 목록 전체를 단과대학별로 그룹핑하여 반환합니다.
    * 프론트엔드 드롭다운 항목 구성에 사용됩니다. (인증 불필요)
    *
