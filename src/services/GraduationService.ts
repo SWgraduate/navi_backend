@@ -206,8 +206,8 @@ export class GraduationService {
     if (hasSecondMajor) {
       // TODO: 다전공 구분에 따른 요구 학점(전공핵심/전공심화/전공계) 상세 산출 로직 구현 필요 (26. 4. 28., Gemini)
       result.requiredSecondMajorCredits = {
-        majorTotal: 36, // 임시 기본값
-        majorCore: 18   // 임시 기본값
+        majorTotal: 36, // TODO: 다전공 요건 확정 전까지 임시값 사용 중. 에러 반환 또는 null 처리 검토 (26. 4. 29., 정태영)
+        majorCore: 18   // TODO: 다전공 요건 확정 전까지 임시값 사용 중. 에러 반환 또는 null 처리 검토 (26. 4. 29., 정태영)
       };
     }
 
