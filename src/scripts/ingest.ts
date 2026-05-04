@@ -55,18 +55,31 @@ async function ingestFile(fileName: string, buffer: Buffer): Promise<void> {
     console.log(`  → ${result.status} | chunks: ${result.chunkCount}`);
 }
 
+function collectMdFiles(dir: string): string[] {
+    const results: string[] = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+            results.push(...collectMdFiles(fullPath));
+        } else if (entry.isFile() && entry.name.endsWith('.md')) {
+            results.push(fullPath);
+        }
+    }
+    return results;
+}
+
 async function run(): Promise<void> {
     await mongoose.connect(MONGO_URI);
     console.log('MongoDB 연결 완료\n');
 
-    const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.md'));
-    console.log(`${files.length}개 파일 발견\n`);
+    const filePaths = collectMdFiles(DATA_DIR);
+    console.log(`${filePaths.length}개 파일 발견\n`);
 
     let success = 0, skipped = 0, failed = 0;
 
-    for (const fileName of files) {
+    for (const filePath of filePaths) {
+        const fileName = path.relative(DATA_DIR, filePath);
         console.log(`처리 중: ${fileName}`);
-        const filePath = path.join(DATA_DIR, fileName);
         const buffer = fs.readFileSync(filePath);
 
         try {
