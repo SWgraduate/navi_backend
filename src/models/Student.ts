@@ -1,8 +1,17 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import { IUser } from './User';
 
-export const SECOND_MAJOR_TYPES = ['다중전공', '융합전공', '부전공', '복수전공', '연계전공', '마이크로전공'] as const;
-export type SecondMajorType = typeof SECOND_MAJOR_TYPES[number];
+export const SECOND_MAJOR = {
+  MULTI: '다중전공',
+  CONVERGENCE: '융합전공',
+  MINOR: '부전공',
+  DOUBLE: '복수전공',
+  LINKED: '연계전공',
+  MICRO: '마이크로전공',
+} as const;
+
+export const SECOND_MAJOR_TYPES = Object.values(SECOND_MAJOR);
+export type SecondMajorType = typeof SECOND_MAJOR[keyof typeof SECOND_MAJOR];
 
 export const ACADEMIC_STATUSES = ['재학생', '휴학생'] as const;
 export type AcademicStatus = typeof ACADEMIC_STATUSES[number];
@@ -21,6 +30,7 @@ export interface IStudent extends Document {
   secondMajorInfo?: ISecondMajorInfo | null;
   academicStatus: AcademicStatus;
   completedSemesters: number;
+  isTransfer?: boolean; // 편입생 여부 (예외 케이스 대응)
 }
 
 const SecondMajorSchema = new Schema(
@@ -56,6 +66,10 @@ const StudentSchema: Schema = new Schema(
       required: true,
       min: 1,
       max: 12,
+    },
+    isTransfer: {
+      type: Boolean,
+      default: false,
     },
   },
   {
