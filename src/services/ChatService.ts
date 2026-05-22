@@ -296,9 +296,9 @@ export class ChatService {
   }
 
   private detectMealQuery(query: string): boolean {
-    const keywords = ['학식', '메뉴', '식당', '점심', '중식', '조식', '석식', '밥', '오늘 뭐', '뭐 먹'];
-    const lower = query.toLowerCase();
-    return keywords.some(kw => lower.includes(kw));
+    // '식당', '밥', '메뉴' 단독 키워드는 제외 — "식당 위치", "주변 식당 추천" 등 무관한 질문을 RAG 우회시키기 때문
+    const keywords = ['학식', '학생식당', '교직원식당', '구내식당', '오늘 밥', '학교 밥', '조식', '석식', '오늘 점심 메뉴', '오늘 저녁 메뉴'];
+    return keywords.some(kw => query.includes(kw));
   }
 
   // 쿼리에 특정 식당 키워드가 있으면 해당 ID 반환, 없으면 학생식당(re12) 기본값

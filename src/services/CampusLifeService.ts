@@ -29,7 +29,7 @@ export class CampusLifeService {
    * DB에 이번 주 데이터가 있으면 즉시 반환, 없으면 크롤링 후 저장합니다.
    */
   public async getTodayMenu(cafeteriaId: string = 're12'): Promise<ICafeteriaMenu | null> {
-    const today = this.formatDate(new Date());
+    const today = this.formatDate(this.getKSTNow());
     const weekStart = this.getWeekStartDate();
 
     const cached = await CafeteriaMenu.findOne({ date: today, cafeteriaId });
@@ -135,23 +135,33 @@ export class CampusLifeService {
 
   // ─── 헬퍼 메서드 ─────────────────────────────────────────────────────────────
 
-  // 오늘 날짜 기준으로 이번 주 월요일을 'YYYY-MM-DD'로 반환
+  // 서버가 UTC로 실행되므로 KST(UTC+9) 기준 현재 시각을 반환
+  private getKSTNow(): Date {
+    return new Date(Date.now() + 9 * 60 * 60 * 1000);
+  }
+
+  // KST 기준 오늘 날짜로 이번 주 월요일을 'YYYY-MM-DD'로 반환
   private getWeekStartDate(): string {
-    const today = new Date();
-    const day = today.getDay(); // 0=일, 1=월 ... 6=토
+    const kst = this.getKSTNow();
+    const day = kst.getUTCDay(); // KST 보정 후 UTC 메서드로 요일 추출
     const diff = day === 0 ? 6 : day - 1;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - diff);
+    const monday = new Date(kst);
+    monday.setUTCDate(kst.getUTCDate() - diff);
     return this.formatDate(monday);
   }
 
+  // KST 보정된 Date를 'YYYY-MM-DD' string으로 변환
+  // toISOString()은 UTC 기준이라 00:00~09:00 KST 구간에서 날짜가 하루 밀리므로 사용 금지
   private formatDate(date: Date): string {
-    return date.toISOString().split('T')[0]!; // 'YYYY-MM-DDTHH:...' → 'YYYY-MM-DD'
+    const y = date.getUTCFullYear();
+    const m = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(date.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   private addDays(dateStr: string, days: number): string {
-    const date = new Date(dateStr);
-    date.setDate(date.getDate() + days);
+    const date = new Date(dateStr); // ISO date string → UTC midnight (날짜 연산 전용)
+    date.setUTCDate(date.getUTCDate() + days);
     return this.formatDate(date);
   }
 }
