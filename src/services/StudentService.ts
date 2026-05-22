@@ -44,6 +44,10 @@ export interface UpsertProfileRequest {
    * @example 6
    */
   completedSemesters: number;
+  /**
+   * 편입생 여부 (true인 경우 3학년 편입 기준 졸업요건 적용)
+   */
+  isTransfer?: boolean;
 }
 
 export interface StudentResponse {
@@ -89,6 +93,10 @@ export interface StudentResponse {
    * @example 6
    */
   completedSemesters: number;
+  /**
+   * 편입생 여부
+   */
+  isTransfer?: boolean;
 }
 
 
@@ -234,6 +242,7 @@ export class StudentService {
       secondMajorInfo: updated.secondMajorInfo,
       academicStatus: updated.academicStatus,
       completedSemesters: updated.completedSemesters,
+      isTransfer: updated.isTransfer,
     };
   }
 
@@ -261,6 +270,7 @@ export class StudentService {
       secondMajorInfo: student.secondMajorInfo,
       academicStatus: student.academicStatus,
       completedSemesters: student.completedSemesters,
+      isTransfer: student.isTransfer,
     };
   }
 

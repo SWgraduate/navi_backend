@@ -7,7 +7,6 @@ import 'src/models/Student';
 import 'src/models/AcademicRecord';
 import 'src/models/Verification';
 import 'src/models/Chat';
-import 'src/models/GraduationRule';
 import 'src/models/IngestionRegistry';
 
 /**
