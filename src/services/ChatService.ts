@@ -1,17 +1,18 @@
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 import mongoose from "mongoose";
 import ChatModel, { IChat, IChatResult, IChatSource } from "src/models/Chat";
+import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
+import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { EmbeddingService } from "src/rag/ingestion/services/EmbeddingService";
 import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexService";
-import { RagRetrievalService } from "src/rag/retrieval/services/RagRetrievalService";
 import { RetrievedChunk } from "src/rag/retrieval/types/retrieval.types";
 import { ERICA_SYSTEM_PROMPT } from "src/rag/shared/prompts/ericaSystemPrompt";
-import { GLOBAL_CONFIG, OPENROUTER_API_KEY } from 'src/settings';
 import { logger } from "src/utils/log";
 import { AttachmentContextService } from "./AttachmentContextService";
 import { ConversationService } from "./ConversationService";
 import { StudentService } from "./StudentService";
+import { CampusLifeService } from "./CampusLifeService";
 
 type ChatStatus = "queued" | "processing" | "completed" | "failed";
 
@@ -19,6 +20,7 @@ type ProcessPayload = {
   answer?: string;
   sources?: IChatSource[];
   retrievalMeta?: IChatResult["retrievalMeta"];
+  menuImages?: string[];
 };
 
 type TaskUpdateData = Partial<{
@@ -44,6 +46,7 @@ export class ChatService {
   private conversationService = ConversationService.getInstance();
   private attachmentContextService = AttachmentContextService.getInstance();
   private studentService = new StudentService();
+  private campusLifeService = CampusLifeService.getInstance();
   private ragRetrievalService = new RagRetrievalService(
     new EmbeddingService(),
     new PineconeIndexService()
@@ -167,11 +170,12 @@ export class ChatService {
         updateData.answer = payload.answer;
       }
 
-      if (payload?.sources || payload?.retrievalMeta) {
+      if (payload?.sources || payload?.retrievalMeta || payload?.menuImages) {
         updateData.result = {
           answer: payload.answer ?? "",
           sources: payload.sources ?? [],
           retrievalMeta: payload.retrievalMeta ?? { topK: 0, usedChunks: 0, retrievalMode: 'corpus-only' },
+          ...(payload.menuImages && { menuImages: payload.menuImages }),
         };
       }
 
@@ -180,6 +184,42 @@ export class ChatService {
 
     try {
       logger.i(`${tag} Pipeline started | query="${query.slice(0, 80)}${query.length > 80 ? '...' : ''}" userId=${userId ?? 'anon'} conversationId=${conversationId ?? 'none'}`);
+
+      // Step 0: 학식 메뉴 쿼리 감지 → RAG 대신 DB에서 메뉴 데이터 주입
+      if (this.detectMealQuery(query)) {
+        logger.i(`${tag} [0] Meal query detected → fetching cafeteria menu`);
+        await update("retrieving_chunks", "Fetching today's menu...");
+        const cafeteriaId = this.getCafeteriaIdFromQuery(query);
+        const menuDoc = await this.campusLifeService.getTodayMenu(cafeteriaId);
+
+        const menuContext = menuDoc
+          ? `오늘(${menuDoc.date}) ${menuDoc.cafeteriaName} 메뉴:\n` +
+            menuDoc.meals.map(m =>
+              `[${m.time}]\n` + m.menus.map(item => `- ${item.name} (${item.price})`).join('\n')
+            ).join('\n\n')
+          : '오늘의 메뉴 정보를 찾을 수 없습니다.';
+
+        const menuImages = menuDoc
+          ? menuDoc.meals.flatMap(m => m.menus.map(item => item.imageUrl).filter((url): url is string => !!url))
+          : [];
+
+        await update("generating_answer", "Generating answer...");
+        const history = conversationId ? await this.getRecentHistory(conversationId, 5) : [];
+        const answer = await this.callGroundedLLM(query, menuContext, history);
+        logger.s(`${tag} [0] Meal query answered`);
+
+        await update("done", "Completed", {
+          answer,
+          sources: [],
+          retrievalMeta: { topK: 0, usedChunks: 0, retrievalMode: 'corpus-only' },
+          menuImages,
+        });
+
+        if (userId && conversationId) {
+          await this.conversationService.touchConversation(userId, conversationId);
+        }
+        return;
+      }
 
       // Step 1: Resolve bound documents
       await update("embedding_query", "Embedding user query...");
@@ -212,11 +252,13 @@ export class ChatService {
       // Step 4: Call LLM (개인 학적 컨텍스트 주입)
       await update("generating_answer", "Generating grounded answer...");
       logger.i(`${tag} [4/5] Calling LLM | model=${GLOBAL_CONFIG.chatModel}`);
+      const history = conversationId ? await this.getRecentHistory(conversationId, 5) : [];
+      logger.i(`${tag} [4/5] History turns loaded: ${history.length}`);
       const personalContext = userId ? await this.studentService.getAcademicContextString(userId) : null;
       if (personalContext) {
         logger.i(`${tag} [4/5] Personal academic context injected (userId=${userId})`);
       }
-      const answer = await this.callGroundedLLM(query, contextText, personalContext ?? undefined);
+      const answer = await this.callGroundedLLM(query, contextText, history, personalContext ?? undefined);
       logger.s(`${tag} [4/5] LLM responded | answer length=${answer.length} chars`);
 
       // Step 5: Save result
@@ -253,6 +295,21 @@ export class ChatService {
     return this.attachmentContextService.resolveBoundDocumentIds(userId, conversationId);
   }
 
+  private detectMealQuery(query: string): boolean {
+    // '식당', '밥', '메뉴' 단독 키워드는 제외 — "식당 위치", "주변 식당 추천" 등 무관한 질문을 RAG 우회시키기 때문
+    const keywords = ['학식', '학생식당', '교직원식당', '구내식당', '오늘 밥', '학교 밥', '조식', '석식', '오늘 점심 메뉴', '오늘 저녁 메뉴'];
+    return keywords.some(kw => query.includes(kw));
+  }
+
+  // 쿼리에 특정 식당 키워드가 있으면 해당 ID 반환, 없으면 학생식당(re12) 기본값
+  private getCafeteriaIdFromQuery(query: string): string {
+    if (query.includes('교직원')) return 're11';
+    if (query.includes('창의인재')) return 're13';
+    if (query.includes('푸드코트')) return 're14';
+    if (query.includes('창업')) return 're15';
+    return 're12'; // 학생식당 기본값
+  }
+
   private buildSources(chunks: RetrievedChunk[]): IChatSource[] {
     return chunks.slice(0, 5).map((chunk) => ({
       documentId: chunk.documentId,
@@ -287,7 +344,16 @@ export class ChatService {
       .join("\n\n");
   }
 
-  private async callGroundedLLM(query: string, contextText: string, personalContext?: string, voiceMode = false): Promise<string> {
+  private async getRecentHistory(conversationId: string, limit: number): Promise<{ query: string; answer: string }[]> {
+    const rows = await ChatModel.find({ conversationId, status: "completed", answer: { $exists: true, $ne: "" } })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .select({ query: 1, answer: 1 });
+
+    return rows.reverse().map(r => ({ query: r.query, answer: r.answer! }));
+  }
+
+  private async callGroundedLLM(query: string, contextText: string, history: { query: string; answer: string }[] = [], personalContext?: string, voiceMode = false): Promise<string> {
     const apiKey = OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("Missing LLM API key");
@@ -337,8 +403,14 @@ export class ChatService {
       contextText || "(no relevant context found)",
     ].join("\n");
 
+    const historyMessages = history.flatMap(turn => [
+      new HumanMessage(turn.query),
+      new AIMessage(turn.answer),
+    ]);
+
     const response = await chat.invoke([
       new SystemMessage(systemPrompt),
+      ...historyMessages,
       new HumanMessage(userPrompt),
     ]);
 
@@ -365,7 +437,7 @@ export class ChatService {
     });
 
     const contextText = this.buildContextText(retrieval.chunks, 5);
-    return this.callGroundedLLM(query, contextText, undefined, true);
+    return this.callGroundedLLM(query, contextText, undefined, undefined, true);
   }
 
   /**

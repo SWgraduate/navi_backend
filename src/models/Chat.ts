@@ -14,10 +14,11 @@ export interface IChatRetrievalMeta {
   retrievalMode: 'bound' | 'corpus-fallback' | 'corpus-only';
 }
 
-export interface IChatResult { 
+export interface IChatResult {
   answer: string;
   sources: IChatSource[];
   retrievalMeta: IChatRetrievalMeta;
+  menuImages?: string[];
 }
 
 export interface IChat extends Document {
@@ -56,8 +57,9 @@ const ChatRetrievalMetaSchema = new Schema<IChatRetrievalMeta>(
 const ChatResultSchema = new Schema<IChatResult>(
   {
     answer: { type: String, required: true },
-    sources: { type: [ChatSourceSchema], default: [ ]},
-    retrievalMeta: { type: ChatRetrievalMetaSchema, required: true},
+    sources: { type: [ChatSourceSchema], default: [] },
+    retrievalMeta: { type: ChatRetrievalMetaSchema, required: true },
+    menuImages: { type: [String], default: undefined },
   },
   { _id: false }
 );
