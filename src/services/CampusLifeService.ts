@@ -29,19 +29,28 @@ export class CampusLifeService {
    * DB에 이번 주 데이터가 있으면 즉시 반환, 없으면 크롤링 후 저장합니다.
    */
   public async getTodayMenu(cafeteriaId: string = 're12'): Promise<ICafeteriaMenu | null> {
-    const today = this.formatDate(this.getKSTNow());
-    const weekStart = this.getWeekStartDate();
+    return this.getMealInfo(undefined, cafeteriaId);
+  }
 
-    const cached = await CafeteriaMenu.findOne({ date: today, cafeteriaId });
+  /**
+   * 특정 날짜(또는 오늘)의 메뉴를 반환합니다.
+   * DB에 해당 주 데이터가 있으면 즉시 반환, 없으면 크롤링 후 저장합니다.
+   * @param dateStr 'YYYY-MM-DD' 형식. undefined이면 오늘(KST) 사용.
+   */
+  public async getMealInfo(dateStr: string | undefined, cafeteriaId: string = 're12'): Promise<ICafeteriaMenu | null> {
+    const date = dateStr ?? this.formatDate(this.getKSTNow());
+    const weekStart = this.getWeekStartDateFor(date);
+
+    const cached = await CafeteriaMenu.findOne({ date, cafeteriaId });
     if (cached) {
-      logger.i(`CampusLifeService: DB cache hit (${cafeteriaId}, ${today})`);
+      logger.i(`CampusLifeService: DB cache hit (${cafeteriaId}, ${date})`);
       return cached;
     }
 
-    logger.i(`CampusLifeService: Cache miss → 이번 주 전체 크롤링 시작 (${cafeteriaId})`);
+    logger.i(`CampusLifeService: Cache miss → 해당 주 전체 크롤링 시작 (${cafeteriaId}, week: ${weekStart})`);
     await this.crawlAndCacheWeek(cafeteriaId, weekStart);
 
-    return CafeteriaMenu.findOne({ date: today, cafeteriaId });
+    return CafeteriaMenu.findOne({ date, cafeteriaId });
   }
 
   /**
@@ -140,14 +149,13 @@ export class CampusLifeService {
     return new Date(Date.now() + 9 * 60 * 60 * 1000);
   }
 
-  // KST 기준 오늘 날짜로 이번 주 월요일을 'YYYY-MM-DD'로 반환
-  private getWeekStartDate(): string {
-    const kst = this.getKSTNow();
-    const day = kst.getUTCDay(); // KST 보정 후 UTC 메서드로 요일 추출
+  // 주어진 날짜(YYYY-MM-DD)가 속한 주의 월요일을 'YYYY-MM-DD'로 반환
+  private getWeekStartDateFor(dateStr: string): string {
+    const date = new Date(dateStr); // UTC midnight
+    const day = date.getUTCDay();
     const diff = day === 0 ? 6 : day - 1;
-    const monday = new Date(kst);
-    monday.setUTCDate(kst.getUTCDate() - diff);
-    return this.formatDate(monday);
+    date.setUTCDate(date.getUTCDate() - diff);
+    return this.formatDate(date);
   }
 
   // KST 보정된 Date를 'YYYY-MM-DD' string으로 변환

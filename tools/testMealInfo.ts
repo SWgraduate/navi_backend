@@ -12,7 +12,7 @@ async function main() {
   try {
     logger.i(`[testMealInfo] 학식 정보 크롤링 테스트 시작... (대상 날짜: ${dateStr || '오늘'})`);
 
-    const service = new CampusLifeService();
+    const service = CampusLifeService.getInstance();
     const resultRe11 = await service.getMealInfo(dateStr, 're11');
     const resultRe12 = await service.getMealInfo(dateStr, 're12');
     
