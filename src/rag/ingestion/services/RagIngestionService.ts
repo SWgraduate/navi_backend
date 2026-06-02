@@ -60,8 +60,20 @@ export class RagIngestionService {
       const contentHash = this.contentHashService.createHash(normalizedText);
       logger.i(`Content hash: ${contentHash}`);
 
-      // 4. Check for existing document by filename
+      // 4. Check for existing document by filename or identical content
       logger.i("Step 4: Checking for existing document by filename...");
+      const existingByHash = await this.ragDocumentRepository.findByContentHash(contentHash);
+      if (existingByHash && existingByHash.originalFileName !== command.originalFileName) {
+        logger.i(`Identical content already exists under different filename: ${existingByHash.originalFileName}. Skipping.`);
+        return {
+          documentId: existingByHash._id.toString(),
+          status: existingByHash.status,
+          message: `Identical content already ingested as: ${existingByHash.originalFileName}`,
+          isDuplicate: true,
+          chunkCount: existingByHash.chunkCount,
+        };
+      }
+
       const existing = await this.ragDocumentRepository.findByFileName(command.originalFileName);
       if (existing) {
         // Same content — nothing changed, skip
@@ -80,7 +92,7 @@ export class RagIngestionService {
         logger.i(`Document content changed. Replacing existing document: ${existing._id}`);
         const existingDocumentId = existing._id.toString();
         const existingNamespace = existing.vectorNamespace;
-        await this.pineconeIndexService.deleteByDocumentId(existingDocumentId, existingNamespace ?? undefined);
+        await this.pineconeIndexService.deleteByDocumentId(existingDocumentId, existing.contentHash, existing.chunkCount, existingNamespace ?? undefined);
         await this.ragDocumentRepository.deleteById(existingDocumentId);
         logger.i(`Deleted old vectors and record for document: ${existingDocumentId}`);
       }
