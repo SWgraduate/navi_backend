@@ -60,18 +60,29 @@ export class RagIngestionService {
       const contentHash = this.contentHashService.createHash(normalizedText);
       logger.i(`Content hash: ${contentHash}`);
 
-      // 4. Dedup check in Mongo
-      logger.i("Step 4: Checking for duplicates...");
-      const existing = await this.ragDocumentRepository.findByContentHash(contentHash);
-      if (existing && existing.status !== INGESTION_STATUS.PENDING) {
-        logger.i(`Document already exists (status: ${existing.status}). Skipping ingestion.`);
-        return {
-          documentId: existing._id.toString(),
-          status: existing.status,
-          message: `Document already exists in system (status: ${existing.status})`,
-          isDuplicate: true,
-          chunkCount: existing.chunkCount,
-        };
+      // 4. Check for existing document by filename
+      logger.i("Step 4: Checking for existing document by filename...");
+      const existing = await this.ragDocumentRepository.findByFileName(command.originalFileName);
+      if (existing) {
+        // Same content — nothing changed, skip
+        if (existing.contentHash === contentHash && existing.status !== INGESTION_STATUS.PENDING) {
+          logger.i(`Document content unchanged (status: ${existing.status}). Skipping ingestion.`);
+          return {
+            documentId: existing._id.toString(),
+            status: existing.status,
+            message: `Document content unchanged (status: ${existing.status})`,
+            isDuplicate: true,
+            chunkCount: existing.chunkCount,
+          };
+        }
+
+        // Content changed — delete old vectors and record, then re-ingest
+        logger.i(`Document content changed. Replacing existing document: ${existing._id}`);
+        const existingDocumentId = existing._id.toString();
+        const existingNamespace = existing.vectorNamespace;
+        await this.pineconeIndexService.deleteByDocumentId(existingDocumentId, existingNamespace ?? undefined);
+        await this.ragDocumentRepository.deleteById(existingDocumentId);
+        logger.i(`Deleted old vectors and record for document: ${existingDocumentId}`);
       }
 
       // 5. Save source-of-truth document first

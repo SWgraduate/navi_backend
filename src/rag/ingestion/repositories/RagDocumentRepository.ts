@@ -12,6 +12,14 @@ export class RagDocumentRepository {
     return RagDocumentModel.findOne({ contentHash }).exec();
   }
 
+  async findByFileName(originalFileName: string): Promise<IRagDocument | null> {
+    return RagDocumentModel.findOne({ originalFileName }).exec();
+  }
+
+  async deleteById(documentId: string): Promise<void> {
+    await RagDocumentModel.findByIdAndDelete(documentId).exec();
+  }
+
   // fetch document for retry/read flows
   async findById(documentId: string): Promise<IRagDocument | null> {
     if (!Types.ObjectId.isValid(documentId)) {
