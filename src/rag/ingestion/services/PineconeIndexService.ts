@@ -127,7 +127,7 @@ export class PineconeIndexService {
     }
   }
 
-  async deleteByDocumentId(documentId: string, namespace?: string): Promise<void> {
+  async deleteByDocumentId(documentId: string, contentHash: string, chunkCount: number, namespace?: string): Promise<void> {
     try {
       if (!documentId?.trim()) {
         throw new Error("documentId cannot be empty");
@@ -136,13 +136,13 @@ export class PineconeIndexService {
       const resolvedNamespace = this.getNamespace(namespace);
       const index = this.pinecone.Index(this.indexName).namespace(resolvedNamespace);
 
-      logger.i(`Deleting vectors for document: ${documentId} from namespace: ${resolvedNamespace}`);
+      logger.i(`Deleting ${chunkCount} vectors for document: ${documentId} from namespace: ${resolvedNamespace}`);
 
-      await index.deleteMany({
-        filter: {
-          documentId: { $eq: documentId },
-        },
-      });
+      const chunkIds = Array.from({ length: chunkCount }, (_, i) =>
+        `${documentId}::${contentHash.slice(0, 12)}::${i}`
+      );
+
+      await index.deleteMany(chunkIds);
 
       logger.i(`Successfully deleted vectors for document: ${documentId}`);
     } catch (error) {
