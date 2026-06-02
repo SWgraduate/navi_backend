@@ -6,6 +6,7 @@ import { LoginRequest } from 'src/controllers/AuthController';
 import AcademicRecord from 'src/models/AcademicRecord';
 import Chat from 'src/models/Chat';
 import { ChatAttachmentBindingModel } from 'src/models/ChatAttachmentBinding';
+import { RagDocumentModel } from 'src/rag/ingestion/models/RagDocument';
 import { PineconeIndexService } from 'src/rag/ingestion/services/PineconeIndexService';
 import { ConversationModel } from 'src/models/Conversation';
 import Student from 'src/models/Student';
@@ -202,11 +203,13 @@ export class AuthService {
     if (documentIdsToDelete.length > 0) {
       const pineconeService = new PineconeIndexService();
       await Promise.all(
-        documentIdsToDelete.map(documentId =>
-          pineconeService.deleteByDocumentId(documentId).catch(e =>
+        documentIdsToDelete.map(async documentId => {
+          const doc = await RagDocumentModel.findById(documentId).select("contentHash chunkCount").lean();
+          if (!doc) return;
+          return pineconeService.deleteByDocumentId(documentId, doc.contentHash, doc.chunkCount).catch(e =>
             logger.e(`AuthService.leave: Pinecone 벡터 삭제 실패 (documentId=${documentId})`, e)
-          )
-        )
+          );
+        })
       );
     }
   }
