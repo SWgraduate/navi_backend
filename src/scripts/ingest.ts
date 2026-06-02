@@ -25,7 +25,7 @@ const pineconeIndexService = new PineconeIndexService();
 const normalizationService = new TextNormalizationService();
 const hashService = new ContentHashService();
 
-async function ingestFile(fileName: string, buffer: Buffer): Promise<void> {
+async function ingestFile(fileName: string, buffer: Buffer): Promise<'skipped' | 'processed'> {
   const rawText = buffer.toString('utf-8');
   const normalizedText = normalizationService.normalize(rawText);
   const newHash = hashService.createHash(normalizedText);
@@ -35,11 +35,11 @@ async function ingestFile(fileName: string, buffer: Buffer): Promise<void> {
   if (existing) {
     if (existing.contentHash === newHash) {
       console.log(`  → 스킵 (변경 없음)`);
-      return;
+      return 'skipped';
     }
 
     console.log(`  → 변경 감지 - 기존 벡터 삭제 중...`);
-    await pineconeIndexService.deleteByDocumentId(existing._id.toString(), NAMESPACE);
+    await pineconeIndexService.deleteByDocumentId(existing._id.toString(), existing.contentHash, existing.chunkCount, NAMESPACE);
     await RagDocumentModel.deleteOne({ _id: existing._id });
   }
 
@@ -52,17 +52,25 @@ async function ingestFile(fileName: string, buffer: Buffer): Promise<void> {
     actor: { userId: 'admin-script', role: 'admin' },
   });
 
+  if (result.isDuplicate) {
+    console.log(`  → 스킵 (동일 내용 이미 존재)`);
+    return 'skipped';
+  }
+
   console.log(`  → ${result.status} | chunks: ${result.chunkCount}`);
+  return 'processed';
 }
+
+const EXCLUDED_DIRS = new Set(['.venv', 'node_modules', '.git', '__pycache__']);
 
 function collectMdFiles(dir: string): string[] {
   const results: string[] = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      results.push(...collectMdFiles(fullPath));
+      if (EXCLUDED_DIRS.has(entry.name)) continue;
+      results.push(...collectMdFiles(path.join(dir, entry.name)));
     } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      results.push(fullPath);
+      results.push(path.join(dir, entry.name));
     }
   }
   return results;

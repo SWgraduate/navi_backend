@@ -297,16 +297,36 @@ export class ChatService {
 
   private detectMealQuery(query: string): boolean {
     // '식당', '밥', '메뉴' 단독 키워드는 제외 — "식당 위치", "주변 식당 추천" 등 무관한 질문을 RAG 우회시키기 때문
-    const keywords = ['학식', '학생식당', '교직원식당', '구내식당', '오늘 밥', '학교 밥', '조식', '석식', '오늘 점심 메뉴', '오늘 저녁 메뉴'];
-    return keywords.some(kw => query.includes(kw));
+    const q = query.toLowerCase();
+    const keywords = [
+      // Korean
+      '학식', '학생식당', '교직원식당', '구내식당', '오늘 밥', '학교 밥', '조식', '석식', '오늘 점심 메뉴', '오늘 저녁 메뉴',
+      // English
+      'lunch menu', 'dinner menu', 'breakfast menu', 'cafeteria menu',
+      "today's lunch", "today's dinner", "today's breakfast", "today's meal",
+      'what is for lunch', "what's for lunch", 'what is for dinner', "what's for dinner",
+      'school cafeteria', 'student cafeteria', 'cafeteria today',
+      // Mongolian
+      'өнөөдрийн хоол', 'үдийн хоол', 'оройн хоол', 'өглөөний хоол',
+      'сургуулийн хоол', 'дотуур байрны хоол', 'өнөөдөр юу',
+      // Chinese
+      '食堂', '今天菜单', '今日菜单', '午餐菜单', '晚餐菜单', '早餐菜单',
+      '今天午饭', '今天晚饭', '今天早饭', '学生食堂', '今日午餐', '今日晚餐',
+    ];
+    return keywords.some(kw => q.includes(kw.toLowerCase()));
   }
 
   // 쿼리에 특정 식당 키워드가 있으면 해당 ID 반환, 없으면 학생식당(re12) 기본값
   private getCafeteriaIdFromQuery(query: string): string {
-    if (query.includes('교직원')) return 're11';
-    if (query.includes('창의인재')) return 're13';
-    if (query.includes('푸드코트')) return 're14';
-    if (query.includes('창업')) return 're15';
+    const q = query.toLowerCase();
+    // re11: 교직원식당 (faculty/staff)
+    if (q.includes('교직원') || q.includes('faculty') || q.includes('staff cafeteria') || q.includes('багш нарын') || q.includes('教职工食堂')) return 're11';
+    // re13: 창의인재원식당
+    if (q.includes('창의인재') || q.includes('changui') || q.includes('창의')) return 're13';
+    // re14: 푸드코트
+    if (q.includes('푸드코트') || q.includes('food court') || q.includes('фүүд корт') || q.includes('美食广场')) return 're14';
+    // re15: 창업식당
+    if (q.includes('창업') || q.includes('startup') || q.includes('стартап') || q.includes('创业')) return 're15';
     return 're12'; // 학생식당 기본값
   }
 

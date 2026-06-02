@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import ChatModel from "src/models/Chat";
 import { ConversationModel } from "src/models/Conversation";
 import { ChatAttachmentBindingModel } from "src/models/ChatAttachmentBinding";
+import { RagDocumentModel } from "src/rag/ingestion/models/RagDocument";
 import { PineconeIndexService } from "src/rag/ingestion/services/PineconeIndexService";
 import { GLOBAL_CONFIG } from "src/settings";
 
@@ -118,9 +119,11 @@ export class ConversationService {
     const documentIds = bindings.map((b) => b.documentId);
 
     await Promise.all(
-      documentIds.map((documentId) =>
-        this.pineconeIndexService.deleteByDocumentId(documentId, GLOBAL_CONFIG.pineconeUserDocsNamespace)
-      )
+      documentIds.map(async (documentId) => {
+        const doc = await RagDocumentModel.findById(documentId).select("contentHash chunkCount").lean();
+        if (!doc) return;
+        return this.pineconeIndexService.deleteByDocumentId(documentId, doc.contentHash, doc.chunkCount, GLOBAL_CONFIG.pineconeUserDocsNamespace);
+      })
     );
 
     await ChatAttachmentBindingModel.deleteMany({ userId, conversationId });
