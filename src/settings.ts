@@ -13,8 +13,10 @@ if (envName !== 'production') {
 function requireEnv(key: string, defaultValue?: string): string {
   const value = process.env[key];
   if (value === undefined) {
-    if (defaultValue) {
-      console.log(`The environment variable '${key}' is not defined. Using default value '${defaultValue}'.`);
+    if (defaultValue !== undefined) {
+      if (defaultValue) {
+        console.log(`The environment variable '${key}' is not defined. Using default value '${defaultValue}'.`);
+      }
       return defaultValue;
     }
     throw new Error(`The environment variable '${key}' is not defined.`);
